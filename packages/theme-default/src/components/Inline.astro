@@ -1,5 +1,6 @@
 ---
 import type { InlineNode } from "@cosense-site-kit/core";
+import { pathFor } from "@cosense-site-kit/core";
 import Inline from "./Inline.astro";
 
 interface Props {
@@ -26,7 +27,7 @@ const { nodes } = Astro.props;
       return <a href={node.href} rel="noopener noreferrer"><Inline nodes={node.children} /></a>;
     case "pageLink":
       if (node.exists && node.slug) {
-        return <a class="page-link" href={`/${encodeURIComponent(node.slug)}`}>{node.title}</a>;
+        return <a class="page-link" href={pathFor(node.slug)}>{node.title}</a>;
       }
       return <span class="page-link missing">{node.title}</span>;
     case "tag":

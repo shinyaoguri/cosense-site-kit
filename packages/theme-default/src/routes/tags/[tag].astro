@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import { pathFor } from "@cosense-site-kit/core";
 import options from "virtual:cosense-theme-default/options";
 import Layout from "../../components/Layout.astro";
 
@@ -30,7 +31,7 @@ const { entries } = Astro.props as {
   <ul class="tag-page-list">
     {entries.map((entry) => (
       <li>
-        <a href={`/${encodeURIComponent(entry.data.slug)}`}>{entry.data.title}</a>
+        <a href={pathFor(entry.data.slug)}>{entry.data.title}</a>
         {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
       </li>
     ))}

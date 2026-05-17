@@ -44,9 +44,18 @@ export function assignSlugs(
   });
 }
 
+// Build an absolute path for a slug. Encodes each path segment once so
+// unicode and special characters survive without breaking `/` separators.
+export function pathFor(slug: string): string {
+  return `/${slug.split("/").map(encodeURIComponent).join("/")}`;
+}
+
 function encodeTitle(title: string): string {
-  // Cosense convention: spaces become underscores in URLs.
-  return encodeURIComponent(title.replace(/\s+/g, "_"));
+  // Slugs are logical identifiers, not URL-ready strings. Themes URL-encode
+  // each path segment once when building an href; this keeps unicode titles
+  // readable inside the intermediate model and avoids double-encoding bugs.
+  // Cosense convention: spaces become underscores.
+  return title.replace(/\s+/g, "_");
 }
 
 function slugifyAscii(input: string): string {

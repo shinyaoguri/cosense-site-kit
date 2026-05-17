@@ -1,4 +1,5 @@
 ---
+import { pathFor } from "@cosense-site-kit/core";
 import options from "virtual:cosense-theme-default/options";
 import "../styles/global.css";
 
@@ -23,7 +24,7 @@ const siteTitle = Astro.site ? new URL("/", Astro.site).hostname : title;
       <a class="site-title" href="/">{siteTitle}</a>
       <nav class="site-nav">
         {options.nav.map((item) => (
-          <a href={item.href ?? (item.page ? `/${encodeURIComponent(item.page)}` : "#")}>
+          <a href={item.href ?? (item.page ? pathFor(item.page) : "#")}>
             {item.label}
           </a>
         ))}

@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import { pathFor } from "@cosense-site-kit/core";
 import options from "virtual:cosense-theme-default/options";
 
 interface Props {
@@ -18,7 +19,7 @@ const resolved = backlinks
     <h4>Backlinks</h4>
     <ul>
       {resolved.map((b) => (
-        <li><a href={`/${encodeURIComponent(b.slug)}`}>{b.title}</a></li>
+        <li><a href={pathFor(b.slug)}>{b.title}</a></li>
       ))}
     </ul>
   </aside>
