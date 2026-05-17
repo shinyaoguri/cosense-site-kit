@@ -3,10 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "jsx": "preserve"
   },
-  "include": ["src/**/*"],
-  "references": [{ "path": "../core" }]
+  "include": ["src/**/*"]
 }
