@@ -25,6 +25,13 @@ export const cosenseSiteConfigSchema = z.object({
       ),
     })
     .default({}),
+  siteConfig: z
+    .object({
+      // The Cosense page title that holds the site-config YAML block.
+      // Set to null to disable site-config-page support entirely.
+      page: z.string().min(1).nullable().default(".site"),
+    })
+    .default({}),
   theme: z.unknown().optional(),
   plugins: z.array(z.unknown()).default([]),
   deploy: z

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { blockSchema, type CosenseBlock } from "./block";
+import { siteStructureSchema, type SiteStructure } from "./site-structure";
 
 export interface CosenseSitePage {
   schemaVersion: "1";
@@ -41,21 +42,10 @@ export const pageSchema: z.ZodType<CosenseSitePage> = z.object({
     .optional(),
 });
 
-export interface IntermediateData {
-  schemaVersion: "1";
-  generatedAt: string;
-  site: {
-    title: string;
-    description?: string;
-    baseUrl: string;
-    lang: string;
-  };
-  pages: CosenseSitePage[];
-  excluded: { title: string; reason: string }[];
-  linkGraph: Record<string, string[]>;
-}
-
-export const intermediateDataSchema: z.ZodType<IntermediateData> = z.object({
+// Inferred from the schema so fields with `.default()` (inside SiteStructure)
+// keep matching the actual parsed shape. Explicit interface + `z.ZodType<T>`
+// cast can't carry default-induced input/output divergence.
+export const intermediateDataSchema = z.object({
   schemaVersion: z.literal("1"),
   generatedAt: z.string(),
   site: z.object({
@@ -67,4 +57,10 @@ export const intermediateDataSchema: z.ZodType<IntermediateData> = z.object({
   pages: z.array(pageSchema),
   excluded: z.array(z.object({ title: z.string(), reason: z.string() })),
   linkGraph: z.record(z.string(), z.array(z.string())),
+  structure: siteStructureSchema,
+  warnings: z.array(z.string()),
 });
+
+export type IntermediateData = z.infer<typeof intermediateDataSchema>;
+// Reference SiteStructure so dropping the import doesn't break tooling.
+export type { SiteStructure };

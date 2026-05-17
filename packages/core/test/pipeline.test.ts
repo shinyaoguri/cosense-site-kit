@@ -152,4 +152,80 @@ describe("buildIntermediate", () => {
       expect(data.linkGraph[home.slug]).toEqual([sub.slug]);
     }
   });
+
+  it("falls back to an empty SiteStructure when no site-config page exists", async () => {
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({
+      config,
+      source: stubSource([rawPage({ id: "a", title: "A", text: "A\n#publish" })]),
+    });
+    expect(data.structure.nav).toEqual([]);
+    expect(data.structure.home).toBeUndefined();
+    expect(data.warnings).toEqual([]);
+  });
+
+  it("parses .site YAML into IntermediateData.structure and excludes the page", async () => {
+    const siteYaml = [
+      ".site",
+      "code:site.yaml",
+      " home:",
+      "   page: \"Home\"",
+      " nav:",
+      "   - { label: 'About', page: 'About' }",
+      " posts:",
+      "   tag: 'post'",
+      "   limit: 5",
+    ].join("\n");
+    const raws = [
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      rawPage({ id: "a", title: "Home", text: "Home\n#publish" }),
+      rawPage({ id: "b", title: "About", text: "About\n#publish" }),
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+
+    expect(data.pages.map((p) => p.title).sort()).toEqual(["About", "Home"]);
+    expect(data.excluded.find((e) => e.title === ".site")?.reason).toBe("site-config page");
+    expect(data.structure.home?.page).toBe("Home");
+    expect(data.structure.nav).toEqual([{ label: "About", page: "About" }]);
+    expect(data.structure.posts?.tag).toBe("post");
+    expect(data.structure.posts?.limit).toBe(5);
+  });
+
+  it("captures parse errors as warnings instead of aborting the build", async () => {
+    const bad = [".site", "code:site.yaml", " nav: [ - { label: oops"].join("\n");
+    const raws = [
+      rawPage({ id: "s", title: ".site", text: bad }),
+      rawPage({ id: "a", title: "A", text: "A\n#publish" }),
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+
+    expect(data.pages.map((p) => p.title)).toEqual(["A"]);
+    expect(data.structure.nav).toEqual([]);
+    expect(data.warnings.join(" ")).toMatch(/site\.yaml/);
+  });
+
+  it("respects siteConfig.page set to null (feature disabled)", async () => {
+    const raws = [rawPage({ id: "s", title: ".site", text: ".site\ncode:site.yaml\n nav: []" })];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+      siteConfig: { page: null },
+      publish: { default: "all" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    // With siteConfig disabled, .site is treated like any other page.
+    expect(data.pages.map((p) => p.title)).toEqual([".site"]);
+    expect(data.structure.nav).toEqual([]);
+  });
 });

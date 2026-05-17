@@ -1,11 +1,13 @@
 import { writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { CosenseSiteConfig } from "./config";
+import { parseSitePage, SiteConfigParseError } from "./parse/site-config";
 import { applyPublishRules } from "./publish/filter";
 import { buildLinkGraph, computeBacklinks } from "./resolve/backlinks";
 import { resolveInternalLinks } from "./resolve/links";
 import { assignSlugs } from "./resolve/slug";
 import { intermediateDataSchema, type IntermediateData } from "./schema/v1/page";
+import { emptySiteStructure, type SiteStructure } from "./schema/v1/site-structure";
 import { createCosenseSource, type CosenseSourceOptions } from "./source/cosense";
 import { normalizePage } from "./source/cosense/normalize";
 import type { SiteSource, SourcePageRaw } from "./source/types";
@@ -27,7 +29,9 @@ export type ProgressEvent =
   | { kind: "list"; total: number }
   | { kind: "fetch"; current: number; total: number; title: string }
   | { kind: "normalize"; total: number }
-  | { kind: "publish"; kept: number; excluded: number };
+  | { kind: "publish"; kept: number; excluded: number }
+  | { kind: "site-config"; found: boolean; warnings: string[] }
+  | { kind: "warn"; message: string };
 
 export async function buildIntermediate(
   opts: BuildIntermediateOptions,
@@ -62,7 +66,22 @@ export async function buildIntermediate(
   const normalized = raws.map(normalizePage);
   opts.onProgress?.({ kind: "normalize", total: normalized.length });
 
-  const { kept, excluded } = applyPublishRules(normalized, config.publish);
+  // Separate the site-config page (if any) before the publish filter. It is
+  // meta-data, never rendered as a route, and must not be dropped just because
+  // it lacks a #publish tag.
+  const { structure, warnings, sitePageTitle } = extractStructure(
+    normalized,
+    config.siteConfig.page,
+    opts.onProgress,
+  );
+  const remainingPages = sitePageTitle
+    ? normalized.filter((p) => p.title !== sitePageTitle)
+    : normalized;
+
+  const { kept, excluded } = applyPublishRules(remainingPages, config.publish);
+  if (sitePageTitle && normalized.some((p) => p.title === sitePageTitle)) {
+    excluded.push({ title: sitePageTitle, reason: "site-config page" });
+  }
   opts.onProgress?.({ kind: "publish", kept: kept.length, excluded: excluded.length });
 
   const slugged = assignSlugs(kept, config.routing);
@@ -77,9 +96,45 @@ export async function buildIntermediate(
     pages: withBacklinks,
     excluded,
     linkGraph,
+    structure,
+    warnings,
   };
 
   return intermediateDataSchema.parse(data);
+}
+
+function extractStructure(
+  normalized: ReturnType<typeof normalizePage>[],
+  sitePage: string | null,
+  onProgress: BuildIntermediateOptions["onProgress"],
+): { structure: SiteStructure; warnings: string[]; sitePageTitle: string | null } {
+  if (!sitePage) {
+    return { structure: emptySiteStructure(), warnings: [], sitePageTitle: null };
+  }
+  const page = normalized.find((p) => p.title === sitePage);
+  if (!page) {
+    onProgress?.({ kind: "site-config", found: false, warnings: [] });
+    return { structure: emptySiteStructure(), warnings: [], sitePageTitle: sitePage };
+  }
+  try {
+    const result = parseSitePage(page);
+    const structure = result?.structure ?? emptySiteStructure();
+    const warnings = result?.warnings ?? [];
+    onProgress?.({ kind: "site-config", found: result !== null, warnings });
+    for (const w of warnings) onProgress?.({ kind: "warn", message: w });
+    return { structure, warnings, sitePageTitle: sitePage };
+  } catch (err) {
+    if (err instanceof SiteConfigParseError) {
+      const message = err.message;
+      onProgress?.({ kind: "warn", message });
+      return {
+        structure: emptySiteStructure(),
+        warnings: [message],
+        sitePageTitle: sitePage,
+      };
+    }
+    throw err;
+  }
 }
 
 function defaultSource(
