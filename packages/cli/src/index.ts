@@ -4,6 +4,7 @@ import { runInit } from "./commands/init";
 import { runFetch } from "./commands/fetch";
 import { runBuild } from "./commands/build";
 import { runValidate } from "./commands/validate";
+import { runDeployInit } from "./commands/deploy";
 
 export const VERSION = "0.0.0";
 
@@ -62,6 +63,34 @@ program
   .action(async (opts: { config?: string }) => {
     await runValidate({ cwd: process.cwd(), configFile: opts.config });
   });
+
+const deploy = program.command("deploy").description("Deploy configuration helpers");
+deploy
+  .command("init")
+  .description("Generate CI workflow and (for Workers) wrangler.jsonc")
+  .option("--config <file>", "Path to cosense.config.{ts,js,mjs}")
+  .option(
+    "--target <target>",
+    "cloudflare-workers | github-pages (overrides config)",
+  )
+  .option("--schedule <cron>", "Cron schedule for the build job")
+  .option("--force", "Overwrite existing files")
+  .action(
+    async (opts: {
+      config?: string;
+      target?: "cloudflare-workers" | "github-pages";
+      schedule?: string;
+      force?: boolean;
+    }) => {
+      await runDeployInit({
+        cwd: process.cwd(),
+        configFile: opts.config,
+        target: opts.target,
+        schedule: opts.schedule,
+        force: opts.force,
+      });
+    },
+  );
 
 program.parseAsync().catch((err: unknown) => {
   const msg = err instanceof Error ? err.message : String(err);
