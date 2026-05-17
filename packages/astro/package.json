@@ -1,0 +1,33 @@
+{
+  "name": "@cosense-site-kit/astro",
+  "version": "0.0.0",
+  "description": "Astro Content Loader and Integration for cosense-site-kit",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "astro": "^5.0.0"
+  },
+  "dependencies": {
+    "@cosense-site-kit/core": "*",
+    "c12": "^2.0.1"
+  },
+  "devDependencies": {
+    "astro": "^5.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  }
+}

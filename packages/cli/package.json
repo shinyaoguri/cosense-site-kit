@@ -1,0 +1,29 @@
+{
+  "name": "@cosense-site-kit/cli",
+  "version": "0.0.0",
+  "description": "cosense-site CLI",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "cosense-site": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cosense-site-kit/core": "*",
+    "@cosense-site-kit/deploy": "*",
+    "c12": "^2.0.1",
+    "commander": "^12.1.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  }
+}
