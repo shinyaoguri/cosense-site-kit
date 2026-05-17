@@ -18,6 +18,11 @@ export { createCosenseSource, type CosenseSourceOptions } from "./source/cosense
 export type { SiteSource, SourcePageRef, SourcePageRaw } from "./source/types";
 export { normalizePage } from "./source/cosense/normalize";
 export { parseScrapboxText, type ParsedPage } from "./parse/scrapbox";
+export {
+  parseSitePage,
+  SiteConfigParseError,
+  type SiteConfigResult,
+} from "./parse/site-config";
 
 export { applyPublishRules } from "./publish/filter";
 export { assignSlugs, computeSlug, pathFor } from "./resolve/slug";
