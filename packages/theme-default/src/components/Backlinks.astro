@@ -1,0 +1,25 @@
+---
+import { getCollection } from "astro:content";
+import options from "virtual:cosense-theme-default/options";
+
+interface Props {
+  backlinks: string[];
+}
+
+const { backlinks } = Astro.props;
+const all = await getCollection(options.collection as "pages");
+const titleToSlug = new Map(all.map((e) => [e.data.title, e.data.slug]));
+const resolved = backlinks
+  .map((title) => ({ title, slug: titleToSlug.get(title) }))
+  .filter((b): b is { title: string; slug: string } => Boolean(b.slug));
+---
+{resolved.length > 0 && (
+  <aside class="backlinks">
+    <h4>Backlinks</h4>
+    <ul>
+      {resolved.map((b) => (
+        <li><a href={`/${encodeURIComponent(b.slug)}`}>{b.title}</a></li>
+      ))}
+    </ul>
+  </aside>
+)}

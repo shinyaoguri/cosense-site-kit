@@ -1,0 +1,38 @@
+---
+import { getCollection } from "astro:content";
+import options from "virtual:cosense-theme-default/options";
+import Layout from "../../components/Layout.astro";
+
+export async function getStaticPaths() {
+  const opts = (await import("virtual:cosense-theme-default/options")).default;
+  const pages = await getCollection(opts.collection as "pages");
+  const tagMap = new Map<string, typeof pages>();
+  for (const entry of pages) {
+    for (const tag of entry.data.tags) {
+      const list = tagMap.get(tag) ?? [];
+      list.push(entry);
+      tagMap.set(tag, list);
+    }
+  }
+  return Array.from(tagMap.entries()).map(([tag, entries]) => ({
+    params: { tag },
+    props: { entries },
+  }));
+}
+
+const { tag } = Astro.params;
+const { entries } = Astro.props as {
+  entries: Awaited<ReturnType<typeof getCollection<"pages">>>;
+};
+---
+<Layout title={`#${tag}`}>
+  <h1>#{tag}</h1>
+  <ul class="tag-page-list">
+    {entries.map((entry) => (
+      <li>
+        <a href={`/${encodeURIComponent(entry.data.slug)}`}>{entry.data.title}</a>
+        {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
+      </li>
+    ))}
+  </ul>
+</Layout>

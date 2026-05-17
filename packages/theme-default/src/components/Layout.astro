@@ -1,0 +1,39 @@
+---
+import options from "virtual:cosense-theme-default/options";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const siteTitle = Astro.site ? new URL("/", Astro.site).hostname : title;
+---
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="site-title" href="/">{siteTitle}</a>
+      <nav class="site-nav">
+        {options.nav.map((item) => (
+          <a href={item.href ?? (item.page ? `/${encodeURIComponent(item.page)}` : "#")}>
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    </header>
+    <main class="site-main">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <small>Built with cosense-site-kit</small>
+    </footer>
+  </body>
+</html>

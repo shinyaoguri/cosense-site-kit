@@ -1,0 +1,28 @@
+---
+import { getCollection, getEntry } from "astro:content";
+import options from "virtual:cosense-theme-default/options";
+import Layout from "../components/Layout.astro";
+import PageContent from "../components/PageContent.astro";
+
+const pages = await getCollection(options.collection as "pages");
+pages.sort((a, b) => (b.data.updatedAt ?? "").localeCompare(a.data.updatedAt ?? ""));
+
+const home = options.homePage
+  ? await getEntry(options.collection as "pages", options.homePage)
+  : undefined;
+---
+<Layout title={Astro.site?.hostname ?? "Home"}>
+  {home && <PageContent blocks={home.data.blocks} />}
+
+  <section class="recent-pages">
+    <h2>Recent pages</h2>
+    <ul>
+      {pages.slice(0, 30).map((entry) => (
+        <li>
+          <a href={`/${encodeURIComponent(entry.data.slug)}`}>{entry.data.title}</a>
+          {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
+        </li>
+      ))}
+    </ul>
+  </section>
+</Layout>

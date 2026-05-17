@@ -1,0 +1,46 @@
+---
+import { getCollection } from "astro:content";
+import options from "virtual:cosense-theme-default/options";
+import Layout from "../components/Layout.astro";
+import PageContent from "../components/PageContent.astro";
+import Backlinks from "../components/Backlinks.astro";
+
+export async function getStaticPaths() {
+  const opts = (await import("virtual:cosense-theme-default/options")).default;
+  const pages = await getCollection(opts.collection as "pages");
+  return pages.map((entry) => ({
+    params: { slug: entry.data.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props as { entry: Awaited<ReturnType<typeof getCollection<"pages">>>[number] };
+const page = entry.data;
+---
+<Layout title={page.title} description={page.summary}>
+  <article>
+    <header class="page-header">
+      <h1>{page.title}</h1>
+      {page.tags.length > 0 && (
+        <p class="tags">
+          {page.tags.map((tag) => (
+            <a class="tag" href={`/tags/${encodeURIComponent(tag)}`}>#{tag}</a>
+          ))}
+        </p>
+      )}
+      {page.updatedAt && (
+        <time class="updated" datetime={page.updatedAt}>
+          {new Date(page.updatedAt).toISOString().slice(0, 10)}
+        </time>
+      )}
+    </header>
+
+    <PageContent blocks={page.blocks} />
+
+    <Backlinks backlinks={page.backlinks} />
+
+    <footer class="source">
+      <a href={page.sourceUrl} rel="noopener noreferrer">Source on Cosense</a>
+    </footer>
+  </article>
+</Layout>
