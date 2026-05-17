@@ -37,10 +37,12 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
           },
         });
 
-        const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
-        injectRoute({ pattern: "/", entrypoint: here("./routes/index.astro") });
-        injectRoute({ pattern: "/tags/[tag]", entrypoint: here("./routes/tags/[tag].astro") });
-        injectRoute({ pattern: "/[...slug]", entrypoint: here("./routes/[...slug].astro") });
+        // .astro/.css files ship as raw src/ (not bundled by tsup), so resolve
+        // from the built index.js up one level into src/.
+        const here = (p: string) => fileURLToPath(new URL(`../src/${p}`, import.meta.url));
+        injectRoute({ pattern: "/", entrypoint: here("routes/index.astro") });
+        injectRoute({ pattern: "/tags/[tag]", entrypoint: here("routes/tags/[tag].astro") });
+        injectRoute({ pattern: "/[...slug]", entrypoint: here("routes/[...slug].astro") });
       },
     },
   };
