@@ -17,3 +17,14 @@ export { createCosenseSource, type CosenseSourceOptions } from "./source/cosense
 export type { SiteSource, SourcePageRef, SourcePageRaw } from "./source/types";
 export { normalizePage } from "./source/cosense/normalize";
 export { parseScrapboxText, type ParsedPage } from "./parse/scrapbox";
+
+export { applyPublishRules } from "./publish/filter";
+export { assignSlugs, computeSlug } from "./resolve/slug";
+export { resolveInternalLinks } from "./resolve/links";
+export { computeBacklinks, buildLinkGraph } from "./resolve/backlinks";
+export {
+  buildIntermediate,
+  writeIntermediate,
+  type BuildIntermediateOptions,
+  type ProgressEvent,
+} from "./pipeline";
