@@ -9,10 +9,10 @@ export default defineCosenseSite({
   },
   source: {
     type: "cosense",
-    project: "your-public-cosense-project",
+    project: "shinyaoguri",
   },
   publish: {
-    default: "none",
+    default: "all",
     includeTags: ["publish"],
     excludeTags: ["draft", "private", "internal"],
   },
