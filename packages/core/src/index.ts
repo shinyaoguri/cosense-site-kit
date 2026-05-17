@@ -10,6 +10,7 @@ export {
   type CosenseSiteConfig,
   type CosenseSiteConfigInput,
 } from "./config";
+export { loadCosenseSiteConfig } from "./load-config";
 
 export * from "./schema";
 

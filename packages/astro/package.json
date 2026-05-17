@@ -22,8 +22,7 @@
     "astro": "^5.0.0"
   },
   "dependencies": {
-    "@cosense-site-kit/core": "*",
-    "c12": "^2.0.1"
+    "@cosense-site-kit/core": "*"
   },
   "devDependencies": {
     "astro": "^5.0.0",
