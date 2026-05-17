@@ -12,3 +12,8 @@ export {
 } from "./config";
 
 export * from "./schema";
+
+export { createCosenseSource, type CosenseSourceOptions } from "./source/cosense";
+export type { SiteSource, SourcePageRef, SourcePageRaw } from "./source/types";
+export { normalizePage } from "./source/cosense/normalize";
+export { parseScrapboxText, type ParsedPage } from "./parse/scrapbox";
