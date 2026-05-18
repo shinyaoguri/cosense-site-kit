@@ -6,6 +6,7 @@ import { applyPublishRules } from "./publish/filter";
 import { buildLinkGraph, computeBacklinks } from "./resolve/backlinks";
 import { resolveInternalLinks } from "./resolve/links";
 import { assignSlugs } from "./resolve/slug";
+import { assignTemplates } from "./resolve/template";
 import { intermediateDataSchema, type IntermediateData } from "./schema/v1/page";
 import { emptySiteStructure, type SiteStructure } from "./schema/v1/site-structure";
 import { createCosenseSource, type CosenseSourceOptions } from "./source/cosense";
@@ -87,13 +88,14 @@ export async function buildIntermediate(
   const slugged = assignSlugs(kept, config.routing);
   const linked = resolveInternalLinks(slugged);
   const withBacklinks = computeBacklinks(linked);
-  const linkGraph = buildLinkGraph(withBacklinks);
+  const withTemplates = assignTemplates(withBacklinks, structure);
+  const linkGraph = buildLinkGraph(withTemplates);
 
   const data: IntermediateData = {
     schemaVersion: "1",
     generatedAt: new Date().toISOString(),
     site: config.site,
-    pages: withBacklinks,
+    pages: withTemplates,
     excluded,
     linkGraph,
     structure,

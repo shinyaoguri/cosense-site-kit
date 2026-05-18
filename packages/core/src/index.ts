@@ -29,6 +29,11 @@ export { assignSlugs, computeSlug, normalizeBase, pathFor } from "./resolve/slug
 export { resolveInternalLinks } from "./resolve/links";
 export { computeBacklinks, buildLinkGraph } from "./resolve/backlinks";
 export {
+  assignTemplates,
+  resolveTemplate,
+  DEFAULT_TEMPLATE,
+} from "./resolve/template";
+export {
   buildIntermediate,
   writeIntermediate,
   type BuildIntermediateOptions,

@@ -1,4 +1,5 @@
 import { parseScrapboxText } from "../../parse/scrapbox";
+import { DEFAULT_TEMPLATE } from "../../resolve/template";
 import type { CosenseSitePage } from "../../schema/v1/page";
 import type { SourcePageRaw } from "../types";
 
@@ -17,6 +18,7 @@ export function normalizePage(raw: SourcePageRaw): CosenseSitePage {
     title: raw.title,
     slug: "",
     sourceUrl: raw.sourceUrl,
+    template: DEFAULT_TEMPLATE,
     createdAt: new Date(raw.created * 1000).toISOString(),
     updatedAt: new Date(raw.updated * 1000).toISOString(),
     summary: raw.descriptions[0],

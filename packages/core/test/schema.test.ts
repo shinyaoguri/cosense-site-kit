@@ -72,12 +72,14 @@ describe("page schema", () => {
       title: "Home",
       slug: "home",
       sourceUrl: "https://scrapbox.io/proj/Home",
+      template: "page",
       tags: [],
       links: [],
       backlinks: [],
       blocks: [],
     });
     expect(page.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(page.template).toBe("page");
   });
 
   it("rejects a non-url sourceUrl", () => {
@@ -88,6 +90,24 @@ describe("page schema", () => {
         title: "Home",
         slug: "home",
         sourceUrl: "not-a-url",
+        template: "page",
+        tags: [],
+        links: [],
+        backlinks: [],
+        blocks: [],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects an empty template name", () => {
+    expect(() =>
+      pageSchema.parse({
+        schemaVersion: "1",
+        id: "abc",
+        title: "Home",
+        slug: "home",
+        sourceUrl: "https://scrapbox.io/proj/Home",
+        template: "",
         tags: [],
         links: [],
         backlinks: [],

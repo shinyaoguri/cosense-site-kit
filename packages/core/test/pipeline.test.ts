@@ -215,6 +215,30 @@ describe("buildIntermediate", () => {
     expect(data.warnings.join(" ")).toMatch(/site\.yaml/);
   });
 
+  it("resolves page templates from tag and .site YAML mapping", async () => {
+    const siteYaml = [
+      ".site",
+      "code:site.yaml",
+      " templates:",
+      "   \"Welcome\": landing",
+    ].join("\n");
+    const raws = [
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      rawPage({ id: "h", title: "Welcome", text: "Welcome\n#publish" }),
+      rawPage({ id: "a", title: "About", text: "About\n#publish\n#template/profile" }),
+      rawPage({ id: "b", title: "Notes", text: "Notes\n#publish" }),
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    const by = (t: string) => data.pages.find((p) => p.title === t)?.template;
+    expect(by("Welcome")).toBe("landing"); // from YAML
+    expect(by("About")).toBe("profile"); // from tag (beats YAML)
+    expect(by("Notes")).toBe("page"); // default
+  });
+
   it("respects siteConfig.page set to null (feature disabled)", async () => {
     const raws = [rawPage({ id: "s", title: ".site", text: ".site\ncode:site.yaml\n nav: []" })];
     const config = defineCosenseSite({

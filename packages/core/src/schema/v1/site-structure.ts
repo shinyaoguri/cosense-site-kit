@@ -22,6 +22,9 @@ export const siteStructureSchema = z
       .optional(),
     featured: z.array(z.string().min(1)).default([]),
     redirects: z.record(z.string(), z.string()).default({}),
+    // Map from Cosense page title to template name. Used as a fallback when
+    // the page itself doesn't carry a `#template/<name>` tag. The tag wins.
+    templates: z.record(z.string(), z.string().min(1)).default({}),
   })
   // .passthrough() keeps unknown top-level keys so plugins / custom themes can
   // ship their own sections (e.g. `members:`, `profile:`) without core changes.

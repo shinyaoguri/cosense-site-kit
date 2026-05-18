@@ -14,6 +14,7 @@ function pageWith(blocks: CosenseSitePage["blocks"]): CosenseSitePage {
     title: ".site",
     slug: ".site",
     sourceUrl: "https://scrapbox.io/proj/.site",
+    template: "page",
     tags: [],
     links: [],
     backlinks: [],

@@ -8,6 +8,13 @@ export interface CosenseSitePage {
   title: string;
   slug: string;
   sourceUrl: string;
+  /**
+   * Template the theme should render this page with. Resolved by the pipeline
+   * from (in order): `#template/<name>` tag, .site YAML structure.templates
+   * mapping, or the default "page". Themes look this up in their own template
+   * map; unknown names should fall back to "page".
+   */
+  template: string;
   createdAt?: string;
   updatedAt?: string;
   summary?: string;
@@ -27,6 +34,7 @@ export const pageSchema: z.ZodType<CosenseSitePage> = z.object({
   title: z.string(),
   slug: z.string(),
   sourceUrl: z.string().url(),
+  template: z.string().min(1),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   summary: z.string().optional(),
