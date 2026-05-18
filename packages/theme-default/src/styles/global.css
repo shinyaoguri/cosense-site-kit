@@ -38,7 +38,11 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: var(--max-width);
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  /* Header band can be wider than the article content so the nav has
+     breathing room on desktop. Mobile falls back to stacked layout. */
+  max-width: min(64rem, 100% - 2rem);
   margin: 0 auto;
   padding: 1.25rem 1rem;
   border-bottom: 1px solid var(--border);
@@ -47,11 +51,35 @@ a:hover {
 .site-title {
   font-weight: 700;
   color: var(--text);
+  font-size: 1rem;
+  flex: 0 0 auto;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  align-items: center;
 }
 
 .site-nav a {
-  margin-left: 1rem;
   color: var(--muted);
+  white-space: nowrap;
+}
+
+.site-nav a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+@media (max-width: 540px) {
+  .site-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .site-nav {
+    width: 100%;
+  }
 }
 
 .site-main {

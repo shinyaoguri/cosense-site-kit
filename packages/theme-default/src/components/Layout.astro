@@ -9,7 +9,10 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
-const siteTitle = Astro.site ? new URL("/", Astro.site).hostname : title;
+// Prefer the explicit siteTitle from theme options; fall back to the host of
+// Astro.site (verbose) when not set.
+const siteTitle =
+  options.siteTitle ?? (Astro.site ? new URL("/", Astro.site).hostname : title);
 
 // SiteStructure.nav wins over theme-options.nav when both are configured.
 const structure = await loadStructure();

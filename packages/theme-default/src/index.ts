@@ -10,6 +10,12 @@ export interface ThemeDefaultNavItem {
 }
 
 export interface ThemeDefaultOptions {
+  /**
+   * Text shown as the site title in the header. Defaults to Astro's
+   * configured site hostname (e.g. "shinyaoguri.github.io"), which is
+   * usually too verbose; setting an explicit string is recommended.
+   */
+  siteTitle?: string;
   nav?: ThemeDefaultNavItem[];
   /** Name of the content collection to read. Default: "pages". */
   collection?: string;
@@ -25,6 +31,7 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
     collection: opts.collection ?? "pages",
     nav: opts.nav ?? [],
     homePage: opts.homePage,
+    siteTitle: opts.siteTitle,
   };
 
   return {
