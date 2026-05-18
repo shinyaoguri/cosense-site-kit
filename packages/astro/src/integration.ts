@@ -1,8 +1,10 @@
 import type { AstroIntegration } from "astro";
 import {
+  emptySiteStructure,
   normalizeBase,
   pathFor,
   type CosenseSiteConfig,
+  type SiteStructure,
 } from "@cosense-site-kit/core";
 import { loadCosenseSiteConfig } from "./config-loader";
 import { getSharedIntermediate } from "./intermediate-cache";
@@ -26,32 +28,46 @@ export interface CosenseIntegrationOptions {
 //     ],
 //   });
 //
-// The integration sets Astro's `site` to the configured `baseUrl`, runs the
-// fetch pipeline eagerly (its result is memoed for the content loaders), and
-// translates structure.redirects from .site YAML into Astro's redirects map.
-// Pipeline failure does not crash Astro — site is still set and redirects
-// quietly skipped, so the dev server can come up even when offline.
-// Virtual module ID exposed to themes and downstream consumers. Themes can
-// import this without depending on @cosense-site-kit/astro at compile time;
-// they ship their own .d.ts shim. The module emits the validated site block
-// from cosense.config.ts so themes don't have to be told the title twice.
+// The integration:
+//   1. Sets Astro's `site` and `base` from cosense.config.ts.
+//   2. Runs the fetch pipeline (memoed; the pages loader reuses the result).
+//   3. Exposes two virtual modules to themes:
+//        virtual:cosense-site-kit/site       — the site block from config
+//        virtual:cosense-site-kit/structure  — the parsed .site SiteStructure
+//   4. Wires redirects from .site into Astro's `redirects` config.
+//
+// Pipeline failure does not crash Astro — site/base are still set, structure
+// falls back to empty defaults, and redirects are silently skipped so the dev
+// server can come up even when Cosense is offline.
+
 const SITE_VIRTUAL_ID = "virtual:cosense-site-kit/site";
 const SITE_VIRTUAL_RESOLVED = `\0${SITE_VIRTUAL_ID}`;
+const STRUCTURE_VIRTUAL_ID = "virtual:cosense-site-kit/structure";
+const STRUCTURE_VIRTUAL_RESOLVED = `\0${STRUCTURE_VIRTUAL_ID}`;
 
-function virtualSitePlugin(site: CosenseSiteConfig["site"]): {
+interface VirtualSnapshot {
+  site: CosenseSiteConfig["site"];
+  structure: SiteStructure;
+}
+
+function virtualSitePlugin(getSnapshot: () => VirtualSnapshot): {
   name: string;
   resolveId(id: string): string | null;
   load(id: string): string | null;
 } {
   return {
-    name: "cosense-site-kit-virtual-site",
+    name: "cosense-site-kit-virtual",
     resolveId(id) {
       if (id === SITE_VIRTUAL_ID) return SITE_VIRTUAL_RESOLVED;
+      if (id === STRUCTURE_VIRTUAL_ID) return STRUCTURE_VIRTUAL_RESOLVED;
       return null;
     },
     load(id) {
       if (id === SITE_VIRTUAL_RESOLVED) {
-        return `export default ${JSON.stringify(site)};`;
+        return `export default ${JSON.stringify(getSnapshot().site)};`;
+      }
+      if (id === STRUCTURE_VIRTUAL_RESOLVED) {
+        return `export default ${JSON.stringify(getSnapshot().structure)};`;
       }
       return null;
     },
@@ -66,34 +82,41 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
         const config = opts.config ?? (await loadCosenseSiteConfig(opts.configFile));
         const normalized = normalizeBase(config.site.base);
 
-        // updateConfig is invoked in narrow slices so each call types cleanly
-        // against AstroConfig partials. Multi-call is supported and shallow-
-        // merges in order.
-        updateConfig({
-          site: config.site.baseUrl,
-          vite: { plugins: [virtualSitePlugin(config.site)] },
-        });
-        // Astro expects "/sub" (no trailing slash) or "/" for root.
-        if (normalized !== "/") {
-          updateConfig({ base: normalized.replace(/\/$/, "") });
-        }
-
+        // The virtual:cosense-site-kit/structure module needs a SiteStructure
+        // at module-load time. We compute it eagerly here (memoed across the
+        // process) so dev-mode reloads see fresh data without an extra fetch.
+        // Empty fallback keeps the dev server alive when Cosense is offline.
+        let structure: SiteStructure = emptySiteStructure();
         try {
           const data = await getSharedIntermediate({
             configFile: opts.configFile,
             config: opts.config,
           });
-          const redirects: Record<string, string> = {};
-          for (const [from, to] of Object.entries(data.structure.redirects)) {
-            redirects[pathFor(from)] = pathFor(to);
-          }
-          if (Object.keys(redirects).length > 0) {
-            updateConfig({ redirects });
-            logger.info(`cosense: ${Object.keys(redirects).length} redirect(s) wired`);
-          }
+          structure = data.structure;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          logger.warn(`cosense: skipped redirects setup (${msg})`);
+          logger.warn(`cosense: pipeline failed (${msg}); using empty structure`);
+        }
+
+        updateConfig({
+          site: config.site.baseUrl,
+          vite: {
+            plugins: [
+              virtualSitePlugin(() => ({ site: config.site, structure })),
+            ],
+          },
+        });
+        if (normalized !== "/") {
+          updateConfig({ base: normalized.replace(/\/$/, "") });
+        }
+
+        const redirects: Record<string, string> = {};
+        for (const [from, to] of Object.entries(structure.redirects)) {
+          redirects[pathFor(from)] = pathFor(to);
+        }
+        if (Object.keys(redirects).length > 0) {
+          updateConfig({ redirects });
+          logger.info(`cosense: ${Object.keys(redirects).length} redirect(s) wired`);
         }
 
         logger.info(

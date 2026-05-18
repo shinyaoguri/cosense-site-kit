@@ -1,27 +1,21 @@
-import { getCollection, getEntry } from "astro:content";
-import {
-  emptySiteStructure,
-  pathFor,
-  type SiteStructure,
-} from "@cosense-site-kit/core";
+import { getCollection } from "astro:content";
+import structure from "virtual:cosense-site-kit/structure";
+import { pathFor, type SiteStructure } from "@cosense-site-kit/core";
 
 // Name of the Astro content collection that the cosense() integration's
 // pages loader populates. Hardcoded across themes; if a theme wants a
 // different collection name, it can build its own helpers.
 const PAGES_COLLECTION = "pages";
 
-// Load the SiteStructure published by cosense-site-kit. Falls back to an
-// empty structure (no nav, no posts, no templates) when the entry is
-// missing, so theme components don't crash on sites that opt out of the
-// site-config page.
+// Return the SiteStructure published by cosense-site-kit. The cosense()
+// integration computes this once at config:setup time and injects it
+// through the virtual:cosense-site-kit/structure module, so there's no
+// Astro content collection involved — calls are synchronous and cheap.
+//
+// kept async for backwards compatibility and so themes can swap in a
+// custom async source without API churn.
 export async function loadStructure(): Promise<SiteStructure> {
-  try {
-    const entry = await getEntry("site" as never, "structure" as never);
-    const data = (entry as { data?: SiteStructure } | undefined)?.data;
-    return data ?? emptySiteStructure();
-  } catch {
-    return emptySiteStructure();
-  }
+  return structure;
 }
 
 // Build a Cosense-title → URL-slug map from the `pages` collection. Themes

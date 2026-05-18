@@ -1,8 +1,4 @@
-import {
-  pageSchema,
-  siteStructureSchema,
-  type CosenseSiteConfig,
-} from "@cosense-site-kit/core";
+import { pageSchema, type CosenseSiteConfig } from "@cosense-site-kit/core";
 import type { Loader } from "astro/loaders";
 import { getSharedIntermediate } from "./intermediate-cache";
 
@@ -17,12 +13,18 @@ export interface CosenseLoaderOptions {
   force?: boolean;
 }
 
-// Astro Content Loader for individual pages. Use inside src/content.config.ts:
+// Astro Content Loader for the published pages collection. Use it from
+// src/content.config.ts:
 //
 //   const pages = defineCollection({
 //     loader: cosenseLoader({ configFile: "./cosense.config.ts" }),
 //     schema: cosenseSchema,
 //   });
+//
+// The parsed .site SiteStructure is NOT a content collection — it's a
+// per-site singleton exposed via the virtual:cosense-site-kit/structure
+// module from the cosense() Astro integration. Themes read it through
+// loadStructure() in @cosense-site-kit/theme-utils.
 export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
   return {
     name: "cosense-site-kit/pages",
@@ -48,35 +50,4 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
   };
 }
 
-// Astro Content Loader for the SiteStructure. Produces a single entry with
-// id="structure", which themes read via getEntry("site", "structure"):
-//
-//   const site = defineCollection({
-//     loader: cosenseSiteLoader({ configFile: "./cosense.config.ts" }),
-//     schema: cosenseSiteSchema,
-//   });
-export function cosenseSiteLoader(opts: CosenseLoaderOptions = {}): Loader {
-  return {
-    name: "cosense-site-kit/site",
-    schema: () => siteStructureSchema,
-    async load({ store, logger, generateDigest, parseData }) {
-      const data = await getSharedIntermediate(opts);
-      logger.info(
-        `SiteStructure loaded (nav=${data.structure.nav.length}, posts=${data.structure.posts ? "on" : "off"})`,
-      );
-
-      store.clear();
-      const parsed = await parseData({
-        id: "structure",
-        data: data.structure as unknown as Record<string, unknown>,
-      });
-      store.set({
-        id: "structure",
-        data: parsed,
-        digest: generateDigest(parsed),
-      });
-    },
-  };
-}
-
-export { pageSchema as cosenseSchema, siteStructureSchema as cosenseSiteSchema };
+export { pageSchema as cosenseSchema };
