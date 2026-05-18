@@ -3,11 +3,10 @@ import {
   applyPublishRules,
   assignSlugs,
   buildIntermediate,
-  buildLinkGraph,
-  computeBacklinks,
   defineCosenseSite,
   normalizePage,
   resolveInternalLinks,
+  resolveLinkData,
 } from "../src";
 import type { SiteSource, SourcePageRaw } from "../src/source/types";
 
@@ -101,29 +100,32 @@ describe("slug + link + backlink resolution", () => {
     expect(slugged?.slug).toBe("research");
   });
 
-  it("computes backlinks", () => {
+  it("computes backlinks and slug-based link graph in one pass", () => {
     const pages = [
       normalizePage(rawPage({ id: "1", title: "A", text: "A\n#publish\nsee [B]" })),
       normalizePage(rawPage({ id: "2", title: "B", text: "B\n#publish" })),
     ];
     const slugged = assignSlugs(pages, { slug: "encoded-title" });
-    const withBacklinks = computeBacklinks(slugged);
+    const { pages: withBacklinks, linkGraph } = resolveLinkData(slugged);
+
     const b = withBacklinks.find((p) => p.title === "B");
     expect(b?.backlinks).toEqual(["A"]);
-  });
 
-  it("builds a slug -> slug link graph", () => {
-    const pages = [
-      normalizePage(rawPage({ id: "1", title: "A", text: "A\n#publish\nsee [B]" })),
-      normalizePage(rawPage({ id: "2", title: "B", text: "B\n#publish" })),
-    ];
-    const slugged = assignSlugs(pages, { slug: "encoded-title" });
-    const graph = buildLinkGraph(slugged);
     const aSlug = slugged.find((p) => p.title === "A")?.slug;
     const bSlug = slugged.find((p) => p.title === "B")?.slug;
     expect(aSlug).toBeDefined();
     expect(bSlug).toBeDefined();
-    if (aSlug && bSlug) expect(graph[aSlug]).toEqual([bSlug]);
+    if (aSlug && bSlug) expect(linkGraph[aSlug]).toEqual([bSlug]);
+  });
+
+  it("skips links to unpublished pages in both backlinks and link graph", () => {
+    const pages = [
+      normalizePage(rawPage({ id: "1", title: "A", text: "A\n#publish\nsee [Ghost]" })),
+    ];
+    const slugged = assignSlugs(pages, { slug: "encoded-title" });
+    const { pages: out, linkGraph } = resolveLinkData(slugged);
+    expect(out[0]?.backlinks).toEqual([]);
+    expect(linkGraph[out[0]!.slug]).toEqual([]);
   });
 });
 

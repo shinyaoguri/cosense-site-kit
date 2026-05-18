@@ -26,8 +26,8 @@ export {
 
 export { applyPublishRules } from "./publish/filter";
 export { assignSlugs, computeSlug, normalizeBase, pathFor } from "./resolve/slug";
-export { resolveInternalLinks } from "./resolve/links";
-export { computeBacklinks, buildLinkGraph } from "./resolve/backlinks";
+export { buildTitleToSlug, resolveInternalLinks } from "./resolve/links";
+export { resolveLinkData, type LinkData } from "./resolve/backlinks";
 export {
   assignTemplates,
   resolveTemplate,

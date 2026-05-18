@@ -10,7 +10,8 @@ export interface FetchOptions {
   cwd: string;
   configFile?: string;
   cacheDir?: string;
-  out?: string;
+  /** When set, also write the full IntermediateData JSON to this path. */
+  exportPath?: string;
   force?: boolean;
   concurrency?: number;
 }
@@ -18,11 +19,9 @@ export interface FetchOptions {
 export async function runFetch(opts: FetchOptions): Promise<void> {
   const config = await loadCosenseSiteConfig(opts.configFile, opts.cwd);
   const cacheDir = resolve(opts.cwd, opts.cacheDir ?? ".cosense-cache");
-  const out = resolve(opts.cwd, opts.out ?? `${cacheDir}/intermediate.json`);
 
   console.log(pc.dim(`source : cosense:${config.source.project}`));
   console.log(pc.dim(`cache  : ${cacheDir}`));
-  console.log(pc.dim(`out    : ${out}`));
 
   const data = await buildIntermediate({
     config,
@@ -30,19 +29,43 @@ export async function runFetch(opts: FetchOptions): Promise<void> {
     force: opts.force,
     concurrency: opts.concurrency,
     onProgress: (e) => {
-      if (e.kind === "list") console.log(pc.cyan(`→ list   ${e.total} page(s)`));
-      else if (e.kind === "fetch") {
-        if (e.current % 10 === 0 || e.current === e.total) {
-          console.log(pc.dim(`  fetch  ${e.current}/${e.total} ${e.title}`));
-        }
-      } else if (e.kind === "publish") {
-        console.log(
-          pc.cyan(`→ publish kept=${e.kept} excluded=${e.excluded}`),
-        );
+      switch (e.kind) {
+        case "list":
+          console.log(pc.cyan(`→ list   ${e.total} page(s)`));
+          break;
+        case "fetch":
+          if (e.current % 10 === 0 || e.current === e.total) {
+            console.log(pc.dim(`  fetch  ${e.current}/${e.total} ${e.title}`));
+          }
+          break;
+        case "publish":
+          console.log(pc.cyan(`→ publish kept=${e.kept} excluded=${e.excluded}`));
+          break;
+        case "site-config":
+          if (!e.found) {
+            console.log(
+              pc.yellow(
+                `⚠ site-config page "${config.siteConfig.page}" not found — using defaults`,
+              ),
+            );
+          }
+          break;
+        case "warn":
+          console.log(pc.yellow(`⚠ ${e.message}`));
+          break;
+        case "normalize":
+          // quiet: implied by fetch completion
+          break;
       }
     },
   });
 
-  await writeIntermediate(data, out);
-  console.log(pc.green(`✓ wrote ${data.pages.length} page(s) → ${out}`));
+  console.log(pc.green(`✓ ${data.pages.length} page(s) ready`));
+  for (const w of data.warnings) console.log(pc.yellow(`⚠ ${w}`));
+
+  if (opts.exportPath) {
+    const out = resolve(opts.cwd, opts.exportPath);
+    await writeIntermediate(data, out);
+    console.log(pc.green(`✓ wrote intermediate JSON → ${out}`));
+  }
 }

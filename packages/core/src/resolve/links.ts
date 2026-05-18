@@ -4,14 +4,25 @@ import type { CosenseSitePage } from "../schema/v1/page";
 
 // After slugs are assigned, walk each page's blocks and resolve every pageLink
 // node: set its slug if the target is a published page, and set exists.
-export function resolveInternalLinks(pages: CosenseSitePage[]): CosenseSitePage[] {
-  const titleToSlug = new Map<string, string>();
-  for (const p of pages) titleToSlug.set(p.title, p.slug);
-
+// The titleToSlug map is shared with downstream link-data computation; pass it
+// in to avoid rebuilding it.
+export function resolveInternalLinks(
+  pages: CosenseSitePage[],
+  titleToSlug?: Map<string, string>,
+): CosenseSitePage[] {
+  const map = titleToSlug ?? buildTitleToSlug(pages);
   return pages.map((page) => ({
     ...page,
-    blocks: page.blocks.map((b) => resolveBlock(b, titleToSlug)),
+    blocks: page.blocks.map((b) => resolveBlock(b, map)),
   }));
+}
+
+export function buildTitleToSlug(
+  pages: ReadonlyArray<{ title: string; slug: string }>,
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const p of pages) map.set(p.title, p.slug);
+  return map;
 }
 
 function resolveBlock(block: CosenseBlock, m: Map<string, string>): CosenseBlock {

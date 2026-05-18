@@ -24,17 +24,20 @@ program
 
 program
   .command("fetch")
-  .description("Fetch pages from Cosense and write intermediate.json")
+  .description("Fetch pages from Cosense into the local cache")
   .option("--config <file>", "Path to cosense.config.{ts,js,mjs}")
   .option("--cache-dir <dir>", "Cache directory (default .cosense-cache)")
-  .option("--out <file>", "Output path for intermediate.json")
+  .option(
+    "--export <file>",
+    "Also write the full intermediate model (pages + structure) to <file>",
+  )
   .option("--force", "Ignore cache and refetch everything")
   .option("--concurrency <n>", "Parallel fetch concurrency", (v) => Number.parseInt(v, 10))
   .action(
     async (opts: {
       config?: string;
       cacheDir?: string;
-      out?: string;
+      export?: string;
       force?: boolean;
       concurrency?: number;
     }) => {
@@ -42,7 +45,7 @@ program
         cwd: process.cwd(),
         configFile: opts.config,
         cacheDir: opts.cacheDir,
-        out: opts.out,
+        exportPath: opts.export,
         force: opts.force,
         concurrency: opts.concurrency,
       });
