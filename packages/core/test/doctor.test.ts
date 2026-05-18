@@ -175,6 +175,46 @@ describe("runDoctor", () => {
     expect(find(report, "Site-config page").message).toMatch(/disabled/);
   });
 
+  it("summarizes template usage when multiple templates are in play", async () => {
+    const siteYaml = [
+      ".site",
+      "code:site.yaml",
+      " templates:",
+      "   \"Welcome\": landing",
+    ].join("\n");
+    const config = baseConfig();
+    const source = stubSource([
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      rawPage({ id: "w", title: "Welcome", text: "Welcome\n#publish" }),
+      rawPage({ id: "a", title: "About", text: "About\n#publish\n#template/profile" }),
+      rawPage({ id: "b", title: "Notes", text: "Notes\n#publish" }),
+    ]);
+    const report = await runDoctor({ config, source });
+    const usage = find(report, "Template usage");
+    expect(usage.status).toBe("pass");
+    expect(usage.details?.join(" ")).toContain("page");
+    expect(usage.details?.join(" ")).toContain("profile");
+    expect(usage.details?.join(" ")).toContain("landing");
+  });
+
+  it("warns when .site templates mapping references missing titles", async () => {
+    const siteYaml = [
+      ".site",
+      "code:site.yaml",
+      " templates:",
+      "   \"Typoed Title\": profile",
+    ].join("\n");
+    const config = baseConfig();
+    const source = stubSource([
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      rawPage({ id: "h", title: "Home", text: "Home\n#publish" }),
+    ]);
+    const report = await runDoctor({ config, source });
+    const c = find(report, "Template mapping titles");
+    expect(c.status).toBe("warn");
+    expect(c.details?.[0]).toContain("Typoed Title");
+  });
+
   it("captures pipeline failures as fatalError", async () => {
     const config = baseConfig();
     const explodingSource: SiteSource = {

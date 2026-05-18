@@ -63,6 +63,8 @@ export async function runDoctor(opts: RunDoctorOptions): Promise<DoctorReport> {
   checks.push(checkOrphanPosts(data));
   checks.push(checkRedirectDestinations(data));
   checks.push(checkBrokenPageLinks(data));
+  checks.push(checkTemplateUsage(data));
+  checks.push(checkTemplateMapping(data));
   checks.push(checkSlugCollisions(data));
   checks.push(checkDraftLeak(opts.config, data));
 
@@ -293,6 +295,56 @@ function checkBrokenPageLinks(data: IntermediateData): DoctorCheck {
           sources.length <= 3 ? ` (${sources.map((s) => `"${s}"`).join(", ")})` : ""
         }`,
     ),
+  };
+}
+
+// Report which page-level templates are in use. core doesn't know what
+// templates the theme actually supports (themes hold their own registry), so
+// this check never fails — it just surfaces the breakdown so users can spot
+// "I added #template/profil but it didn't take" by missing counts.
+function checkTemplateUsage(data: IntermediateData): DoctorCheck {
+  const counts = new Map<string, number>();
+  for (const p of data.pages) counts.set(p.template, (counts.get(p.template) ?? 0) + 1);
+  if (counts.size <= 1) {
+    return {
+      name: "Template usage",
+      status: "pass",
+      message: `all ${data.pages.length} page(s) use the default template`,
+    };
+  }
+  const entries = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  return {
+    name: "Template usage",
+    status: "pass",
+    message: `${counts.size} templates in use`,
+    details: entries.map(([name, n]) => `${n}× ${name}`),
+  };
+}
+
+// Validate that .site site.yaml's `templates:` mapping refers to titles that
+// actually exist among published pages. A typo here silently does nothing
+// because the mapping never matches; surface it explicitly.
+function checkTemplateMapping(data: IntermediateData): DoctorCheck {
+  const entries = Object.entries(data.structure.templates);
+  if (entries.length === 0) {
+    return { name: "Template mapping titles", status: "pass", message: "no mappings" };
+  }
+  const titles = new Set(data.pages.map((p) => p.title));
+  const missing = entries
+    .filter(([title]) => !titles.has(title))
+    .map(([title, template]) => `"${title}" → ${template}`);
+  if (missing.length === 0) {
+    return {
+      name: "Template mapping titles",
+      status: "pass",
+      message: `${entries.length} mapping(s) all resolve`,
+    };
+  }
+  return {
+    name: "Template mapping titles",
+    status: "warn",
+    message: `${missing.length} title(s) in .site templates do not match any published page`,
+    details: missing,
   };
 }
 
