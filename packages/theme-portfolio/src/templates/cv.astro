@@ -1,0 +1,191 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Layout from "../components/Layout.astro";
+import PageContent from "../components/PageContent.astro";
+import {
+  type CvData,
+  type CvSectionKey,
+  type PeriodItem,
+  type PublicationItem,
+  type QualificationItem,
+  type YearItem,
+  effectiveOrder,
+  extractCv,
+  renderInlineLinks,
+} from "../lib/cv";
+
+interface Props {
+  entry: CollectionEntry<"pages">;
+}
+
+const { entry } = Astro.props;
+const page = entry.data;
+const cv: CvData | null = extractCv(page.blocks);
+
+const SECTION_TITLES: Record<CvSectionKey, string> = {
+  education: "Education",
+  career: "Career",
+  publications: "Publications",
+  awards: "Awards",
+  researchgrant: "Research Grant",
+  works: "Works",
+  qualification: "Qualification",
+};
+
+// Wraps the title+description into a single HTML chunk so the row body can
+// surface authors' Markdown links inline. Used for period/year rows.
+function rowHtml(item: PeriodItem | YearItem): string {
+  const titlePart = renderInlineLinks(item.title);
+  const desc = "description" in item ? item.description : undefined;
+  return desc ? `${titlePart}, ${renderInlineLinks(desc)}` : titlePart;
+}
+
+function isPeriodSection(key: CvSectionKey): boolean {
+  return key === "education" || key === "career";
+}
+
+function getYearItems(cv: CvData, key: CvSectionKey): YearItem[] {
+  if (key === "awards") return cv.awards ?? [];
+  if (key === "researchgrant") return cv.researchgrant ?? [];
+  if (key === "works") return cv.works ?? [];
+  return [];
+}
+
+function getPeriodItems(cv: CvData, key: CvSectionKey): PeriodItem[] {
+  if (key === "education") return cv.education ?? [];
+  if (key === "career") return cv.career ?? [];
+  return [];
+}
+
+const order = cv ? effectiveOrder(cv) : [];
+---
+<Layout title={page.title} description={page.summary}>
+  <article class="prose">
+    <h1>{page.title}</h1>
+
+    {cv ? (
+      <>
+        {order.map((key) => {
+          if (key === "publications") {
+            const pubs: PublicationItem[] = cv.publications ?? [];
+            if (pubs.length === 0) return null;
+            return (
+              <section class="cv-section cv-pubs">
+                <div class="cv-section-head">
+                  <h2>{SECTION_TITLES.publications}</h2>
+                  <div class="pub-filters">
+                    <button type="button" data-filter="all" class="pub-filter is-active">All</button>
+                    <button type="button" data-filter="peer-reviewed" class="pub-filter">Peer-reviewed</button>
+                    <button type="button" data-filter="full-paper" class="pub-filter">Full-paper</button>
+                  </div>
+                </div>
+                <ul class="pub-list" id="publications-list">
+                  {pubs.map((pub) => (
+                    <li
+                      class="pub-item"
+                      data-peer-reviewed={pub.peerReviewed ? "true" : "false"}
+                      data-full-paper={pub.fullPaper ? "true" : "false"}
+                    >
+                      {pub.authors},
+                      {pub.url ? (
+                        <a href={pub.url} target="_blank" rel="noopener noreferrer">"{pub.title}"</a>
+                      ) : (
+                        <>"{pub.title}"</>
+                      )}, {pub.source}, ({pub.year})
+                      {pub.peerReviewed && <span class="pub-badge">Peer-reviewed</span>}
+                      {pub.fullPaper && <span class="pub-badge">Full-paper</span>}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          }
+
+          if (key === "qualification") {
+            const items: QualificationItem[] = cv.qualification ?? [];
+            if (items.length === 0) return null;
+            return (
+              <section class="cv-section">
+                <h2>{SECTION_TITLES.qualification}</h2>
+                <div class="cv-rows">
+                  {items.map((item) => (
+                    <div class="cv-row">
+                      <span class="cv-row-label is-year">{item.year}</span>
+                      <span class="cv-row-content">
+                        {item.url ? (
+                          <a href={item.url} target="_blank" rel="noopener noreferrer">{item.title}</a>
+                        ) : (
+                          item.title
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          }
+
+          if (isPeriodSection(key)) {
+            const items = getPeriodItems(cv, key);
+            if (items.length === 0) return null;
+            return (
+              <section class="cv-section">
+                <h2>{SECTION_TITLES[key]}</h2>
+                <div class="cv-rows">
+                  {items.map((item) => (
+                    <div class="cv-row">
+                      <span class="cv-row-label is-period">{item.period}</span>
+                      <span class="cv-row-content" set:html={rowHtml(item)} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          }
+
+          const yearItems = getYearItems(cv, key);
+          if (yearItems.length === 0) return null;
+          return (
+            <section class="cv-section">
+              <h2>{SECTION_TITLES[key]}</h2>
+              <div class="cv-rows">
+                {yearItems.map((item) => (
+                  <div class="cv-row">
+                    <span class="cv-row-label is-year">{item.year}</span>
+                    <span class="cv-row-content" set:html={rowHtml(item)} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </>
+    ) : (
+      <PageContent blocks={page.blocks} />
+    )}
+  </article>
+</Layout>
+
+<script>
+  // Publications filter (All / Peer-reviewed / Full-paper). Operates on the
+  // data-peer-reviewed and data-full-paper attributes set on each <li>.
+  const buttons = document.querySelectorAll<HTMLButtonElement>(".pub-filter");
+  const items = document.querySelectorAll<HTMLLIElement>(".pub-item");
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const filter = btn.dataset.filter;
+      buttons.forEach((b) => b.classList.toggle("is-active", b === btn));
+      items.forEach((item) => {
+        if (filter === "all") {
+          item.style.display = "";
+        } else if (filter === "peer-reviewed") {
+          item.style.display =
+            item.dataset.peerReviewed === "true" ? "" : "none";
+        } else if (filter === "full-paper") {
+          item.style.display =
+            item.dataset.fullPaper === "true" ? "" : "none";
+        }
+      });
+    });
+  });
+</script>

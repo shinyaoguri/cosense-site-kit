@@ -1,0 +1,48 @@
+---
+// Adds a language label and a copy-to-clipboard button to .prose <pre>
+// blocks. Ported from shinyaoguri.com.
+---
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const codeBlocks = document.querySelectorAll<HTMLPreElement>(".prose pre");
+    codeBlocks.forEach((pre) => {
+      if (pre.classList.contains("is-enhanced")) return;
+      pre.classList.add("is-enhanced");
+
+      const code = pre.querySelector("code");
+      let language = pre.getAttribute("data-language") ?? "";
+      if (!language && code) {
+        const match = code.className.match(/language-(\w+)/);
+        if (match?.[1]) language = match[1];
+      }
+
+      if (language) {
+        const label = document.createElement("span");
+        label.className = "code-block-lang";
+        label.textContent = language;
+        pre.parentNode?.insertBefore(label, pre);
+      }
+
+      const btn = document.createElement("button");
+      btn.className = "code-block-copy";
+      btn.textContent = "Copy";
+      btn.setAttribute("type", "button");
+      btn.addEventListener("click", async () => {
+        const text = code?.textContent ?? pre.textContent ?? "";
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.textContent = "Copied!";
+          btn.classList.add("is-copied");
+          setTimeout(() => {
+            btn.textContent = "Copy";
+            btn.classList.remove("is-copied");
+          }, 2000);
+        } catch {
+          btn.textContent = "Failed";
+          setTimeout(() => { btn.textContent = "Copy"; }, 2000);
+        }
+      });
+      pre.appendChild(btn);
+    });
+  });
+</script>

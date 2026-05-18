@@ -1,0 +1,17 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Layout from "../components/Layout.astro";
+import PageContent from "../components/PageContent.astro";
+
+interface Props {
+  entry: CollectionEntry<"pages">;
+}
+
+const { entry } = Astro.props;
+const page = entry.data;
+---
+<Layout title={page.title} description={page.summary}>
+  <article class="prose">
+    <PageContent blocks={page.blocks} />
+  </article>
+</Layout>
