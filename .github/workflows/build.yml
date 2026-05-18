@@ -1,0 +1,62 @@
+name: Build and deploy
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 1,13 * * *"
+
+# Required by actions/deploy-pages@v4.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Avoid concurrent deploys racing each other.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Restore Cosense cache
+        uses: actions/cache@v4
+        with:
+          path: site/.cosense-cache
+          key: cosense-cache-${{ github.ref }}
+          restore-keys: |
+            cosense-cache-
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - run: npm ci
+        working-directory: ${{ github.workspace }}
+      - run: npx cosense-site fetch
+      - run: npx astro build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
