@@ -34,6 +34,20 @@ describe("generateGithubActionsWorkflow", () => {
     expect(yml).toContain("path: ./site/dist");
   });
 
+  it("auto-builds workspace packages when workingDirectory implies a monorepo", () => {
+    const yml = generateGithubActionsWorkflow({
+      target: "github-pages",
+      workingDirectory: "site",
+    });
+    expect(yml).toContain("Build framework packages");
+    expect(yml).toContain("npm run build");
+  });
+
+  it("omits the workspace build step for a single-package site", () => {
+    const yml = generateGithubActionsWorkflow({ target: "github-pages" });
+    expect(yml).not.toContain("Build framework packages");
+  });
+
   it("defaults to a twice-daily off-the-hour schedule", () => {
     const yml = generateGithubActionsWorkflow({ target: "cloudflare-workers" });
     expect(yml).toContain('cron: "17 1,13 * * *"');

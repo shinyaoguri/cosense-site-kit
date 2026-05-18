@@ -43,6 +43,10 @@ jobs:
 
       - run: npm ci
         working-directory: ${{ github.workspace }}
+
+      - name: Build framework packages
+        run: npm run build
+        working-directory: ${{ github.workspace }}
       - run: npx cosense-site fetch
       - run: npx astro build
 

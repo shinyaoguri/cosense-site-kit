@@ -11,23 +11,50 @@ export interface GithubActionsOptions {
    * Default: "." (repo root).
    */
   workingDirectory?: string;
+  /**
+   * When true, inject `npm run build` at the repo root before fetch so
+   * workspace packages with unbuilt dist/ get compiled. Required when the
+   * site consumes local workspace packages (i.e. inside this monorepo).
+   * Default: true when workingDirectory is set, false otherwise.
+   */
+  buildWorkspaces?: boolean;
 }
 
 export function generateGithubActionsWorkflow(opts: GithubActionsOptions): string {
   const schedule = opts.schedule ?? "17 1,13 * * *";
   const nodeVersion = opts.nodeVersion ?? 24;
   const wd = opts.workingDirectory && opts.workingDirectory !== "." ? opts.workingDirectory : null;
+  const buildWorkspaces = opts.buildWorkspaces ?? wd !== null;
 
   if (opts.target === "github-pages") {
-    return renderPagesWorkflow({ schedule, nodeVersion, workingDirectory: wd });
+    return renderPagesWorkflow({
+      schedule,
+      nodeVersion,
+      workingDirectory: wd,
+      buildWorkspaces,
+    });
   }
-  return renderCloudflareWorkflow({ schedule, nodeVersion, workingDirectory: wd });
+  return renderCloudflareWorkflow({
+    schedule,
+    nodeVersion,
+    workingDirectory: wd,
+    buildWorkspaces,
+  });
 }
 
 interface RenderArgs {
   schedule: string;
   nodeVersion: number;
   workingDirectory: string | null;
+  buildWorkspaces: boolean;
+}
+
+function buildStep(a: RenderArgs): string {
+  if (!a.buildWorkspaces) return "";
+  return `
+      - name: Build framework packages
+        run: npm run build
+        working-directory: \${{ github.workspace }}`;
 }
 
 function renderCloudflareWorkflow(a: RenderArgs): string {
@@ -63,6 +90,7 @@ jobs:
             cosense-cache-
 
       - run: npm ci
+${buildStep(a)}
       - run: npx cosense-site fetch
       - run: npx astro build
 
@@ -128,6 +156,7 @@ jobs:
 
       - run: npm ci
         working-directory: \${{ github.workspace }}
+${buildStep(a)}
       - run: npx cosense-site fetch
       - run: npx astro build
 
