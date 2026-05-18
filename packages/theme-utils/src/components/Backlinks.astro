@@ -1,15 +1,12 @@
 ---
-import { getCollection } from "astro:content";
-import { path } from "../lib/structure";
-import options from "virtual:cosense-theme-default/options";
+import { loadTitleToSlug, path } from "../structure";
 
 interface Props {
   backlinks: string[];
 }
 
 const { backlinks } = Astro.props;
-const all = await getCollection(options.collection as "pages");
-const titleToSlug = new Map(all.map((e) => [e.data.title, e.data.slug]));
+const titleToSlug = await loadTitleToSlug();
 const resolved = backlinks
   .map((title) => ({ title, slug: titleToSlug.get(title) }))
   .filter((b): b is { title: string; slug: string } => Boolean(b.slug));

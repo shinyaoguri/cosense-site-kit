@@ -11,14 +11,13 @@ export interface ThemeDefaultNavItem {
 
 export interface ThemeDefaultOptions {
   /**
-   * Text shown as the site title in the header. Defaults to Astro's
-   * configured site hostname (e.g. "shinyaoguri.github.io"), which is
-   * usually too verbose; setting an explicit string is recommended.
+   * Text shown as the site title in the header. Defaults to
+   * cosense.config.ts site.title via virtual:cosense-site-kit/site, then to
+   * Astro's configured site hostname.
    */
   siteTitle?: string;
+  /** Fallback nav items used when `.site` declares no `nav:`. */
   nav?: ThemeDefaultNavItem[];
-  /** Name of the content collection to read. Default: "pages". */
-  collection?: string;
   /** Page slug to use as the home page body. Default: render a list of pages. */
   homePage?: string;
 }
@@ -27,8 +26,7 @@ const VIRTUAL_ID = "virtual:cosense-theme-default/options";
 const VIRTUAL_RESOLVED = `\0${VIRTUAL_ID}`;
 
 export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroIntegration {
-  const options: Required<Pick<ThemeDefaultOptions, "collection">> & ThemeDefaultOptions = {
-    collection: opts.collection ?? "pages",
+  const options: Required<Pick<ThemeDefaultOptions, "nav">> & ThemeDefaultOptions = {
     nav: opts.nav ?? [],
     homePage: opts.homePage,
     siteTitle: opts.siteTitle,

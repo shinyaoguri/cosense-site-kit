@@ -3,12 +3,12 @@ import { getCollection } from "astro:content";
 import options from "virtual:cosense-theme-default/options";
 import Layout from "../components/Layout.astro";
 import PageContent from "../components/PageContent.astro";
-import { loadStructure, loadTitleToSlug, path } from "../lib/structure";
+import { loadStructure, loadTitleToSlug, path } from "@cosense-site-kit/theme-utils";
 
 const structure = await loadStructure();
 const titleToSlug = await loadTitleToSlug();
 
-const allPages = await getCollection(options.collection as "pages");
+const allPages = await getCollection("pages");
 allPages.sort((a, b) => (b.data.updatedAt ?? "").localeCompare(a.data.updatedAt ?? ""));
 
 // 1. Home body: structure.home.page > options.homePage > none

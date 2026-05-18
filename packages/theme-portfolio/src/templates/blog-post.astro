@@ -2,8 +2,8 @@
 import type { CollectionEntry } from "astro:content";
 import Layout from "../components/Layout.astro";
 import PageContent from "../components/PageContent.astro";
-import Backlinks from "../components/Backlinks.astro";
-import { isPublicTag, path } from "../lib/structure";
+import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
+import { isPublicTag, path } from "@cosense-site-kit/theme-utils";
 
 interface Props {
   entry: CollectionEntry<"pages">;

@@ -1,12 +1,10 @@
 ---
 import { getCollection } from "astro:content";
-import options from "virtual:cosense-theme-portfolio/options";
 import Layout from "../components/Layout.astro";
-import { isPublicTag, path } from "../lib/structure";
+import { isPublicTag, path } from "@cosense-site-kit/theme-utils";
 
 export async function getStaticPaths() {
-  const opts = (await import("virtual:cosense-theme-portfolio/options")).default;
-  const pages = await getCollection(opts.collection as "pages");
+  const pages = await getCollection("pages");
   const tagMap = new Map<string, typeof pages>();
   for (const entry of pages) {
     for (const tag of entry.data.tags) {

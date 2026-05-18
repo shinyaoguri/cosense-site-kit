@@ -5,9 +5,12 @@
 /// <reference types="astro/client" />
 
 declare module "astro:content" {
+  // Loose data shape for in-repo typecheck. The actual Astro project overrides
+  // this with real types generated from content.config.ts.
   export type CollectionEntry<_T extends string = string> = {
     id: string;
-    data: Record<string, unknown> & { title: string; slug: string };
+    // biome-ignore lint: shim only — Astro's typegen replaces this in consumers
+    data: any;
   };
   export function getCollection<T extends string = string>(
     collection: T,

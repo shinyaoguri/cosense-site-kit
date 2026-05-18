@@ -1,7 +1,7 @@
 {
-  "name": "@cosense-site-kit/theme-default",
+  "name": "@cosense-site-kit/theme-utils",
   "version": "0.0.0",
-  "description": "Default theme for cosense-site-kit",
+  "description": "Shared runtime helpers for cosense-site-kit themes",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,11 +11,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./components/*": "./src/components/*",
-    "./templates/*": "./src/templates/*",
-    "./styles/*": "./src/styles/*"
+    "./components/*": "./src/components/*"
   },
-  "files": ["dist", "src/components", "src/templates", "src/styles", "src/virtual"],
+  "files": ["dist", "src/components"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -25,8 +23,7 @@
     "astro": "^5.0.0"
   },
   "dependencies": {
-    "@cosense-site-kit/core": "*",
-    "@cosense-site-kit/theme-utils": "*"
+    "@cosense-site-kit/core": "*"
   },
   "devDependencies": {
     "astro": "^5.0.0",

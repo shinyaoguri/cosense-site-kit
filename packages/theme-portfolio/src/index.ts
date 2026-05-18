@@ -22,8 +22,6 @@ export interface ThemePortfolioOptions {
   siteDescription?: string;
   /** Header nav items. Falls back to .site `nav:` when empty. */
   nav?: ThemePortfolioNavItem[];
-  /** Name of the content collection to read. Default: "pages". */
-  collection?: string;
   /**
    * Page slug or title to embed at the top of the home route. When unset,
    * falls back to `.site` `home.page`, then to a minimal greeting.
@@ -62,7 +60,6 @@ export default function themePortfolio(
     siteTagline: opts.siteTagline,
     siteDescription: opts.siteDescription,
     nav: opts.nav ?? [],
-    collection: opts.collection ?? "pages",
     homePage: opts.homePage,
     blogTag: opts.blogTag ?? "blog",
     blogRoute,

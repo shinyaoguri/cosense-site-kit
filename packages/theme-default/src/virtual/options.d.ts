@@ -6,7 +6,6 @@ declare module "virtual:cosense-theme-default/options" {
   }
   export interface ThemeDefaultRuntimeOptions {
     nav: ThemeDefaultNavItem[];
-    collection: string;
     homePage?: string;
     siteTitle?: string;
   }

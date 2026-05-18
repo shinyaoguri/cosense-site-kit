@@ -4,7 +4,7 @@ import options from "virtual:cosense-theme-portfolio/options";
 import Layout from "../components/Layout.astro";
 import BlogCard from "../components/BlogCard.astro";
 import { postSummary } from "../lib/blog";
-import { loadStructure } from "../lib/structure";
+import { loadStructure } from "@cosense-site-kit/theme-utils";
 
 // Posts are surfaced by tag membership. `posts.tag` from .site wins; if
 // absent, fall back to the theme's blogTag option (default "blog").
@@ -12,7 +12,7 @@ const structure = await loadStructure();
 const blogTag = structure.posts?.tag ?? options.blogTag;
 const limit = structure.posts?.limit;
 
-const all = await getCollection(options.collection as "pages");
+const all = await getCollection("pages");
 let posts = all
   .filter((e) => e.data.tags.includes(blogTag))
   .sort((a, b) => {

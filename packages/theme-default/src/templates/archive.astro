@@ -1,8 +1,7 @@
 ---
 import { getCollection } from "astro:content";
-import options from "virtual:cosense-theme-default/options";
 import Layout from "../components/Layout.astro";
-import { loadStructure, path } from "../lib/structure";
+import { loadStructure, path } from "@cosense-site-kit/theme-utils";
 
 const structure = await loadStructure();
 
@@ -10,7 +9,7 @@ const structure = await loadStructure();
 // If it isn't configured, return a stub page so the route doesn't crash.
 const postTag = structure.posts?.tag;
 
-const all = await getCollection(options.collection as "pages");
+const all = await getCollection("pages");
 const posts = postTag
   ? all
       .filter((e) => e.data.tags.includes(postTag))

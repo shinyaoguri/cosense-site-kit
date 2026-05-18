@@ -6,11 +6,13 @@ declare module "virtual:cosense-theme-portfolio/options" {
   }
   export interface ThemePortfolioOptions {
     siteTitle?: string;
+    siteTagline?: string;
+    siteDescription?: string;
     nav: ThemePortfolioNavItem[];
-    collection: string;
     homePage?: string;
     blogTag: string;
     blogRoute: string;
+    copyrightHolder?: string;
   }
   const options: ThemePortfolioOptions;
   export default options;

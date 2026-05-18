@@ -18,8 +18,7 @@ const TEMPLATES: Record<string, typeof Page> = {
 };
 
 export async function getStaticPaths() {
-  const opts = (await import("virtual:cosense-theme-portfolio/options")).default;
-  const pages = await getCollection(opts.collection as "pages");
+  const pages = await getCollection("pages");
   return pages.map((entry) => ({
     params: { slug: entry.data.slug },
     props: { entry },
