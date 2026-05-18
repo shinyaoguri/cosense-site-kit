@@ -1,0 +1,67 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Layout from "../components/Layout.astro";
+import PageContent from "../components/PageContent.astro";
+import { path } from "../lib/structure";
+
+// Profile template: a slim hero band over the body, no tag chips, and a
+// "more pages" footer pointing back into the rest of the site. Suitable for
+// About / Members / Bio pages.
+//
+// Opt in by tagging the Cosense page with `#template/profile`, or by mapping
+// the title in `.site` site.yaml:
+//
+//   templates:
+//     "About Me": profile
+
+interface Props {
+  entry: CollectionEntry<"pages">;
+}
+
+const { entry } = Astro.props;
+const page = entry.data;
+---
+<Layout title={page.title} description={page.summary}>
+  <article class="profile">
+    <header class="profile-hero">
+      <h1>{page.title}</h1>
+      {page.summary && <p class="profile-summary">{page.summary}</p>}
+    </header>
+
+    <PageContent blocks={page.blocks} />
+
+    <footer class="profile-source">
+      <a href={page.sourceUrl} rel="noopener noreferrer">Source on Cosense</a>
+      {" · "}
+      <a href={path("")}>← Back to home</a>
+    </footer>
+  </article>
+</Layout>
+
+<style>
+  .profile-hero {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  .profile-hero h1 {
+    font-size: 2.25rem;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.01em;
+  }
+  .profile-summary {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 36rem;
+    margin: 0 auto;
+  }
+  .profile-source {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    text-align: center;
+    font-size: 0.9rem;
+  }
+</style>

@@ -2,6 +2,7 @@
 import { getCollection, type CollectionEntry } from "astro:content";
 import options from "virtual:cosense-theme-default/options";
 import Page from "./page.astro";
+import Profile from "./profile.astro";
 
 // Theme's per-page template registry. Add a new template by importing the
 // .astro file at the top and adding an entry below — the page-level
@@ -9,6 +10,7 @@ import Page from "./page.astro";
 // Unknown names fall back to Page so a bad tag never 500s.
 const TEMPLATES: Record<string, typeof Page> = {
   page: Page,
+  profile: Profile,
 };
 
 export async function getStaticPaths() {
