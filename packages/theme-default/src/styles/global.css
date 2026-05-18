@@ -37,10 +37,10 @@
   --width-narrow: 36rem;
 
   /* Type */
-  --font-sans: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont,
+  --font-sans: 'M PLUS 2', -apple-system, BlinkMacSystemFont,
     "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
-  --font-display: 'M PLUS Rounded 1c', var(--font-sans);
-  --font-mono: 'M PLUS Code Latin', ui-monospace, SFMono-Regular,
+  --font-display: 'M PLUS 2', var(--font-sans);
+  --font-mono: 'M PLUS 1 Code', ui-monospace, SFMono-Regular,
     Menlo, Consolas, monospace;
 
   /* Motion */
