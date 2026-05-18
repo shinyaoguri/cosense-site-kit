@@ -57,6 +57,22 @@ function buildStep(a: RenderArgs): string {
         working-directory: \${{ github.workspace }}`;
 }
 
+// In a monorepo, the workspace cli is locally linked, but its bin target
+// (packages/cli/dist/index.js) doesn't exist when npm ci runs, so npm skips
+// creating the bin symlink. Calling the file directly through node sidesteps
+// that race entirely.
+function renderMonorepoRunSteps(): string {
+  return `      - run: node \${{ github.workspace }}/packages/cli/dist/index.js fetch
+      - run: node \${{ github.workspace }}/node_modules/astro/astro.js build`;
+}
+
+// Single-package consumers install @cosense-site-kit/cli from npm where the
+// dist/ is already present, so npm creates a working bin link. npx is fine.
+function renderRunSteps(): string {
+  return `      - run: npx cosense-site fetch
+      - run: npx astro build`;
+}
+
 function renderCloudflareWorkflow(a: RenderArgs): string {
   const wd = a.workingDirectory ? `\n    defaults:\n      run:\n        working-directory: ${a.workingDirectory}` : "";
   const cachePath = a.workingDirectory ? `${a.workingDirectory}/.cosense-cache` : ".cosense-cache";
@@ -91,8 +107,7 @@ jobs:
 
       - run: npm ci
 ${buildStep(a)}
-      - run: "\${{ github.workspace }}/node_modules/.bin/cosense-site fetch"
-      - run: "\${{ github.workspace }}/node_modules/.bin/astro build"
+${a.buildWorkspaces ? renderMonorepoRunSteps() : renderRunSteps()}
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
@@ -157,8 +172,7 @@ jobs:
       - run: npm ci
         working-directory: \${{ github.workspace }}
 ${buildStep(a)}
-      - run: "\${{ github.workspace }}/node_modules/.bin/cosense-site fetch"
-      - run: "\${{ github.workspace }}/node_modules/.bin/astro build"
+${a.buildWorkspaces ? renderMonorepoRunSteps() : renderRunSteps()}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

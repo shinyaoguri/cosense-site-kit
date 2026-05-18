@@ -9,8 +9,18 @@ describe("generateGithubActionsWorkflow", () => {
     });
     expect(yml).toContain('cron: "5 0,12 * * *"');
     expect(yml).toContain("cloudflare/wrangler-action@v3");
-    expect(yml).toContain("/node_modules/.bin/cosense-site fetch");
-    expect(yml).toContain("/node_modules/.bin/astro build");
+    expect(yml).toContain("npx cosense-site fetch");
+    expect(yml).toContain("npx astro build");
+  });
+
+  it("uses direct node invocation for the bins in monorepo mode", () => {
+    const yml = generateGithubActionsWorkflow({
+      target: "github-pages",
+      workingDirectory: "site",
+    });
+    expect(yml).toContain("node ${{ github.workspace }}/packages/cli/dist/index.js fetch");
+    expect(yml).toContain("node ${{ github.workspace }}/node_modules/astro/astro.js build");
+    expect(yml).not.toContain("npx cosense-site");
   });
 
   it("emits a github-pages workflow with build/deploy jobs and env binding", () => {
