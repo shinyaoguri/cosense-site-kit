@@ -5,6 +5,8 @@
 Cosense で執筆 → Cloudflare Workers Static Assets または GitHub Pages に公開、ビルドは GitHub Actions の cron が定期実行。
 
 > ステータス: pre-1.0。MVP は実プロジェクトに対して end-to-end で動作確認済み。
+>
+> **ライブ例**: 公式ドキュメントサイト自身が cosense-site-kit で生成されています — <https://shinyaoguri.github.io/cosense-site-kit/> （データソース: <https://scrapbox.io/cosense-site-kit/>、設定: [site/](site/)）
 
 ## できること
 
@@ -161,6 +163,17 @@ const TEMPLATES = { page: Page, profile: Profile, landing: Landing };
 
 未知のテンプレート名は `page` にフォールバックするので、Cosense 側のタイポでサイトが 500 を返すことはありません。
 
+### テーマ作者向け: サイトメタデータの取得
+
+`cosense()` integration が `virtual:cosense-site-kit/site` という Vite 仮想モジュールで `cosense.config.ts` の `site` ブロックを公開します。テーマはこれを import するだけで、利用者に option を二度書きさせる必要がなくなります:
+
+```ts
+import site from "virtual:cosense-site-kit/site";
+// site.title / site.description / site.baseUrl / site.lang / site.base
+```
+
+`@cosense-site-kit/astro` への直接の dependency は不要（peer 扱い）で、テーマ側に小さな `.d.ts` shim を1つ置けば TypeScript も通ります（`packages/theme-default/src/virtual/site.d.ts` が見本）。
+
 ### doctor のサポート
 
 `cosense-site doctor` は使われているテンプレートの内訳と、`.site` の `templates:` マッピングが解決するかを検証します:
@@ -231,16 +244,25 @@ cosense-site deploy init          .github/workflows/build.yml と wrangler.jsonc
 Doctor report for "my-project"
 
   ✓ Pipeline warnings  none
-  ✓ Publish rules produce pages  23 kept, 132 excluded
+  ✓ Publish rules produce pages  23 kept, 5 excluded
   ✓ Site-config page  ".site" parsed successfully
   ✗ Nav references resolve  1 nav reference(s) point to missing pages
       · "Contact" is not a published page
+  ✓ Home reference resolves  home.page "Home" found
+  ✓ Featured references resolve  2 featured item(s) all resolve
+  ✓ Posts tag has content  4 page(s) tagged #post
+  ✓ No orphan posts  every #post page is published
+  ✓ Redirect destinations exist  no redirects
   ⚠ Internal page links resolve  4 broken page link target(s)
       · "Old Topic" referenced by 2 page(s) ("Notes", "Roadmap")
+  ✓ Template usage  2 templates in use
+      · 20× page
+      · 3× profile
+  ✓ Template mapping titles  1 mapping(s) all resolve
   ✓ No slug collisions  all slugs unique
   ✓ No draft leak  no excluded-tag pages published
 
-Summary: 6 ok, 1 warn, 1 fail
+Summary: 12 ok, 1 warn, 1 fail
 ```
 
 `fail` が 1 件でもあれば exit code 1 を返すので、CI に組み込んで公開前ゲートとして使えます。
@@ -256,6 +278,7 @@ export default defineCosenseSite({
     description: "...",
     baseUrl: "https://example.com",
     lang: "ja",
+    base: "/",                                        // GitHub Pages のサブパス用、例: "/my-site"
   },
 
   source: {
@@ -288,12 +311,36 @@ export default defineCosenseSite({
 
 `cosense-site deploy init` で次のファイルが生成されます:
 
-- `.github/workflows/build.yml` — checkout → Cosense cache 復元 → `cosense-site fetch` → `astro build` → `cloudflare/wrangler-action@v3` で Workers へ、または GitHub Pages へ公開
+- `.github/workflows/build.yml` — checkout → Cosense cache 復元 → `cosense-site fetch` → `astro build` → `cloudflare/wrangler-action@v3` で Workers へ、または `actions/deploy-pages@v4` で GitHub Pages へ公開
 - `wrangler.jsonc`（Cloudflare 用のみ） — Workers Static Assets を `./dist` に向けた設定
 
 ビルドは cron + `workflow_dispatch` の併用が前提です。Cosense は分単位で更新するものではないので、1 日 2 回で十分です。
 
-Cloudflare を使う場合に必要なシークレット: `CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`。
+### GitHub Pages 用の追加設定
+
+リポジトリの **Settings → Pages → Source** を **"GitHub Actions"** に切り替えます。
+
+サブパス（`<user>.github.io/<repo>/` 形式の project pages）に配信する場合は `cosense.config.ts` の `site.base` を設定:
+
+```ts
+site: {
+  baseUrl: "https://<user>.github.io",
+  base: "/<repo>",                                    // 例: "/cosense-site-kit"
+}
+```
+
+これで Astro の `base` 設定に渡り、内部リンク（`pathFor`）も自動で `/<repo>/...` プレフィックスを付けるようになります。
+
+### Cloudflare Workers 用の追加設定
+
+リポジトリ Secrets に2つ追加:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+
+### Monorepo（サイトが `<repo>/site/` 等のサブディレクトリ）
+
+`cosense-site deploy init --working-directory site --repo-root ..` で、ワークフローが repo root の `npm ci` + 全パッケージ build を走らせる構成で生成されます（このリポジトリ自身がその構成です）。
 
 ## fetch キャッシュの仕組み
 
