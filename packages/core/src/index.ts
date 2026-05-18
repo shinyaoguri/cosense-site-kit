@@ -34,3 +34,10 @@ export {
   type BuildIntermediateOptions,
   type ProgressEvent,
 } from "./pipeline";
+
+export {
+  runDoctor,
+  type DoctorCheck,
+  type DoctorReport,
+  type RunDoctorOptions,
+} from "./doctor";

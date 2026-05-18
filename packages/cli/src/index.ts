@@ -5,6 +5,7 @@ import { runFetch } from "./commands/fetch";
 import { runBuild } from "./commands/build";
 import { runValidate } from "./commands/validate";
 import { runDeployInit } from "./commands/deploy";
+import { runDoctorCmd } from "./commands/doctor";
 
 export const VERSION = "0.0.0";
 
@@ -63,6 +64,24 @@ program
   .action(async (opts: { config?: string }) => {
     await runValidate({ cwd: process.cwd(), configFile: opts.config });
   });
+
+program
+  .command("doctor")
+  .description("Diagnose the project: config, publish rules, structure references, broken links")
+  .option("--config <file>", "Path to cosense.config.{ts,js,mjs}")
+  .option("--cache-dir <dir>", "Cache directory (default .cosense-cache)")
+  .option("--force", "Ignore cache and refetch everything")
+  .action(
+    async (opts: { config?: string; cacheDir?: string; force?: boolean }) => {
+      const code = await runDoctorCmd({
+        cwd: process.cwd(),
+        configFile: opts.config,
+        cacheDir: opts.cacheDir,
+        force: opts.force,
+      });
+      if (code !== 0) process.exit(code);
+    },
+  );
 
 const deploy = program.command("deploy").description("Deploy configuration helpers");
 deploy
