@@ -1,9 +1,16 @@
 import type { CosenseSitePage } from "../schema/v1/page";
 import type { CosenseSiteConfig } from "../config";
 
+export interface ExcludedPage {
+  title: string;
+  reason: string;
+  /** Page tags at exclusion time — used by doctor to spot orphan posts etc. */
+  tags?: string[];
+}
+
 export interface PublishDecision {
   kept: CosenseSitePage[];
-  excluded: { title: string; reason: string }[];
+  excluded: ExcludedPage[];
 }
 
 // Apply publish rules to a set of normalized pages. Rule order:
@@ -15,13 +22,17 @@ export function applyPublishRules(
   publish: CosenseSiteConfig["publish"],
 ): PublishDecision {
   const kept: CosenseSitePage[] = [];
-  const excluded: { title: string; reason: string }[] = [];
+  const excluded: ExcludedPage[] = [];
 
   for (const page of pages) {
     const tags = new Set(page.tags);
     const excluded_tag = publish.excludeTags.find((t) => tags.has(t));
     if (excluded_tag) {
-      excluded.push({ title: page.title, reason: `excluded by tag #${excluded_tag}` });
+      excluded.push({
+        title: page.title,
+        reason: `excluded by tag #${excluded_tag}`,
+        tags: page.tags,
+      });
       continue;
     }
     const included_tag = publish.includeTags.find((t) => tags.has(t));
@@ -35,6 +46,7 @@ export function applyPublishRules(
       excluded.push({
         title: page.title,
         reason: `no include tag and default is "none"`,
+        tags: page.tags,
       });
     }
   }

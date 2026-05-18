@@ -60,6 +60,7 @@ export async function runDoctor(opts: RunDoctorOptions): Promise<DoctorReport> {
   checks.push(checkHomeReference(data));
   checks.push(checkFeaturedReferences(data));
   checks.push(checkPostsTagHasContent(data));
+  checks.push(checkOrphanPosts(data));
   checks.push(checkRedirectDestinations(data));
   checks.push(checkBrokenPageLinks(data));
   checks.push(checkSlugCollisions(data));
@@ -215,6 +216,27 @@ function checkPostsTagHasContent(data: IntermediateData): DoctorCheck {
     name: "Posts tag has content",
     status: "pass",
     message: `${count} page(s) tagged #${tag}`,
+  };
+}
+
+// A page tagged with the posts.tag but missing #publish is almost always a
+// mistake — the author intended a blog post but it never reaches the feed
+// because publish rules run first. Surface it explicitly so users don't have
+// to read excluded[] manually to figure out the gap.
+function checkOrphanPosts(data: IntermediateData): DoctorCheck {
+  const tag = data.structure.posts?.tag;
+  if (!tag) return { name: "No orphan posts", status: "pass", message: "posts not configured" };
+  const orphans = data.excluded
+    .filter((e) => e.tags?.includes(tag))
+    .map((e) => e.title);
+  if (orphans.length === 0) {
+    return { name: "No orphan posts", status: "pass", message: `every #${tag} page is published` };
+  }
+  return {
+    name: "No orphan posts",
+    status: "warn",
+    message: `${orphans.length} page(s) tagged #${tag} but missing #publish — add #publish to surface them in /posts`,
+    details: orphans.map((t) => `"${t}"`),
   };
 }
 

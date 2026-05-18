@@ -55,7 +55,13 @@ export const intermediateDataSchema = z.object({
     lang: z.string(),
   }),
   pages: z.array(pageSchema),
-  excluded: z.array(z.object({ title: z.string(), reason: z.string() })),
+  excluded: z.array(
+    z.object({
+      title: z.string(),
+      reason: z.string(),
+      tags: z.array(z.string()).optional(),
+    }),
+  ),
   linkGraph: z.record(z.string(), z.array(z.string())),
   structure: siteStructureSchema,
   warnings: z.array(z.string()),
