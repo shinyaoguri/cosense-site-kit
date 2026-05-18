@@ -163,14 +163,27 @@ a:hover {
 }
 
 .recent-pages ul,
-.tag-page-list {
+.tag-page-list,
+.featured ul {
   list-style: none;
   padding: 0;
 }
 
 .recent-pages li,
-.tag-page-list li {
+.tag-page-list li,
+.featured li {
   margin-bottom: 1rem;
+}
+
+.featured {
+  margin: 2.5rem 0;
+  padding: 1rem 1.25rem;
+  background: var(--code-bg);
+  border-radius: 8px;
+}
+
+.featured h2 {
+  margin-top: 0;
 }
 
 .summary {

@@ -1,24 +1,54 @@
 ---
-import { getCollection, getEntry } from "astro:content";
+import { getCollection } from "astro:content";
 import { pathFor } from "@cosense-site-kit/core";
 import options from "virtual:cosense-theme-default/options";
 import Layout from "../components/Layout.astro";
 import PageContent from "../components/PageContent.astro";
+import { loadStructure, loadTitleToSlug } from "../lib/structure";
 
-const pages = await getCollection(options.collection as "pages");
-pages.sort((a, b) => (b.data.updatedAt ?? "").localeCompare(a.data.updatedAt ?? ""));
+const structure = await loadStructure();
+const titleToSlug = await loadTitleToSlug();
 
-const home = options.homePage
-  ? await getEntry(options.collection as "pages", options.homePage)
+const allPages = await getCollection(options.collection as "pages");
+allPages.sort((a, b) => (b.data.updatedAt ?? "").localeCompare(a.data.updatedAt ?? ""));
+
+// 1. Home body: structure.home.page > options.homePage > none
+const homeTitle = structure.home?.page ?? options.homePage;
+const homeEntry = homeTitle
+  ? allPages.find((e) => e.data.title === homeTitle || e.data.slug === homeTitle)
   : undefined;
+
+// 2. Featured pages (by title; skip those that don't exist)
+const featured = structure.featured
+  .map((title) => ({ title, slug: titleToSlug.get(title) }))
+  .filter((f): f is { title: string; slug: string } => Boolean(f.slug));
+
+// 3. Recent items. If posts are configured, show recent posts. Otherwise show
+//    recent pages (current behavior).
+const postTag = structure.posts?.tag;
+const recent = postTag
+  ? allPages.filter((e) => e.data.tags.includes(postTag)).slice(0, structure.posts?.limit ?? 10)
+  : allPages.slice(0, 30);
+const recentHeading = postTag ? "Recent posts" : "Recent pages";
 ---
 <Layout title={Astro.site?.hostname ?? "Home"}>
-  {home && <PageContent blocks={home.data.blocks} />}
+  {homeEntry && <PageContent blocks={homeEntry.data.blocks} />}
+
+  {featured.length > 0 && (
+    <section class="featured">
+      <h2>Featured</h2>
+      <ul>
+        {featured.map((f) => (
+          <li><a href={pathFor(f.slug)}>{f.title}</a></li>
+        ))}
+      </ul>
+    </section>
+  )}
 
   <section class="recent-pages">
-    <h2>Recent pages</h2>
+    <h2>{recentHeading}</h2>
     <ul>
-      {pages.slice(0, 30).map((entry) => (
+      {recent.map((entry) => (
         <li>
           <a href={pathFor(entry.data.slug)}>{entry.data.title}</a>
           {entry.data.summary && <p class="summary">{entry.data.summary}</p>}

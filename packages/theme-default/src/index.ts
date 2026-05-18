@@ -41,6 +41,7 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
         // from the built index.js up one level into src/.
         const here = (p: string) => fileURLToPath(new URL(`../src/${p}`, import.meta.url));
         injectRoute({ pattern: "/", entrypoint: here("routes/index.astro") });
+        injectRoute({ pattern: "/posts", entrypoint: here("routes/posts/index.astro") });
         injectRoute({ pattern: "/tags/[tag]", entrypoint: here("routes/tags/[tag].astro") });
         injectRoute({ pattern: "/[...slug]", entrypoint: here("routes/[...slug].astro") });
       },
