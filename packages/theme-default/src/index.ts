@@ -40,10 +40,13 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
         // .astro/.css files ship as raw src/ (not bundled by tsup), so resolve
         // from the built index.js up one level into src/.
         const here = (p: string) => fileURLToPath(new URL(`../src/${p}`, import.meta.url));
-        injectRoute({ pattern: "/", entrypoint: here("routes/index.astro") });
-        injectRoute({ pattern: "/posts", entrypoint: here("routes/posts/index.astro") });
-        injectRoute({ pattern: "/tags/[tag]", entrypoint: here("routes/tags/[tag].astro") });
-        injectRoute({ pattern: "/[...slug]", entrypoint: here("routes/[...slug].astro") });
+        // Fixed-route templates: each owns a known URL.
+        injectRoute({ pattern: "/", entrypoint: here("templates/home.astro") });
+        injectRoute({ pattern: "/posts", entrypoint: here("templates/archive.astro") });
+        injectRoute({ pattern: "/tags/[tag]", entrypoint: here("templates/tag.astro") });
+        // Dispatcher: serves /<slug> and picks the right per-page template
+        // (templates/page.astro by default, others via #template/<name>).
+        injectRoute({ pattern: "/[...slug]", entrypoint: here("templates/_dispatcher.astro") });
       },
     },
   };

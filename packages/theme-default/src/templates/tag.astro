@@ -1,8 +1,8 @@
 ---
 import { getCollection } from "astro:content";
 import options from "virtual:cosense-theme-default/options";
-import Layout from "../../components/Layout.astro";
-import { path } from "../../lib/structure";
+import Layout from "../components/Layout.astro";
+import { path } from "../lib/structure";
 
 export async function getStaticPaths() {
   const opts = (await import("virtual:cosense-theme-default/options")).default;

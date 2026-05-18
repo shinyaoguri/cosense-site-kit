@@ -12,10 +12,10 @@
       "import": "./dist/index.js"
     },
     "./components/*": "./src/components/*",
-    "./routes/*": "./src/routes/*",
+    "./templates/*": "./src/templates/*",
     "./styles/*": "./src/styles/*"
   },
-  "files": ["dist", "src/components", "src/routes", "src/styles", "src/virtual"],
+  "files": ["dist", "src/components", "src/templates", "src/styles", "src/virtual"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

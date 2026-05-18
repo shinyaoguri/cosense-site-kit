@@ -1,21 +1,15 @@
 ---
-import { getCollection } from "astro:content";
-import options from "virtual:cosense-theme-default/options";
+import type { CollectionEntry } from "astro:content";
 import Layout from "../components/Layout.astro";
 import PageContent from "../components/PageContent.astro";
 import Backlinks from "../components/Backlinks.astro";
 import { path } from "../lib/structure";
 
-export async function getStaticPaths() {
-  const opts = (await import("virtual:cosense-theme-default/options")).default;
-  const pages = await getCollection(opts.collection as "pages");
-  return pages.map((entry) => ({
-    params: { slug: entry.data.slug },
-    props: { entry },
-  }));
+interface Props {
+  entry: CollectionEntry<"pages">;
 }
 
-const { entry } = Astro.props as { entry: Awaited<ReturnType<typeof getCollection<"pages">>>[number] };
+const { entry } = Astro.props;
 const page = entry.data;
 ---
 <Layout title={page.title} description={page.summary}>

@@ -1,0 +1,26 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import options from "virtual:cosense-theme-default/options";
+import Page from "./page.astro";
+
+// Theme's per-page template registry. Add a new template by importing the
+// .astro file at the top and adding an entry below — the page-level
+// `#template/<name>` tag and `.site` YAML `templates:` mapping look these up.
+// Unknown names fall back to Page so a bad tag never 500s.
+const TEMPLATES: Record<string, typeof Page> = {
+  page: Page,
+};
+
+export async function getStaticPaths() {
+  const opts = (await import("virtual:cosense-theme-default/options")).default;
+  const pages = await getCollection(opts.collection as "pages");
+  return pages.map((entry) => ({
+    params: { slug: entry.data.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props as { entry: CollectionEntry<"pages"> };
+const Template = TEMPLATES[entry.data.template] ?? Page;
+---
+<Template entry={entry} />
