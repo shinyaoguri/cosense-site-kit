@@ -47,8 +47,8 @@ jobs:
       - name: Build framework packages
         run: npm run build
         working-directory: ${{ github.workspace }}
-      - run: npx cosense-site fetch
-      - run: npx astro build
+      - run: "${{ github.workspace }}/node_modules/.bin/cosense-site fetch"
+      - run: "${{ github.workspace }}/node_modules/.bin/astro build"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

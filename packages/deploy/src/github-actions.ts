@@ -91,8 +91,8 @@ jobs:
 
       - run: npm ci
 ${buildStep(a)}
-      - run: npx cosense-site fetch
-      - run: npx astro build
+      - run: "\${{ github.workspace }}/node_modules/.bin/cosense-site fetch"
+      - run: "\${{ github.workspace }}/node_modules/.bin/astro build"
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
@@ -157,8 +157,8 @@ jobs:
       - run: npm ci
         working-directory: \${{ github.workspace }}
 ${buildStep(a)}
-      - run: npx cosense-site fetch
-      - run: npx astro build
+      - run: "\${{ github.workspace }}/node_modules/.bin/cosense-site fetch"
+      - run: "\${{ github.workspace }}/node_modules/.bin/astro build"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

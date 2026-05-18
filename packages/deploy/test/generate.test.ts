@@ -9,8 +9,8 @@ describe("generateGithubActionsWorkflow", () => {
     });
     expect(yml).toContain('cron: "5 0,12 * * *"');
     expect(yml).toContain("cloudflare/wrangler-action@v3");
-    expect(yml).toContain("npx cosense-site fetch");
-    expect(yml).toContain("npx astro build");
+    expect(yml).toContain("/node_modules/.bin/cosense-site fetch");
+    expect(yml).toContain("/node_modules/.bin/astro build");
   });
 
   it("emits a github-pages workflow with build/deploy jobs and env binding", () => {
