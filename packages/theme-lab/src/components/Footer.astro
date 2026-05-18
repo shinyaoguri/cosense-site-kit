@@ -1,0 +1,14 @@
+---
+import options from "virtual:cosense-theme-lab/options";
+import site from "virtual:cosense-site-kit/site";
+
+const year = new Date().getFullYear();
+const holder = options.copyrightHolder ?? options.siteTitle ?? site?.title ?? "";
+const affiliation = options.affiliation;
+---
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <span>&copy; {year} {holder}</span>
+    {affiliation && <span>{affiliation}</span>}
+  </div>
+</footer>

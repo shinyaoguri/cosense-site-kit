@@ -1,0 +1,38 @@
+---
+import type { InlineNode } from "@cosense-site-kit/core";
+import { isHiddenTag, isPublicTag, path } from "@cosense-site-kit/theme-utils";
+import Inline from "./Inline.astro";
+
+interface Props { nodes: InlineNode[] }
+const { nodes } = Astro.props;
+---
+{nodes.map((node) => {
+  switch (node.type) {
+    case "text": return node.value;
+    case "strong": return <strong><Inline nodes={node.children} /></strong>;
+    case "emphasis": return <em><Inline nodes={node.children} /></em>;
+    case "strikethrough": return <s><Inline nodes={node.children} /></s>;
+    case "code": return <code>{node.value}</code>;
+    case "formula": return <code class="formula">{node.value}</code>;
+    case "link":
+      return (
+        <a href={node.href} target="_blank" rel="noopener noreferrer">
+          <Inline nodes={node.children} />
+        </a>
+      );
+    case "pageLink":
+      if (node.exists && node.slug) {
+        return <a class="page-link" href={path(node.slug)}>{node.title}</a>;
+      }
+      return <span class="page-link missing">{node.title}</span>;
+    case "tag":
+      if (isHiddenTag(node.name)) return null;
+      if (!isPublicTag(node.name)) {
+        return <span class="tag tag-meta">#{node.name}</span>;
+      }
+      return <a class="tag" href={path(`tags/${node.name}`)}>#{node.name}</a>;
+    case "icon":
+      return <span class="icon">[{node.pageTitle}.icon]</span>;
+    default: return null;
+  }
+})}

@@ -1,0 +1,45 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Layout from "../components/Layout.astro";
+import PageContent from "../components/PageContent.astro";
+import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
+import { isPublicTag, path } from "@cosense-site-kit/theme-utils";
+
+interface Props { entry: CollectionEntry<"pages"> }
+const { entry } = Astro.props;
+const page = entry.data;
+const date = page.createdAt ?? page.updatedAt;
+const tags = page.tags.filter(isPublicTag);
+---
+<Layout title={page.title} description={page.summary}>
+  <article class="site-section">
+    <div class="prose">
+      <p class="page-meta">
+        <span class="page-meta-eyebrow">News</span>
+        {date && (
+          <time datetime={date}>
+            {new Date(date).toLocaleDateString("ja-JP")}
+          </time>
+        )}
+      </p>
+      <h1>{page.title}</h1>
+      <PageContent blocks={page.blocks} />
+      {tags.length > 0 && (
+        <p style="margin-top: 2rem">
+          {tags.map((t) => (
+            <a class="tag" href={path(`tags/${t}`)}>#{t}</a>
+          ))}
+        </p>
+      )}
+      <p style="margin-top: 2.5rem">
+        <a href={path("news")}>← News へ戻る</a>
+      </p>
+      <Backlinks backlinks={page.backlinks} />
+      <p class="source-link">
+        <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">
+          Source on Cosense ↗
+        </a>
+      </p>
+    </div>
+  </article>
+</Layout>

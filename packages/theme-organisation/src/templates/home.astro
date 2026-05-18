@@ -1,0 +1,90 @@
+---
+import { getCollection } from "astro:content";
+import options from "virtual:cosense-theme-organisation/options";
+import Layout from "../components/Layout.astro";
+import Hero from "../components/Hero.astro";
+import PageContent from "../components/PageContent.astro";
+import { loadStructure, path } from "@cosense-site-kit/theme-utils";
+import { cardSummary, formatYmd } from "../lib/cards";
+
+const structure = await loadStructure();
+const homeTarget = structure.home?.page ?? options.homePage;
+const all = await getCollection("pages");
+const homeEntry = homeTarget
+  ? all.find((e) => e.data.title === homeTarget || e.data.slug === homeTarget)
+  : undefined;
+
+// Services, recent news, recent cases — surfaced on the home page when
+// pages with the relevant tags exist.
+const services = all.filter((e) => e.data.tags.includes(options.serviceTag));
+const news = all
+  .filter((e) => e.data.tags.includes(options.newsTag))
+  .map(cardSummary)
+  .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
+  .slice(0, 5);
+const cases = all
+  .filter((e) => e.data.tags.includes(options.caseTag))
+  .map(cardSummary)
+  .slice(0, 3);
+---
+<Layout title="Home">
+  <Hero />
+
+  {homeEntry && (
+    <section class="site-section">
+      <div class="prose">
+        <PageContent blocks={homeEntry.data.blocks} />
+      </div>
+    </section>
+  )}
+
+  {services.length > 0 && (
+    <section class="site-section wide">
+      <h2 class="section-heading">Services</h2>
+      <ul class="card-grid">
+        {services.slice(0, 6).map((entry) => (
+          <li>
+            <a class="card" href={path(entry.data.slug)}>
+              <span class="card-eyebrow">Service</span>
+              <h3>{entry.data.title}</h3>
+              {entry.data.summary && <p>{entry.data.summary}</p>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {cases.length > 0 && (
+    <section class="site-section wide" style="background: var(--color-bg-alt)">
+      <h2 class="section-heading">Cases</h2>
+      <ul class="card-grid">
+        {cases.map((c) => (
+          <li>
+            <a class="card" href={path(c.slug)}>
+              <span class="card-eyebrow">Case study</span>
+              <h3>{c.title}</h3>
+              {c.description && <p>{c.description}</p>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {news.length > 0 && (
+    <section class="site-section">
+      <h2 class="section-heading">News</h2>
+      <ul class="news-list">
+        {news.map((n) => (
+          <li>
+            <time class="news-date" datetime={n.date?.toISOString()}>
+              {formatYmd(n.date)}
+            </time>
+            <a class="news-link" href={path(n.slug)}>{n.title}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</Layout>

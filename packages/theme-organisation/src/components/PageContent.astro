@@ -1,0 +1,48 @@
+---
+import type { CosenseBlock } from "@cosense-site-kit/core";
+import Inline from "./Inline.astro";
+
+interface Props { blocks: CosenseBlock[] }
+const { blocks } = Astro.props;
+
+const DATA_FILENAMES = new Set(["site.yaml"]);
+const visible = blocks.filter(
+  (b) => !(b.type === "code" && b.filename && DATA_FILENAMES.has(b.filename)),
+);
+---
+<div class="page-content prose">
+  {visible.map((block) => {
+    switch (block.type) {
+      case "paragraph": return <p><Inline nodes={block.children} /></p>;
+      case "heading":
+        if (block.depth === 1) return <h2><Inline nodes={block.children} /></h2>;
+        if (block.depth === 2) return <h3><Inline nodes={block.children} /></h3>;
+        return <h4><Inline nodes={block.children} /></h4>;
+      case "list":
+        return (
+          <ul style={`margin-left: ${(block.depth - 1) * 1.5}em`}>
+            <li><Inline nodes={block.children} /></li>
+          </ul>
+        );
+      case "code":
+        return <pre><code class={block.lang && `language-${block.lang}`}>{block.value}</code></pre>;
+      case "image":
+        return <img src={block.url} alt={block.alt ?? ""} loading="lazy" />;
+      case "embed":
+        return <a href={block.url} target="_blank" rel="noopener noreferrer">{block.url}</a>;
+      case "table":
+        return (
+          <table>
+            {block.filename && <caption>{block.filename}</caption>}
+            <tbody>
+              {block.rows.map((row) => (
+                <tr>{row.map((c) => <td>{c}</td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+        );
+      case "raw": return <pre>{block.value}</pre>;
+      default: return null;
+    }
+  })}
+</div>

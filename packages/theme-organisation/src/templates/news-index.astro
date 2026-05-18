@@ -1,0 +1,39 @@
+---
+import { getCollection } from "astro:content";
+import options from "virtual:cosense-theme-organisation/options";
+import Layout from "../components/Layout.astro";
+import { loadStructure, path } from "@cosense-site-kit/theme-utils";
+import { cardSummary, formatYmd } from "../lib/cards";
+
+const structure = await loadStructure();
+const tag = structure.posts?.tag ?? options.newsTag;
+const limit = structure.posts?.limit;
+
+const all = await getCollection("pages");
+let items = all
+  .filter((e) => e.data.tags.includes(tag))
+  .map(cardSummary)
+  .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+if (limit && limit > 0) items = items.slice(0, limit);
+---
+<Layout title="News" description="お知らせ・プレスリリース">
+  <article class="site-section">
+    <h1 class="section-heading">News</h1>
+    {items.length === 0 ? (
+      <p style="color: var(--color-text-muted)">
+        ニュースは <code>#{tag}</code> タグ付きのページとして公開してください。
+      </p>
+    ) : (
+      <ul class="news-list">
+        {items.map((n) => (
+          <li>
+            <time class="news-date" datetime={n.date?.toISOString()}>
+              {formatYmd(n.date)}
+            </time>
+            <a class="news-link" href={path(n.slug)}>{n.title}</a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </article>
+</Layout>

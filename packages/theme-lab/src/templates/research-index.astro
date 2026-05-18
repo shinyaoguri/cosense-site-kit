@@ -1,0 +1,36 @@
+---
+import { getCollection } from "astro:content";
+import options from "virtual:cosense-theme-lab/options";
+import Layout from "../components/Layout.astro";
+import { path } from "@cosense-site-kit/theme-utils";
+
+const tag = options.researchTag;
+const all = await getCollection("pages");
+const topics = all
+  .filter((e) => e.data.tags.includes(tag))
+  .sort((a, b) => a.data.title.localeCompare(b.data.title));
+---
+<Layout title="Research" description="研究テーマ一覧" wide>
+  <article>
+    <h1 style="font-family: var(--font-serif); font-size: 1.75rem; margin: 0 0 1.5rem">
+      Research
+    </h1>
+
+    {topics.length === 0 ? (
+      <p style="color: var(--color-text-muted)">
+        研究テーマは <code>#{tag}</code> タグ付きのページとして公開してください。
+      </p>
+    ) : (
+      <ul class="research-grid">
+        {topics.map((entry) => (
+          <li>
+            <a class="research-card" href={path(entry.data.slug)}>
+              <h3>{entry.data.title}</h3>
+              {entry.data.summary && <p>{entry.data.summary}</p>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </article>
+</Layout>

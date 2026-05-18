@@ -1,0 +1,36 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import options from "virtual:cosense-theme-organisation/options";
+import Page from "./page.astro";
+import NewsPost from "./news-post.astro";
+import CasePost from "./case-post.astro";
+import ServicePost from "./service-post.astro";
+
+// Tag-driven template selection is the primary mechanism for this theme:
+// the listings (news / cases / services) are tag-based, so it makes sense
+// for the individual page renderer to follow the same tag.
+//
+// Explicit `templates:` mapping in .site still wins through the TEMPLATES
+// map below for pages that need a custom template name.
+const TEMPLATES: Record<string, typeof Page> = {
+  page: Page,
+};
+
+export async function getStaticPaths() {
+  const pages = await getCollection("pages");
+  return pages.map((entry) => ({
+    params: { slug: entry.data.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props as { entry: CollectionEntry<"pages"> };
+const data = entry.data as { template: string; tags: string[] };
+
+let Template: typeof Page;
+if (data.tags.includes(options.newsTag)) Template = NewsPost;
+else if (data.tags.includes(options.caseTag)) Template = CasePost;
+else if (data.tags.includes(options.serviceTag)) Template = ServicePost;
+else Template = TEMPLATES[data.template] ?? Page;
+---
+<Template entry={entry} />

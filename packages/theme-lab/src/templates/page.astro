@@ -1,0 +1,22 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Layout from "../components/Layout.astro";
+import PageContent from "../components/PageContent.astro";
+import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
+
+interface Props { entry: CollectionEntry<"pages"> }
+const { entry } = Astro.props;
+const page = entry.data;
+---
+<Layout title={page.title} description={page.summary}>
+  <article class="prose">
+    <h1>{page.title}</h1>
+    <PageContent blocks={page.blocks} />
+    <Backlinks backlinks={page.backlinks} />
+    <p class="source-link">
+      <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">
+        Source on Cosense ↗
+      </a>
+    </p>
+  </article>
+</Layout>

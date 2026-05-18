@@ -593,4 +593,6 @@ export default defineConfig({
 |---|---|---|
 | [`packages/theme-default/`](../packages/theme-default/) | 最もシンプル。`page` / `profile` の2テンプレ + `/posts` archive + `/tags/[tag]` | テーマの最小実用形 |
 | [`packages/theme-portfolio/`](../packages/theme-portfolio/) | 個人サイト向け。`cv` (code:cv.yaml パース + Publications フィルタ) と `blog-post` (タグ自動振り分け) | 高度なテンプレ、code block 内 YAML をデータとして使う `.site` 同様パターン |
+| [`packages/theme-lab/`](../packages/theme-lab/) | 研究室向け。`members` (code:members.yaml) / `publications` / `research` + `news` のタグ自動振り分け | 複数テンプレでの dispatcher、多種の構造化データ block |
+| [`packages/theme-organisation/`](../packages/theme-organisation/) | 企業向け。Hero + `services` / `cases` / `news` のタグ自動振り分け + 多カラムフッタ | sticky ヘッダ、カードグリッド、多カラムフッタの実例 |
 | [`packages/theme-utils/`](../packages/theme-utils/) | 共有ヘルパ | 自分で同等の処理を書く前に参照 |

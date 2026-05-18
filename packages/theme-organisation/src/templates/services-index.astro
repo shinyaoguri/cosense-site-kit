@@ -1,0 +1,34 @@
+---
+import { getCollection } from "astro:content";
+import options from "virtual:cosense-theme-organisation/options";
+import Layout from "../components/Layout.astro";
+import { path } from "@cosense-site-kit/theme-utils";
+
+const tag = options.serviceTag;
+const all = await getCollection("pages");
+const services = all
+  .filter((e) => e.data.tags.includes(tag))
+  .sort((a, b) => a.data.title.localeCompare(b.data.title));
+---
+<Layout title="Services" description="提供サービス">
+  <article class="site-section wide">
+    <h1 class="section-heading">Services</h1>
+    {services.length === 0 ? (
+      <p style="color: var(--color-text-muted)">
+        サービスは <code>#{tag}</code> タグ付きのページとして公開してください。
+      </p>
+    ) : (
+      <ul class="card-grid">
+        {services.map((entry) => (
+          <li>
+            <a class="card" href={path(entry.data.slug)}>
+              <span class="card-eyebrow">Service</span>
+              <h3>{entry.data.title}</h3>
+              {entry.data.summary && <p>{entry.data.summary}</p>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </article>
+</Layout>
