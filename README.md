@@ -36,6 +36,7 @@ npm run dev           # http://localhost:4321
 | `#draft` / `#private` / `#internal` | `#publish` があっても除外（`publish.excludeTags`） |
 | `#slug/research` | URL スラッグを明示指定。無指定の場合はタイトルから生成 |
 | `#post`（変更可） | `/posts` フィードとホームの「Recent posts」に表示。タグ名は `.site` の YAML で指定 |
+| `#template/profile` | このページを `profile` テンプレートで描画。詳細は[テンプレート](#テンプレート) |
 
 「`#draft` 以外は全部公開」にしたい場合は `cosense.config.ts` で `publish.default: "all"` にします。
 
@@ -86,6 +87,90 @@ YAML スキーマ:
 ### `.site` が存在しないとき
 
 何も壊れません。`/` には最近のページ一覧が出て、ナビなし・posts なしで動きます。`.site` ページは完全な **opt-in** です。
+
+## テンプレート
+
+WordPress のテンプレート階層と同じ発想で、**ページごとに違う見た目**を出せます。URL は `/<slug>` のまま、中身のレンダリングだけテーマが切り替えます。
+
+### 仕組み
+
+1. 各 Cosense ページには **`template: string`** が解決されます（中間モデルの一部）
+2. テーマは `_dispatcher.astro` の中に `template名 → .astro コンポーネント` のレジストリを持ちます
+3. `/[...slug]` のディスパッチャがその map を引いて、適切なテンプレートに `entry` を渡します
+
+### テンプレートの指定方法（優先度順）
+
+| 優先度 | 仕組み | 例 |
+|---|---|---|
+| 1 | ページ本文の `#template/<name>` タグ | `#template/profile` をページに付ける |
+| 2 | `.site` YAML の `templates:` マッピング | `templates: { "About Me": profile }` |
+| 3 | デフォルト | `page` |
+
+タグが付いている場合はそれが勝ち、無ければ YAML のマッピング、それも無ければ `page` テンプレート。
+
+### theme-default が提供するテンプレート
+
+| 名前 | 用途 |
+|---|---|
+| `page` | 通常ページ（デフォルト）。タイトル + タグチップ + 本文 + backlinks |
+| `profile` | プロフィール系。中央寄せヒーロー + 本文。タグチップなし |
+
+### ページごとの切り替え例
+
+Cosense の `About Me` ページ本文に:
+```
+About Me
+
+私についての説明...
+
+#publish #template/profile
+```
+
+または、`.site` の YAML で一括:
+```yaml
+templates:
+  "About Me": profile
+  "Members":  members
+  "Welcome":  landing
+```
+
+### カスタムテンプレートの作り方
+
+テーマを自作する場合のお手本は `theme-default` の `templates/` ディレクトリそのものです。1 ファイル足して、`_dispatcher.astro` に登録するだけ:
+
+```astro
+---
+// my-theme/src/templates/landing.astro
+import type { CollectionEntry } from "astro:content";
+import Layout from "../components/Layout.astro";
+interface Props { entry: CollectionEntry<"pages"> }
+const { entry } = Astro.props;
+---
+<Layout title={entry.data.title}>
+  <!-- 自由なマークアップ -->
+</Layout>
+```
+
+```astro
+---
+// my-theme/src/templates/_dispatcher.astro に追加
+import Landing from "./landing.astro";
+const TEMPLATES = { page: Page, profile: Profile, landing: Landing };
+---
+```
+
+未知のテンプレート名は `page` にフォールバックするので、Cosense 側のタイポでサイトが 500 を返すことはありません。
+
+### doctor のサポート
+
+`cosense-site doctor` は使われているテンプレートの内訳と、`.site` の `templates:` マッピングが解決するかを検証します:
+```
+✓ Template usage  3 templates in use
+    · 6× page
+    · 2× profile
+    · 1× landing
+✓ Template mapping titles  2 mapping(s) all resolve
+```
 
 ## アーキテクチャ
 

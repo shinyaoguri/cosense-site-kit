@@ -141,6 +141,9 @@ code:site.yaml
  redirects:
    old-slug: new-slug
 
+ templates:
+   "About Me": profile
+
 [** フィールド]
  home.page  ホームに本文として表示する Cosense ページ
  nav[]      ヘッダーの項目。{label, page} で内部、{label, href} で外部 URL
@@ -148,6 +151,7 @@ code:site.yaml
  posts.limit ホームの「Recent posts」の件数上限
  featured[] ホームで目立たせるページのタイトル
  redirects  旧 slug → 新 slug の写像
+ templates  ページタイトル → テンプレート名 のマッピング（[Templates] 参照）
 
 [** 注意]
  `.site` 自身には `#publish` を付けない。フレームワークが構造ページとして特別扱いします
@@ -250,10 +254,55 @@ actions/cache@v4 で .cosense-cache/ を CI 実行間に永続化します。差
 
 ---
 
+## `Templates`
+
+```
+WordPress のテンプレート階層と同じ発想で、ページごとに違う見た目に切り替えられます。URL は /<slug> のまま変わらず、テーマが内部のレンダリングだけ替えます。
+
+[** 仕組み]
+ 1. 中間モデルが各ページに template: string を解決する（詳細は [Architecture]）
+ 2. テーマの _dispatcher.astro が template 名から .astro コンポーネントへ振り分ける
+ 3. URL は変わらない、中の構造だけ変わる
+
+[** 指定方法（優先度順）]
+ 1. ページ本文の `#template/<name>` タグ
+ 2. [.site page] の YAML の `templates:` マッピング
+ 3. デフォルトは `page`
+
+[** theme-default の提供テンプレート]
+ page    通常ページ（デフォルト）。タイトル + タグチップ + 本文 + backlinks
+ profile プロフィール系。中央ヒーロー + 本文。タグチップなし
+
+[** 例1: ページに直接付ける]
+code:about-me.txt
+ About Me
+
+ 私についての説明...
+
+ #publish #template/profile
+
+[** 例2: .site で一括宣言]
+code:site.yaml
+ templates:
+   "About Me":  profile
+   "Members":   members
+   "Welcome":   landing
+
+[** 自作テンプレート]
+テーマを自作 / fork する場合は templates/ に .astro を1ファイル足して _dispatcher.astro の TEMPLATES に登録するだけ。未知のテンプレート名は自動で page にフォールバックします。
+
+[** 検証]
+[Doctor] が Template usage と Template mapping titles の2つで検証します。
+
+#publish
+```
+
+---
+
 ## 順序の目安
 
 1. `.site` ページを作る（YAML だけ、#publish なし）
 2. `Home` を作る
-3. `Quick start` `Architecture` `.site page` `Doctor` `Deploy` を作る（順不同）
+3. `Quick start` `Architecture` `.site page` `Doctor` `Deploy` `Templates` を作る（順不同）
 4. `cd site && npx cosense-site doctor` で全部 ✓ になることを確認
 5. push して GitHub Pages にデプロイ
