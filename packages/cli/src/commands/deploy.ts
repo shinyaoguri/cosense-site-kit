@@ -13,6 +13,14 @@ export interface DeployInitOptions {
   target?: "cloudflare-workers" | "github-pages";
   schedule?: string;
   force?: boolean;
+  /**
+   * Write the workflow to `<repoRoot>/.github/workflows/` with steps scoped
+   * to this subdirectory. Useful when the site lives under e.g. /site in a
+   * monorepo. The path is relative to repoRoot.
+   */
+  workingDirectory?: string;
+  /** Override repoRoot. Default: opts.cwd. */
+  repoRoot?: string;
 }
 
 // Writes the CI workflow and (for cloudflare-workers) a wrangler.jsonc into
@@ -22,9 +30,14 @@ export async function runDeployInit(opts: DeployInitOptions): Promise<void> {
   const config = await loadCosenseSiteConfig(opts.configFile, opts.cwd);
   const target = opts.target ?? config.deploy?.target ?? "cloudflare-workers";
   const schedule = opts.schedule ?? config.deploy?.schedule;
+  const repoRoot = opts.repoRoot ?? opts.cwd;
 
-  const workflow = generateGithubActionsWorkflow({ target, schedule });
-  const workflowPath = resolve(opts.cwd, ".github/workflows/build.yml");
+  const workflow = generateGithubActionsWorkflow({
+    target,
+    schedule,
+    workingDirectory: opts.workingDirectory,
+  });
+  const workflowPath = resolve(repoRoot, ".github/workflows/build.yml");
   await writeIfAbsent(workflowPath, workflow, opts.force);
   console.log(pc.green("✓ wrote"), workflowPath);
 

@@ -5,50 +5,59 @@ export interface GithubActionsOptions {
   target: "cloudflare-workers" | "github-pages";
   /** Node version to use. Default: 24. */
   nodeVersion?: number;
+  /**
+   * Working directory inside the repo where the Astro project lives.
+   * Set to "site" when the docs site is at /site, or omit for repo root.
+   * Default: "." (repo root).
+   */
+  workingDirectory?: string;
 }
 
 export function generateGithubActionsWorkflow(opts: GithubActionsOptions): string {
   const schedule = opts.schedule ?? "17 1,13 * * *";
   const nodeVersion = opts.nodeVersion ?? 24;
+  const wd = opts.workingDirectory && opts.workingDirectory !== "." ? opts.workingDirectory : null;
 
-  const deployStep =
-    opts.target === "cloudflare-workers"
-      ? CF_DEPLOY_STEP
-      : opts.target === "github-pages"
-        ? PAGES_DEPLOY_STEP
-        : "";
+  if (opts.target === "github-pages") {
+    return renderPagesWorkflow({ schedule, nodeVersion, workingDirectory: wd });
+  }
+  return renderCloudflareWorkflow({ schedule, nodeVersion, workingDirectory: wd });
+}
 
-  const permissions =
-    opts.target === "github-pages"
-      ? `      contents: read
-      pages: write
-      id-token: write`
-      : `      contents: read`;
+interface RenderArgs {
+  schedule: string;
+  nodeVersion: number;
+  workingDirectory: string | null;
+}
+
+function renderCloudflareWorkflow(a: RenderArgs): string {
+  const wd = a.workingDirectory ? `\n    defaults:\n      run:\n        working-directory: ${a.workingDirectory}` : "";
+  const cachePath = a.workingDirectory ? `${a.workingDirectory}/.cosense-cache` : ".cosense-cache";
 
   return `name: Build and deploy
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "${schedule}"
+    - cron: "${a.schedule}"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-${permissions}
+      contents: read${wd}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${nodeVersion}
+          node-version: ${a.nodeVersion}
           cache: npm
 
       - name: Restore Cosense cache
         uses: actions/cache@v4
         with:
-          path: .cosense-cache
+          path: ${cachePath}
           key: cosense-cache-\${{ github.ref }}
           restore-keys: |
             cosense-cache-
@@ -57,21 +66,84 @@ ${permissions}
       - run: npx cosense-site fetch
       - run: npx astro build
 
-${deployStep}
-`;
-}
-
-const CF_DEPLOY_STEP = `      - name: Deploy to Cloudflare Workers
+      - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: \${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy`;
+          command: deploy${a.workingDirectory ? `\n          workingDirectory: ${a.workingDirectory}` : ""}
+`;
+}
 
-const PAGES_DEPLOY_STEP = `      - name: Upload Pages artifact
+function renderPagesWorkflow(a: RenderArgs): string {
+  const wd = a.workingDirectory ? `\n    defaults:\n      run:\n        working-directory: ${a.workingDirectory}` : "";
+  const cachePath = a.workingDirectory ? `${a.workingDirectory}/.cosense-cache` : ".cosense-cache";
+  const distPath = a.workingDirectory ? `./${a.workingDirectory}/dist` : "./dist";
+
+  // GH Pages needs:
+  //   - actions/configure-pages to inject the correct base URL,
+  //   - a "build" job that uploads ./dist as an artifact,
+  //   - a "deploy" job pinned to the github-pages environment.
+  // We keep a single Astro project but split into two GH Actions jobs so
+  // actions/deploy-pages@v4 gets its required environment.
+  return `name: Build and deploy
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "${a.schedule}"
+
+# Required by actions/deploy-pages@v4.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Avoid concurrent deploys racing each other.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest${wd}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${a.nodeVersion}
+          cache: npm
+
+      - name: Restore Cosense cache
+        uses: actions/cache@v4
+        with:
+          path: ${cachePath}
+          key: cosense-cache-\${{ github.ref }}
+          restore-keys: |
+            cosense-cache-
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - run: npm ci
+        working-directory: \${{ github.workspace }}
+      - run: npx cosense-site fetch
+      - run: npx astro build
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: ${distPath}
 
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4`;
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: \${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
+`;
+}

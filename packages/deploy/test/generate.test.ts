@@ -13,11 +13,25 @@ describe("generateGithubActionsWorkflow", () => {
     expect(yml).toContain("npx astro build");
   });
 
-  it("emits a github-pages workflow with the required permissions", () => {
+  it("emits a github-pages workflow with build/deploy jobs and env binding", () => {
     const yml = generateGithubActionsWorkflow({ target: "github-pages" });
+    expect(yml).toContain("actions/configure-pages@v5");
+    expect(yml).toContain("actions/upload-pages-artifact@v3");
     expect(yml).toContain("actions/deploy-pages@v4");
     expect(yml).toContain("pages: write");
     expect(yml).toContain("id-token: write");
+    expect(yml).toContain("name: github-pages");
+    expect(yml).toContain("concurrency:");
+  });
+
+  it("scopes commands to a subdirectory when workingDirectory is set", () => {
+    const yml = generateGithubActionsWorkflow({
+      target: "github-pages",
+      workingDirectory: "site",
+    });
+    expect(yml).toContain("working-directory: site");
+    expect(yml).toContain("path: site/.cosense-cache");
+    expect(yml).toContain("path: ./site/dist");
   });
 
   it("defaults to a twice-daily off-the-hour schedule", () => {

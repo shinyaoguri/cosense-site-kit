@@ -93,12 +93,22 @@ deploy
     "cloudflare-workers | github-pages (overrides config)",
   )
   .option("--schedule <cron>", "Cron schedule for the build job")
+  .option(
+    "--working-directory <dir>",
+    "Subdirectory of repoRoot where the site lives (monorepo)",
+  )
+  .option(
+    "--repo-root <dir>",
+    "Root of the repo to write .github/workflows into (default: cwd)",
+  )
   .option("--force", "Overwrite existing files")
   .action(
     async (opts: {
       config?: string;
       target?: "cloudflare-workers" | "github-pages";
       schedule?: string;
+      workingDirectory?: string;
+      repoRoot?: string;
       force?: boolean;
     }) => {
       await runDeployInit({
@@ -106,6 +116,8 @@ deploy
         configFile: opts.config,
         target: opts.target,
         schedule: opts.schedule,
+        workingDirectory: opts.workingDirectory,
+        repoRoot: opts.repoRoot,
         force: opts.force,
       });
     },
