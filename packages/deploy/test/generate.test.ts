@@ -8,7 +8,7 @@ describe("generateGithubActionsWorkflow", () => {
       schedule: "5 0,12 * * *",
     });
     expect(yml).toContain('cron: "5 0,12 * * *"');
-    expect(yml).toContain("cloudflare/wrangler-action@v3");
+    expect(yml).toContain("cloudflare/wrangler-action@v4");
     expect(yml).toContain("npx cosense-site fetch");
     expect(yml).toContain("npx astro build");
   });
@@ -25,9 +25,9 @@ describe("generateGithubActionsWorkflow", () => {
 
   it("emits a github-pages workflow with build/deploy jobs and env binding", () => {
     const yml = generateGithubActionsWorkflow({ target: "github-pages" });
-    expect(yml).toContain("actions/configure-pages@v5");
-    expect(yml).toContain("actions/upload-pages-artifact@v3");
-    expect(yml).toContain("actions/deploy-pages@v4");
+    expect(yml).toContain("actions/configure-pages@v6");
+    expect(yml).toContain("actions/upload-pages-artifact@v5");
+    expect(yml).toContain("actions/deploy-pages@v5");
     expect(yml).toContain("pages: write");
     expect(yml).toContain("id-token: write");
     expect(yml).toContain("name: github-pages");
