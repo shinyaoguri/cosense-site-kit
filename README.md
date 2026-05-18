@@ -138,7 +138,7 @@ templates:
 
 ### カスタムテンプレートの作り方
 
-テーマを自作する場合のお手本は `theme-default` の `templates/` ディレクトリそのものです。1 ファイル足して、`_dispatcher.astro` に登録するだけ:
+既存テーマに 1 テンプレ追加するだけなら、`.astro` ファイルを 1 つ書いて `_dispatcher.astro` の `TEMPLATES` レジストリに登録するだけです:
 
 ```astro
 ---
@@ -163,16 +163,19 @@ const TEMPLATES = { page: Page, profile: Profile, landing: Landing };
 
 未知のテンプレート名は `page` にフォールバックするので、Cosense 側のタイポでサイトが 500 を返すことはありません。
 
-### テーマ作者向け: サイトメタデータの取得
+### テーマを自作する
 
-`cosense()` integration が `virtual:cosense-site-kit/site` という Vite 仮想モジュールで `cosense.config.ts` の `site` ブロックを公開します。テーマはこれを import するだけで、利用者に option を二度書きさせる必要がなくなります:
+新しいテーマを 0 から作る場合は **[docs/THEMES.md](./docs/THEMES.md)** に完全ガイドがあります。`Integration として何を返すか` / `injectRoute の使い方` / `virtual module で options を渡す方法` / `pages collection と SiteStructure の読み方` / `tsup の設定` まで網羅。
 
-```ts
-import site from "virtual:cosense-site-kit/site";
-// site.title / site.description / site.baseUrl / site.lang / site.base
-```
+データレイヤだけ簡単に説明すると、テーマは次の 3 つだけを消費します:
 
-`@cosense-site-kit/astro` への直接の dependency は不要（peer 扱い）で、テーマ側に小さな `.d.ts` shim を1つ置けば TypeScript も通ります（`packages/theme-default/src/virtual/site.d.ts` が見本）。
+| インタフェース | 用途 | API |
+|---|---|---|
+| `pages` collection | 公開済みページ一覧 | `getCollection("pages")` |
+| `virtual:cosense-site-kit/site` | `cosense.config.ts` の `site` ブロック | `import site from "..."` |
+| `virtual:cosense-site-kit/structure` | `.site` ページの構造体 (推奨は `loadStructure()` 経由) | `@cosense-site-kit/theme-utils` |
+
+頻出処理は `@cosense-site-kit/theme-utils` にあるので積極的に使ってください (`loadStructure`, `loadTitleToSlug`, `navHref`, `path`, `isPublicTag`, `isHiddenTag`, 共通 `Backlinks.astro`)。
 
 ### 公式テーマ
 
