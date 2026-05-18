@@ -6,6 +6,10 @@ export const cosenseSiteConfigSchema = z.object({
     description: z.string().optional(),
     baseUrl: z.string().url(),
     lang: z.string().default("ja"),
+    // Sub-path the site is served under, e.g. "/cosense-site-kit" for a
+    // GitHub Pages project site. Forwarded to Astro's `base` config.
+    // Leading slash optional; trailing slash gets normalized away.
+    base: z.string().default("/"),
   }),
   source: z.object({
     type: z.literal("cosense"),

@@ -1,9 +1,8 @@
 ---
 import { getCollection } from "astro:content";
-import { pathFor } from "@cosense-site-kit/core";
 import options from "virtual:cosense-theme-default/options";
 import Layout from "../../components/Layout.astro";
-import { loadStructure } from "../../lib/structure";
+import { loadStructure, path } from "../../lib/structure";
 
 const structure = await loadStructure();
 
@@ -25,7 +24,7 @@ const posts = postTag
       <ul class="recent-pages">
         {posts.map((entry) => (
           <li>
-            <a href={pathFor(entry.data.slug)}>{entry.data.title}</a>
+            <a href={path(entry.data.slug)}>{entry.data.title}</a>
             {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
             {entry.data.updatedAt && (
               <time class="updated" datetime={entry.data.updatedAt}>

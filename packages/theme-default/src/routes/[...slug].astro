@@ -4,6 +4,7 @@ import options from "virtual:cosense-theme-default/options";
 import Layout from "../components/Layout.astro";
 import PageContent from "../components/PageContent.astro";
 import Backlinks from "../components/Backlinks.astro";
+import { path } from "../lib/structure";
 
 export async function getStaticPaths() {
   const opts = (await import("virtual:cosense-theme-default/options")).default;
@@ -24,7 +25,7 @@ const page = entry.data;
       {page.tags.length > 0 && (
         <p class="tags">
           {page.tags.map((tag) => (
-            <a class="tag" href={`/tags/${encodeURIComponent(tag)}`}>#{tag}</a>
+            <a class="tag" href={path(`tags/${tag}`)}>#{tag}</a>
           ))}
         </p>
       )}

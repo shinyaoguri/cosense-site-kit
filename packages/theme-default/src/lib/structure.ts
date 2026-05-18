@@ -24,7 +24,7 @@ export async function loadStructure(): Promise<SiteStructure> {
 // the correct URL path. We do this once per render at the Astro server.
 export async function loadTitleToSlug(): Promise<Map<string, string>> {
   const pages = await getCollection(options.collection as "pages");
-  return new Map(pages.map((e) => [e.data.title, e.data.slug]));
+  return new Map(pages.map((e: { data: { title: string; slug: string } }) => [e.data.title, e.data.slug]));
 }
 
 export function navHref(
@@ -35,5 +35,11 @@ export function navHref(
 ): string {
   if ("href" in item) return item.href;
   const slug = titleToSlug.get(item.page);
-  return slug ? pathFor(slug) : "#";
+  return slug ? path(slug) : "#";
+}
+
+// pathFor wrapper that automatically prepends Astro's configured base path.
+// import.meta.env.BASE_URL is "/" by default and reflects site.base when set.
+export function path(slug: string): string {
+  return pathFor(slug, import.meta.env.BASE_URL);
 }

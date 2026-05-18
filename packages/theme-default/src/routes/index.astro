@@ -1,10 +1,9 @@
 ---
 import { getCollection } from "astro:content";
-import { pathFor } from "@cosense-site-kit/core";
 import options from "virtual:cosense-theme-default/options";
 import Layout from "../components/Layout.astro";
 import PageContent from "../components/PageContent.astro";
-import { loadStructure, loadTitleToSlug } from "../lib/structure";
+import { loadStructure, loadTitleToSlug, path } from "../lib/structure";
 
 const structure = await loadStructure();
 const titleToSlug = await loadTitleToSlug();
@@ -39,7 +38,7 @@ const recentHeading = postTag ? "Recent posts" : "Recent pages";
       <h2>Featured</h2>
       <ul>
         {featured.map((f) => (
-          <li><a href={pathFor(f.slug)}>{f.title}</a></li>
+          <li><a href={path(f.slug)}>{f.title}</a></li>
         ))}
       </ul>
     </section>
@@ -50,7 +49,7 @@ const recentHeading = postTag ? "Recent posts" : "Recent pages";
     <ul>
       {recent.map((entry) => (
         <li>
-          <a href={pathFor(entry.data.slug)}>{entry.data.title}</a>
+          <a href={path(entry.data.slug)}>{entry.data.title}</a>
           {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
         </li>
       ))}

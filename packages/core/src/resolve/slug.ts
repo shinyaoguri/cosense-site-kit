@@ -44,10 +44,23 @@ export function assignSlugs(
   });
 }
 
-// Build an absolute path for a slug. Encodes each path segment once so
-// unicode and special characters survive without breaking `/` separators.
-export function pathFor(slug: string): string {
-  return `/${slug.split("/").map(encodeURIComponent).join("/")}`;
+// Normalize an Astro-style base path to start and end with exactly one slash.
+// "/cosense-site-kit", "cosense-site-kit/", "/cosense-site-kit/" → "/cosense-site-kit/"
+// "/" or "" → "/"
+export function normalizeBase(base: string): string {
+  if (!base || base === "/") return "/";
+  const stripped = base.replace(/^\/+|\/+$/g, "");
+  return stripped ? `/${stripped}/` : "/";
+}
+
+// Build an absolute path for a slug. Encodes each path segment once so unicode
+// and special characters survive without breaking `/` separators. When a base
+// is given (Astro project-pages style "/cosense-site-kit"), it is prepended.
+// Pass `import.meta.env.BASE_URL` from theme components — Astro fills that
+// from the integration's site.base configuration.
+export function pathFor(slug: string, base = "/"): string {
+  const encoded = slug.split("/").map(encodeURIComponent).join("/");
+  return `${normalizeBase(base)}${encoded}`;
 }
 
 function encodeTitle(title: string): string {

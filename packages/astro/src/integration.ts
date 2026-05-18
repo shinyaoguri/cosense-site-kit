@@ -1,5 +1,9 @@
 import type { AstroIntegration } from "astro";
-import { pathFor, type CosenseSiteConfig } from "@cosense-site-kit/core";
+import {
+  normalizeBase,
+  pathFor,
+  type CosenseSiteConfig,
+} from "@cosense-site-kit/core";
 import { loadCosenseSiteConfig } from "./config-loader";
 import { getSharedIntermediate } from "./intermediate-cache";
 
@@ -33,9 +37,16 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
     hooks: {
       "astro:config:setup": async ({ updateConfig, logger }) => {
         const config = opts.config ?? (await loadCosenseSiteConfig(opts.configFile));
-        const baseUpdate: { site: string; redirects?: Record<string, string> } = {
+        const normalized = normalizeBase(config.site.base);
+        const baseUpdate: {
+          site: string;
+          base?: string;
+          redirects?: Record<string, string>;
+        } = {
           site: config.site.baseUrl,
         };
+        // Astro expects "/sub" (no trailing slash) or "/" for root.
+        if (normalized !== "/") baseUpdate.base = normalized.replace(/\/$/, "");
 
         try {
           const data = await getSharedIntermediate({

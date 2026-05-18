@@ -25,7 +25,7 @@ export {
 } from "./parse/site-config";
 
 export { applyPublishRules } from "./publish/filter";
-export { assignSlugs, computeSlug, pathFor } from "./resolve/slug";
+export { assignSlugs, computeSlug, normalizeBase, pathFor } from "./resolve/slug";
 export { resolveInternalLinks } from "./resolve/links";
 export { computeBacklinks, buildLinkGraph } from "./resolve/backlinks";
 export {
