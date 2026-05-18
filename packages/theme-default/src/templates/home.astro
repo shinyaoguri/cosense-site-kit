@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import options from "virtual:cosense-theme-default/options";
+import site from "virtual:cosense-site-kit/site";
 import Layout from "../components/Layout.astro";
 import PageContent from "../components/PageContent.astro";
 import { loadStructure, loadTitleToSlug, path } from "@cosense-site-kit/theme-utils";
@@ -17,21 +18,34 @@ const homeEntry = homeTitle
   ? allPages.find((e) => e.data.title === homeTitle || e.data.slug === homeTitle)
   : undefined;
 
-// 2. Featured pages (by title; skip those that don't exist)
 const featured = structure.featured
   .map((title) => ({ title, slug: titleToSlug.get(title) }))
   .filter((f): f is { title: string; slug: string } => Boolean(f.slug));
 
-// 3. Recent items. If posts are configured, show recent posts. Otherwise show
-//    recent pages (current behavior).
 const postTag = structure.posts?.tag;
 const recent = postTag
   ? allPages.filter((e) => e.data.tags.includes(postTag)).slice(0, structure.posts?.limit ?? 10)
-  : allPages.slice(0, 30);
+  : allPages.slice(0, 20);
 const recentHeading = postTag ? "Recent posts" : "Recent pages";
+
+const siteTitle = site?.title ?? Astro.site?.hostname ?? "Home";
+const siteDescription = site?.description;
 ---
-<Layout title={Astro.site?.hostname ?? "Home"}>
-  {homeEntry && <PageContent blocks={homeEntry.data.blocks} />}
+<Layout title={siteTitle} description={siteDescription} hideToc>
+  {homeEntry ? (
+    <article>
+      <header class="page-header">
+        <h1>{siteTitle}</h1>
+        {siteDescription && <p class="summary" style="font-size: 1rem; margin-top: 0.25rem">{siteDescription}</p>}
+      </header>
+      <PageContent blocks={homeEntry.data.blocks} />
+    </article>
+  ) : (
+    <header class="page-header">
+      <h1>{siteTitle}</h1>
+      {siteDescription && <p class="summary" style="font-size: 1rem">{siteDescription}</p>}
+    </header>
+  )}
 
   {featured.length > 0 && (
     <section class="featured">
@@ -51,6 +65,11 @@ const recentHeading = postTag ? "Recent posts" : "Recent pages";
         <li>
           <a href={path(entry.data.slug)}>{entry.data.title}</a>
           {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
+          {entry.data.updatedAt && (
+            <time class="updated" datetime={entry.data.updatedAt}>
+              {new Date(entry.data.updatedAt).toISOString().slice(0, 10)}
+            </time>
+          )}
         </li>
       ))}
     </ul>

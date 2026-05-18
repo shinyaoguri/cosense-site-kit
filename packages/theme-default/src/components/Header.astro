@@ -1,0 +1,41 @@
+---
+import options from "virtual:cosense-theme-default/options";
+import site from "virtual:cosense-site-kit/site";
+import { loadStructure, loadTitleToSlug, navHref } from "@cosense-site-kit/theme-utils";
+
+interface Props { currentPath?: string }
+const { currentPath = "/" } = Astro.props;
+
+const siteTitle =
+  options.siteTitle ??
+  site?.title ??
+  (Astro.site ? new URL("/", Astro.site).hostname : "Site");
+
+const structure = await loadStructure();
+const navItems = structure.nav.length > 0 ? structure.nav : options.nav;
+const titleToSlug = await loadTitleToSlug();
+
+const isActive = (href: string): boolean => {
+  if (href === "/") return currentPath === "/";
+  return currentPath === href || currentPath.startsWith(`${href}/`);
+};
+---
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="site-brand" href={import.meta.env.BASE_URL}>{siteTitle}</a>
+    {navItems.length > 0 && (
+      <ul class="site-nav">
+        {navItems.map((item) => {
+          const href = navHref(item, titleToSlug);
+          return (
+            <li>
+              <a href={href} class:list={[{ "is-active": isActive(href) }]}>
+                {item.label}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+  </div>
+</header>

@@ -1,0 +1,10 @@
+---
+import site from "virtual:cosense-site-kit/site";
+const year = new Date().getFullYear();
+const title = site?.title;
+---
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <span>&copy; {year} {title} · Built with cosense-site-kit</span>
+  </div>
+</footer>

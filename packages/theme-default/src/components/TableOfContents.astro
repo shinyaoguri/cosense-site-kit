@@ -1,0 +1,135 @@
+---
+// Notion-style hover TOC for content pages. Bars on the right edge that
+// expand into a labeled panel on hover; active heading is highlighted via
+// IntersectionObserver. Hidden on small screens.
+---
+<nav class="toc" aria-label="目次">
+  <div class="toc-indicator"></div>
+  <div class="toc-panel">
+    <ul class="toc-list"></ul>
+  </div>
+</nav>
+
+<style>
+  .toc {
+    position: fixed;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    pointer-events: none;
+  }
+  .toc-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-right: 0.625rem;
+    transition: opacity 0.2s ease;
+    pointer-events: auto;
+  }
+  .toc-bar {
+    width: 18px;
+    height: 1px;
+    background: var(--color-text-faint);
+    transition: background 0.2s ease, width 0.2s ease;
+  }
+  .toc-bar.is-h3 { width: 10px; margin-left: 0.5rem; }
+  .toc-bar.is-active {
+    background: var(--color-text);
+    width: 22px;
+  }
+  .toc-panel {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    background: rgb(255 255 255 / 0.96);
+    backdrop-filter: blur(8px);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgb(15 15 15 / 0.08), 0 1px 3px rgb(15 15 15 / 0.06);
+    border: 1px solid var(--color-border-soft);
+    padding: 0.5rem 0.75rem;
+    max-width: 16rem;
+    min-width: 9rem;
+  }
+  .toc:hover .toc-panel { opacity: 1; pointer-events: auto; }
+  .toc:hover .toc-indicator { opacity: 0; }
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .toc-item { margin: 0; padding: 0; }
+  .toc-item.is-h3 { margin-left: 0.75rem; }
+  .toc-link {
+    display: block;
+    padding: 0.25rem 0;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s ease;
+  }
+  .toc-link:hover { color: var(--color-text-soft); }
+  .toc-link.is-active { color: var(--color-text); font-weight: 500; }
+  @media (max-width: 900px) { .toc { display: none; } }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const toc = document.querySelector(".toc");
+    const indicator = document.querySelector(".toc-indicator");
+    const list = document.querySelector(".toc-list");
+    if (!toc || !indicator || !list) return;
+    const headings = document.querySelectorAll<HTMLHeadingElement>(
+      ".page-content h2, .page-content h3",
+    );
+    if (headings.length === 0) { toc.remove(); return; }
+
+    headings.forEach((h, i) => {
+      if (!h.id) h.id = `heading-${i}`;
+      const isH3 = h.tagName === "H3";
+      const bar = document.createElement("div");
+      bar.className = `toc-bar ${isH3 ? "is-h3" : "is-h2"}`;
+      bar.dataset.target = h.id;
+      indicator.appendChild(bar);
+      const li = document.createElement("li");
+      li.className = `toc-item ${isH3 ? "is-h3" : ""}`;
+      const a = document.createElement("a");
+      a.href = `#${h.id}`;
+      a.textContent = h.textContent ?? "";
+      a.className = "toc-link";
+      a.dataset.target = h.id;
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        h.scrollIntoView({ behavior: "smooth", block: "start" });
+        history.pushState(null, "", `#${h.id}`);
+      });
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+
+    let active: string | null = null;
+    const setActive = (id: string) => {
+      if (active) {
+        indicator.querySelector(`[data-target="${active}"]`)?.classList.remove("is-active");
+        list.querySelector(`[data-target="${active}"]`)?.classList.remove("is-active");
+      }
+      indicator.querySelector(`[data-target="${id}"]`)?.classList.add("is-active");
+      list.querySelector(`[data-target="${id}"]`)?.classList.add("is-active");
+      active = id;
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) setActive(e.target.id);
+      },
+      { rootMargin: "-72px 0px -70% 0px", threshold: 0 },
+    );
+    for (const h of headings) io.observe(h);
+  });
+</script>

@@ -38,4 +38,31 @@ describe("normalizePage", () => {
   it("keeps backlinks empty until the pipeline computes them", () => {
     expect(normalizePage(sample).backlinks).toEqual([]);
   });
+
+  it("derives summary from the first paragraph with visible text, skipping tag-only lines", () => {
+    const page = normalizePage({
+      ...sample,
+      text: ["Welcome", "#publish #post", "", "actual intro text"].join("\n"),
+      descriptions: [],
+    });
+    expect(page.summary).toBe("actual intro text");
+  });
+
+  it("falls back to descriptions[0] when no paragraph has content", () => {
+    const page = normalizePage({
+      ...sample,
+      text: ["Welcome"].join("\n"),
+      descriptions: ["api description"],
+    });
+    expect(page.summary).toBe("api description");
+  });
+
+  it("rejects an all-tag descriptions[0] fallback", () => {
+    const page = normalizePage({
+      ...sample,
+      text: "Welcome",
+      descriptions: ["#publish #post"],
+    });
+    expect(page.summary).toBeUndefined();
+  });
 });

@@ -27,8 +27,13 @@ const { entries } = Astro.props as {
   entries: Awaited<ReturnType<typeof getCollection<"pages">>>;
 };
 ---
-<Layout title={`#${tag}`}>
-  <h1>#{tag}</h1>
+<Layout title={`#${tag}`} hideToc>
+  <header class="page-header">
+    <h1>#{tag}</h1>
+    <p class="summary" style="font-size: 0.875rem; color: var(--color-text-muted)">
+      {entries.length} page{entries.length === 1 ? "" : "s"}
+    </p>
+  </header>
   <ul class="tag-page-list">
     {entries.map((entry) => (
       <li>

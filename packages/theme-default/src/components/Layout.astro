@@ -1,47 +1,48 @@
 ---
 import options from "virtual:cosense-theme-default/options";
 import site from "virtual:cosense-site-kit/site";
-import { loadStructure, loadTitleToSlug, navHref } from "@cosense-site-kit/theme-utils";
+import Header from "./Header.astro";
+import Footer from "./Footer.astro";
+import TableOfContents from "./TableOfContents.astro";
+import CodeBlockEnhancer from "./CodeBlockEnhancer.astro";
 import "../styles/global.css";
 
 interface Props {
   title: string;
   description?: string;
+  /** Hide the floating right-side TOC (use on home / archive / tag pages). */
+  hideToc?: boolean;
 }
 
-const { title, description } = Astro.props;
-// Resolution order: explicit theme option > cosense.config site.title >
-// Astro.site hostname (verbose) > current page title.
-const siteTitle =
-  options.siteTitle ?? site?.title ?? (Astro.site ? new URL("/", Astro.site).hostname : title);
+const { title, description, hideToc = false } = Astro.props;
 
-// SiteStructure.nav wins over theme-options.nav when both are configured.
-const structure = await loadStructure();
-const navItems = structure.nav.length > 0 ? structure.nav : options.nav;
-const titleToSlug = await loadTitleToSlug();
+const siteTitle =
+  options.siteTitle ??
+  site?.title ??
+  (Astro.site ? new URL("/", Astro.site).hostname : title);
+const fullTitle = siteTitle && siteTitle !== title ? `${title} | ${siteTitle}` : title;
+const metaDescription = description ?? site?.description ?? "";
+const lang = site?.lang ?? "ja";
 ---
 <!doctype html>
-<html lang="ja">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>{title}</title>
-    {description && <meta name="description" content={description} />}
+    {metaDescription && <meta name="description" content={metaDescription} />}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&family=M+PLUS+Code+Latin:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <title>{fullTitle}</title>
   </head>
   <body>
-    <header class="site-header">
-      <a class="site-title" href={import.meta.env.BASE_URL}>{siteTitle}</a>
-      <nav class="site-nav">
-        {navItems.map((item) => (
-          <a href={navHref(item, titleToSlug)}>{item.label}</a>
-        ))}
-      </nav>
-    </header>
-    <main class="site-main">
-      <slot />
-    </main>
-    <footer class="site-footer">
-      <small>Built with cosense-site-kit</small>
-    </footer>
+    <Header currentPath={Astro.url.pathname} />
+    <main class="site-main"><slot /></main>
+    <Footer />
+    {!hideToc && <TableOfContents />}
+    <CodeBlockEnhancer />
   </body>
 </html>

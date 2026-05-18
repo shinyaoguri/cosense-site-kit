@@ -16,11 +16,13 @@ const posts = postTag
       .sort((a, b) => (b.data.updatedAt ?? "").localeCompare(a.data.updatedAt ?? ""))
   : [];
 ---
-<Layout title="Posts">
+<Layout title="Posts" hideToc>
+  <header class="page-header">
+    <h1>Posts</h1>
+  </header>
   {postTag ? (
-    <>
-      <h1>Posts</h1>
-      <ul class="recent-pages">
+    <section class="recent-pages">
+      <ul>
         {posts.map((entry) => (
           <li>
             <a href={path(entry.data.slug)}>{entry.data.title}</a>
@@ -33,11 +35,8 @@ const posts = postTag
           </li>
         ))}
       </ul>
-    </>
+    </section>
   ) : (
-    <>
-      <h1>Posts</h1>
-      <p>Posts are not configured for this site.</p>
-    </>
+    <p class="summary">Posts are not configured for this site.</p>
   )}
 </Layout>

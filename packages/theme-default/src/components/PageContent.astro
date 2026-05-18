@@ -2,14 +2,23 @@
 import type { CosenseBlock } from "@cosense-site-kit/core";
 import Inline from "./Inline.astro";
 
-interface Props {
-  blocks: CosenseBlock[];
-}
-
+interface Props { blocks: CosenseBlock[] }
 const { blocks } = Astro.props;
+
+// Hide framework-internal data blocks from prose rendering (the .site
+// page's YAML, theme-portfolio's cv.yaml, theme-lab's members.yaml).
+const DATA_FILENAMES = new Set([
+  "site.yaml",
+  "cv.yaml",
+  "members.yaml",
+  "publications.yaml",
+]);
+const visible = blocks.filter(
+  (b) => !(b.type === "code" && b.filename && DATA_FILENAMES.has(b.filename)),
+);
 ---
 <div class="page-content">
-  {blocks.map((block) => {
+  {visible.map((block) => {
     switch (block.type) {
       case "paragraph":
         return <p><Inline nodes={block.children} /></p>;
@@ -25,12 +34,14 @@ const { blocks } = Astro.props;
         );
       case "code":
         return (
-          <pre><code class={block.lang ? `language-${block.lang}` : undefined}>{block.value}</code></pre>
+          <pre data-language={block.lang ?? ""}>
+            <code class={block.lang ? `language-${block.lang}` : undefined}>{block.value}</code>
+          </pre>
         );
       case "image":
         return <img src={block.url} alt={block.alt ?? ""} loading="lazy" />;
       case "embed":
-        return <a href={block.url} rel="noopener noreferrer">{block.url}</a>;
+        return <a href={block.url} rel="noopener noreferrer" target="_blank">{block.url}</a>;
       case "table":
         return (
           <table>
