@@ -33,11 +33,10 @@ const visible = blocks.filter(
           </ul>
         );
       case "code":
-        return (
-          <pre data-language={block.lang ?? ""}>
-            <code class={block.lang ? `language-${block.lang}` : undefined}>{block.value}</code>
-          </pre>
-        );
+        // Keep <pre><code> on one line: <pre> preserves whitespace literally,
+        // so any newline/indentation between the tags would render as leading
+        // blank space before the first line of the code.
+        return <pre data-language={block.lang ?? ""}><code class={block.lang ? `language-${block.lang}` : undefined}>{block.value}</code></pre>;
       case "image":
         return <img src={block.url} alt={block.alt ?? ""} loading="lazy" />;
       case "embed":
