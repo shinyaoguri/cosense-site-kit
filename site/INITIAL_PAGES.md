@@ -2,6 +2,8 @@
 
 [`https://scrapbox.io/cosense-site-kit/`](https://scrapbox.io/cosense-site-kit/) に下記のページを作って、各ボディをそのまま貼り付けてください。ページタイトルは見出しの文字列をそのまま使います。`#publish` がスイッチです。
 
+> **注意**: Cosense はページ本文の `#word` をどこに書いても hashtag として扱います。説明文中で `#draft` のようなタグ名に言及する場合は **必ず `` `#draft` `` のようにバッククォートで囲む**こと。さもないとそのページに本物の `#draft` タグが付き、公開ルールから外れます（特に Doctor ページが影響を受けやすいです）。
+
 ---
 
 ## `Home`
@@ -148,7 +150,7 @@ code:site.yaml
  redirects  旧 slug → 新 slug の写像
 
 [** 注意]
- `.site` 自身には #publish を付けない。フレームワークが構造ページとして特別扱いします
+ `.site` 自身には `#publish` を付けない。フレームワークが構造ページとして特別扱いします
  未知のフィールドは zod の passthrough で保持されるので、独自セクションを足しても core の変更なしで使えます
 
 [** 関連]
@@ -198,7 +200,7 @@ fail が1つでもあれば exit code 1。CI で `cosense-site doctor && astro b
  Redirect destinations exist: redirect 先が公開ページか
  Internal page links resolve: 内部リンクの飛び先が存在するか
  No slug collisions: slug 重複が無いか
- No draft leak: #draft 付きページが誤って公開されていないか
+ No draft leak: `#draft` 付きページが誤って公開されていないか
 
 #publish
 ```
