@@ -31,6 +31,33 @@ export interface CosenseIntegrationOptions {
 // translates structure.redirects from .site YAML into Astro's redirects map.
 // Pipeline failure does not crash Astro — site is still set and redirects
 // quietly skipped, so the dev server can come up even when offline.
+// Virtual module ID exposed to themes and downstream consumers. Themes can
+// import this without depending on @cosense-site-kit/astro at compile time;
+// they ship their own .d.ts shim. The module emits the validated site block
+// from cosense.config.ts so themes don't have to be told the title twice.
+const SITE_VIRTUAL_ID = "virtual:cosense-site-kit/site";
+const SITE_VIRTUAL_RESOLVED = `\0${SITE_VIRTUAL_ID}`;
+
+function virtualSitePlugin(site: CosenseSiteConfig["site"]): {
+  name: string;
+  resolveId(id: string): string | null;
+  load(id: string): string | null;
+} {
+  return {
+    name: "cosense-site-kit-virtual-site",
+    resolveId(id) {
+      if (id === SITE_VIRTUAL_ID) return SITE_VIRTUAL_RESOLVED;
+      return null;
+    },
+    load(id) {
+      if (id === SITE_VIRTUAL_RESOLVED) {
+        return `export default ${JSON.stringify(site)};`;
+      }
+      return null;
+    },
+  };
+}
+
 export default function cosense(opts: CosenseIntegrationOptions = {}): AstroIntegration {
   return {
     name: "@cosense-site-kit/astro",
@@ -38,15 +65,18 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
       "astro:config:setup": async ({ updateConfig, logger }) => {
         const config = opts.config ?? (await loadCosenseSiteConfig(opts.configFile));
         const normalized = normalizeBase(config.site.base);
-        const baseUpdate: {
-          site: string;
-          base?: string;
-          redirects?: Record<string, string>;
-        } = {
+
+        // updateConfig is invoked in narrow slices so each call types cleanly
+        // against AstroConfig partials. Multi-call is supported and shallow-
+        // merges in order.
+        updateConfig({
           site: config.site.baseUrl,
-        };
+          vite: { plugins: [virtualSitePlugin(config.site)] },
+        });
         // Astro expects "/sub" (no trailing slash) or "/" for root.
-        if (normalized !== "/") baseUpdate.base = normalized.replace(/\/$/, "");
+        if (normalized !== "/") {
+          updateConfig({ base: normalized.replace(/\/$/, "") });
+        }
 
         try {
           const data = await getSharedIntermediate({
@@ -58,7 +88,7 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
             redirects[pathFor(from)] = pathFor(to);
           }
           if (Object.keys(redirects).length > 0) {
-            baseUpdate.redirects = redirects;
+            updateConfig({ redirects });
             logger.info(`cosense: ${Object.keys(redirects).length} redirect(s) wired`);
           }
         } catch (err) {
@@ -66,7 +96,6 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           logger.warn(`cosense: skipped redirects setup (${msg})`);
         }
 
-        updateConfig(baseUpdate);
         logger.info(
           `cosense: site=${config.site.baseUrl}, project=${config.source.project}`,
         );

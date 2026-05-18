@@ -1,5 +1,6 @@
 ---
 import options from "virtual:cosense-theme-default/options";
+import site from "virtual:cosense-site-kit/site";
 import { loadStructure, loadTitleToSlug, navHref } from "../lib/structure";
 import "../styles/global.css";
 
@@ -9,10 +10,10 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
-// Prefer the explicit siteTitle from theme options; fall back to the host of
-// Astro.site (verbose) when not set.
+// Resolution order: explicit theme option > cosense.config site.title >
+// Astro.site hostname (verbose) > current page title.
 const siteTitle =
-  options.siteTitle ?? (Astro.site ? new URL("/", Astro.site).hostname : title);
+  options.siteTitle ?? site?.title ?? (Astro.site ? new URL("/", Astro.site).hostname : title);
 
 // SiteStructure.nav wins over theme-options.nav when both are configured.
 const structure = await loadStructure();

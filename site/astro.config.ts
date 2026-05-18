@@ -6,7 +6,8 @@ export default defineConfig({
   integrations: [
     cosense({ configFile: "./cosense.config.ts" }),
     themeDefault({
-      siteTitle: "cosense-site-kit",
+      // siteTitle is picked up from cosense.config.ts site.title via the
+      // virtual:cosense-site-kit/site module exposed by cosense().
       nav: [],
     }),
   ],
