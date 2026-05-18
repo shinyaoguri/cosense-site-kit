@@ -33,7 +33,13 @@ export function navHref(
     | { label: string; href: string },
   titleToSlug: Map<string, string>,
 ): string {
-  if ("href" in item) return item.href;
+  if ("href" in item) {
+    if (item.href.startsWith("/")) {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      return `${base}${item.href}`;
+    }
+    return item.href;
+  }
   const slug = titleToSlug.get(item.page);
   return slug ? path(slug) : "#";
 }
@@ -46,7 +52,17 @@ export function path(slug: string): string {
 
 // Namespaced tags (template/profile, slug/foo, etc.) are framework metadata,
 // not user-facing categories. Don't generate /tags/ pages for them and don't
-// render them as clickable chips. A tag is "public" when it has no slash.
+// render them as clickable chips. A tag is "public" when it has no slash and
+// isn't a publish-control tag.
+const HIDDEN_CONTROL_TAGS = new Set(["publish", "draft", "private", "internal"]);
+
 export function isPublicTag(name: string): boolean {
-  return !name.includes("/");
+  return !name.includes("/") && !HIDDEN_CONTROL_TAGS.has(name);
+}
+
+// Tags that should be completely omitted from inline rendering (no chip,
+// no text). These are framework filtering tags that have no value as
+// visible content.
+export function isHiddenTag(name: string): boolean {
+  return HIDDEN_CONTROL_TAGS.has(name);
 }

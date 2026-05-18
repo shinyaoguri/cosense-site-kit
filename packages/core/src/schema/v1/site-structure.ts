@@ -6,7 +6,10 @@ import { z } from "zod";
 
 export const navItemSchema = z.union([
   z.object({ label: z.string().min(1), page: z.string().min(1) }),
-  z.object({ label: z.string().min(1), href: z.string().url() }),
+  // `href` accepts any non-empty string: absolute URL (https://...), site-
+  // relative path (/blog, /tags/foo), mailto:/tel:, or fragment (#about).
+  // Theme navHref helpers prefix site-relative paths with Astro's base.
+  z.object({ label: z.string().min(1), href: z.string().min(1) }),
 ]);
 
 export const siteStructureSchema = z

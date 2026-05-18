@@ -115,8 +115,14 @@ redirects:
     );
   });
 
-  it("rejects nav.href that is not a URL", () => {
-    const yaml = "nav:\n  - { label: 'x', href: 'not a url' }\n";
+  it("accepts site-relative paths in nav.href (for theme-injected routes)", () => {
+    const yaml = "nav:\n  - { label: 'Blog', href: '/blog' }\n";
+    const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+    expect(result?.structure.nav[0]).toEqual({ label: "Blog", href: "/blog" });
+  });
+
+  it("rejects empty nav.href", () => {
+    const yaml = "nav:\n  - { label: 'x', href: '' }\n";
     expect(() => parseSitePage(pageWith([codeBlock("site.yaml", yaml)]))).toThrowError(
       SiteConfigParseError,
     );
