@@ -1,0 +1,4 @@
+.cosense-cache/
+.astro/
+dist/
+node_modules/

@@ -7,7 +7,8 @@
   },
   "workspaces": [
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "site"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present -w packages/core -w packages/astro -w packages/theme-default -w packages/deploy -w packages/cli -w packages/create",

@@ -1,0 +1,21 @@
+{
+  "name": "@cosense-site-kit/docs-site",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "cosense-site fetch && astro build",
+    "preview": "astro preview",
+    "fetch": "cosense-site fetch",
+    "validate": "cosense-site validate",
+    "doctor": "cosense-site doctor"
+  },
+  "dependencies": {
+    "@cosense-site-kit/astro": "*",
+    "@cosense-site-kit/cli": "*",
+    "@cosense-site-kit/core": "*",
+    "@cosense-site-kit/theme-default": "*",
+    "astro": "^5.0.0"
+  }
+}
