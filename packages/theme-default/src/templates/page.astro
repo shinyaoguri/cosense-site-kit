@@ -3,7 +3,7 @@ import type { CollectionEntry } from "astro:content";
 import Layout from "../components/Layout.astro";
 import PageContent from "../components/PageContent.astro";
 import Backlinks from "../components/Backlinks.astro";
-import { path } from "../lib/structure";
+import { isPublicTag, path } from "../lib/structure";
 
 interface Props {
   entry: CollectionEntry<"pages">;
@@ -16,9 +16,9 @@ const page = entry.data;
   <article>
     <header class="page-header">
       <h1>{page.title}</h1>
-      {page.tags.length > 0 && (
+      {page.tags.some(isPublicTag) && (
         <p class="tags">
-          {page.tags.map((tag) => (
+          {page.tags.filter(isPublicTag).map((tag) => (
             <a class="tag" href={path(`tags/${tag}`)}>#{tag}</a>
           ))}
         </p>

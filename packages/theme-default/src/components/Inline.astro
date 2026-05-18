@@ -1,6 +1,6 @@
 ---
 import type { InlineNode } from "@cosense-site-kit/core";
-import { path } from "../lib/structure";
+import { isPublicTag, path } from "../lib/structure";
 import Inline from "./Inline.astro";
 
 interface Props {
@@ -31,6 +31,11 @@ const { nodes } = Astro.props;
       }
       return <span class="page-link missing">{node.title}</span>;
     case "tag":
+      // Namespaced tags (template/x, slug/x) are framework metadata; render
+      // them as plain inline text rather than dead links.
+      if (!isPublicTag(node.name)) {
+        return <span class="tag tag-meta">#{node.name}</span>;
+      }
       return <a class="tag" href={path(`tags/${node.name}`)}>#{node.name}</a>;
     case "icon":
       return <span class="icon">[{node.pageTitle}.icon]</span>;

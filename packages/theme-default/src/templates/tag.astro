@@ -2,7 +2,7 @@
 import { getCollection } from "astro:content";
 import options from "virtual:cosense-theme-default/options";
 import Layout from "../components/Layout.astro";
-import { path } from "../lib/structure";
+import { isPublicTag, path } from "../lib/structure";
 
 export async function getStaticPaths() {
   const opts = (await import("virtual:cosense-theme-default/options")).default;
@@ -10,6 +10,9 @@ export async function getStaticPaths() {
   const tagMap = new Map<string, typeof pages>();
   for (const entry of pages) {
     for (const tag of entry.data.tags) {
+      // Skip namespaced metadata tags (template/foo, slug/foo). They aren't
+      // categories users browse, and slashes can't sit inside a [tag] segment.
+      if (!isPublicTag(tag)) continue;
       const list = tagMap.get(tag) ?? [];
       list.push(entry);
       tagMap.set(tag, list);

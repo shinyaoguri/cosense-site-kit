@@ -43,3 +43,10 @@ export function navHref(
 export function path(slug: string): string {
   return pathFor(slug, import.meta.env.BASE_URL);
 }
+
+// Namespaced tags (template/profile, slug/foo, etc.) are framework metadata,
+// not user-facing categories. Don't generate /tags/ pages for them and don't
+// render them as clickable chips. A tag is "public" when it has no slash.
+export function isPublicTag(name: string): boolean {
+  return !name.includes("/");
+}
