@@ -5,9 +5,8 @@ describe("renderInlineMath", () => {
   it("renders a simple expression as KaTeX HTML", () => {
     const out = renderInlineMath("E = mc^2");
     expect(out).toContain('class="katex"');
-    // KaTeX emits both an MathML semantic block and HTML rendering.
-    expect(out.toLowerCase()).toContain("mathml");
-    // The TeX source is preserved in the annotation for accessibility.
+    expect(out).toMatch(/<math\b/);
+    // TeX source preserved in <annotation> for copy-paste / screen readers.
     expect(out).toContain("E = mc^2");
   });
 

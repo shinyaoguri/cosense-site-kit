@@ -1,6 +1,7 @@
 ---
 import Header from "./Header.astro";
 import Footer from "./Footer.astro";
+import KaTeXLink from "@cosense-site-kit/theme-utils/components/KaTeXLink.astro";
 import options from "virtual:cosense-theme-organisation/options";
 import site from "virtual:cosense-site-kit/site";
 import "../styles/global.css";
@@ -23,12 +24,7 @@ const lang = site?.lang ?? "ja";
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {metaDescription && <meta name="description" content={metaDescription} />}
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
-      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
-      crossorigin="anonymous"
-    />
+    <KaTeXLink />
     <title>{fullTitle}</title>
   </head>
   <body>

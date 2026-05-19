@@ -374,10 +374,7 @@ h1, h2, h3, h4, h5, h6 {
 .page-link {
   text-decoration-color: var(--color-text-faint);
 }
-/* Missing page: dotted underline (not line-through) so it can't be confused
-   with a Cosense [- strike] decoration — broken nested decorations parse as
-   relative page links, and a strikethrough style here would make the two
-   visually identical. */
+/* Dotted underline so it doesn't read as a Cosense [- strike] decoration. */
 .page-link.missing {
   color: var(--color-text-muted);
   text-decoration: underline dotted;
