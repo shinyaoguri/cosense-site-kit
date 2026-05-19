@@ -5,14 +5,9 @@ import Inline from "./Inline.astro";
 interface Props { blocks: CosenseBlock[] }
 const { blocks } = Astro.props;
 
-// Hide framework-internal data blocks from prose rendering (the .site
-// page's YAML, theme-portfolio's cv.yaml, theme-lab's members.yaml).
-const DATA_FILENAMES = new Set([
-  "site.yaml",
-  "cv.yaml",
-  "members.yaml",
-  "publications.yaml",
-]);
+// Hide framework-internal data blocks (the .site page's YAML) from prose
+// rendering.
+const DATA_FILENAMES = new Set(["site.yaml"]);
 const visible = blocks.filter(
   (b) => !(b.type === "code" && b.filename && DATA_FILENAMES.has(b.filename)),
 );

@@ -14,9 +14,9 @@ cosense-site-kit site is near-zero. Here's the triage:
 
 - **GHSA-j687-52p2-xcff** — XSS in `define:vars` via incomplete `</script>`
   sanitization.
-  cosense-site-kit does not use `define:vars` anywhere. Themes shipped in
-  this repo (`theme-default`, `theme-portfolio`) use inline `<script>`
-  blocks bundled by Astro, not `define:vars` injection.
+  cosense-site-kit does not use `define:vars` anywhere. The shipped
+  theme-default uses inline `<script>` blocks bundled by Astro, not
+  `define:vars` injection.
 
 - **GHSA-xr5h-phrj-8vxv** — Server-island encrypted-parameter replay.
   cosense-site-kit produces fully static output (`output: "static"` by

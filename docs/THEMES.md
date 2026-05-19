@@ -2,7 +2,7 @@
 
 cosense-site-kit のテーマは **Astro Integration の薄いラッパ** です。「テーマ」と聞くと CSS だけのものを想像しがちですが、ここでのテーマは **URL の構造 (どのページがどの URL になるか) も含めて決める** ものを指します。WordPress でいう "テンプレート階層" に近い役割です。
 
-本ドキュメントは、`theme-default` と `theme-portfolio` を読みながら自作するときのリファレンスです。最小実装から始めて、機能を追加していく順で説明します。
+本ドキュメントは、`theme-default` を読みながら自作するときのリファレンスです。最小実装から始めて、機能を追加していく順で説明します。
 
 ---
 
@@ -131,7 +131,7 @@ packages/my-theme/
     lib/                      # 補助関数 (必要なら)
 ```
 
-最小限なら `templates/` と `components/Layout.astro` だけでも作れますが、`theme-default` / `theme-portfolio` を参考にすると着地点が見えやすいです。
+最小限なら `templates/` と `components/Layout.astro` だけでも作れますが、`theme-default` を参考にすると着地点が見えやすいです。
 
 ---
 
@@ -288,7 +288,7 @@ const Template = TEMPLATES[entry.data.template] ?? Page;
 
 テンプレートは Astro コンポーネント (`(props: { entry: CollectionEntry<"pages"> }) => Renderable`) として実装します。`theme-default` の `templates/page.astro`, `templates/profile.astro` がほぼそのまま雛形になります。
 
-**特殊な振り分けが必要なケース** (例: `#blog` タグ付きを問答無用で `blog-post` テンプレで描画したい) では、`TEMPLATES[name]` ルックアップの前に条件で割り込みます。`theme-portfolio` の `_dispatcher.astro` がその実例:
+**特殊な振り分けが必要なケース** (例: `#blog` タグ付きを問答無用で `blog-post` テンプレで描画したい) では、`TEMPLATES[name]` ルックアップの前に条件で割り込みます:
 
 ```ts
 const isBlogPost = entry.data.tags.includes(options.blogTag);
@@ -439,7 +439,7 @@ Cosense のグラマーは「装飾の中の装飾」をサポートしません
 
 ## スタイル
 
-`src/styles/global.css` を作って Layout から `import` するだけです。CSS フレームワークに依存せず素 CSS で書くのを推奨 (theme-default / theme-portfolio はどちらも素 CSS):
+`src/styles/global.css` を作って Layout から `import` するだけです。CSS フレームワークに依存せず素 CSS で書くのを推奨 (theme-default は素 CSS):
 
 ```astro
 ---
@@ -608,8 +608,5 @@ export default defineConfig({
 
 | | 役割 | ポイント |
 |---|---|---|
-| [`packages/theme-default/`](../packages/theme-default/) | 最もシンプル。`page` / `profile` の2テンプレ + `/posts` archive + `/tags/[tag]` | テーマの最小実用形 |
-| [`packages/theme-portfolio/`](../packages/theme-portfolio/) | 個人サイト向け。`cv` (code:cv.yaml パース + Publications フィルタ) と `blog-post` (タグ自動振り分け) | 高度なテンプレ、code block 内 YAML をデータとして使う `.site` 同様パターン |
-| [`packages/theme-lab/`](../packages/theme-lab/) | 研究室向け。`members` (code:members.yaml) / `publications` / `research` + `news` のタグ自動振り分け | 複数テンプレでの dispatcher、多種の構造化データ block |
-| [`packages/theme-organisation/`](../packages/theme-organisation/) | 企業向け。Hero + `services` / `cases` / `news` のタグ自動振り分け + 多カラムフッタ | sticky ヘッダ、カードグリッド、多カラムフッタの実例 |
-| [`packages/theme-utils/`](../packages/theme-utils/) | 共有ヘルパ | 自分で同等の処理を書く前に参照 |
+| [`packages/theme-default/`](../packages/theme-default/) | `page` / `profile` の2テンプレ + `/posts` archive + `/tags/[tag]` + Notion 風ホバー TOC | テーマの最小実用形 |
+| [`packages/theme-utils/`](../packages/theme-utils/) | 共有ヘルパ + 共有コンポーネント (`Inline.astro`, `PageContent.astro`, `Backlinks.astro`, `KaTeXLink.astro`) | 自前で同等の処理を書く前に参照 |
