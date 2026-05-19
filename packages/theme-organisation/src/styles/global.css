@@ -283,7 +283,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .page-link.missing {
   color: var(--color-text-faint);
-  text-decoration: line-through;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
 }
 .tag {
   display: inline-block;

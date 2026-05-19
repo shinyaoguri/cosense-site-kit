@@ -418,6 +418,23 @@ case "tag":
 
 実装例は `theme-default/src/components/PageContent.astro` と `Inline.astro` を参照。
 
+### Cosense の装飾はネストしない
+
+Cosense のグラマーは「装飾の中の装飾」をサポートしません。`[**** outer [**** inner]]` のような書き方をすると、内側の `[**** inner]` は **装飾ではなく相対パスの内部リンク**として解釈され、`pageLink` ノードの `exists=false` になります。これは @progfay/scrapbox-parser だけの挙動ではなく Cosense 本体も同じです。
+
+ネストできる組み合わせは次の通り:
+
+| 構造 | 例 | 結果 |
+|---|---|---|
+| 装飾の中にリンク | `[* [Page]]` | OK |
+| 装飾の中に外部リンク | `[* [https://x.com 表示]]` | OK |
+| 装飾の中にタグ | `[* #tag 続き]` | OK |
+| 装飾の中にインライン code | `` [* `code`] `` | 装飾が壊れる |
+| 装飾の中に装飾 | `[* [/ italic]]` | 内側は不在ページリンクになる |
+| リンクの中に装飾 | `[[* bold] in link]` | 外側の `[` `]` がリテラル化する |
+
+そのため `.page-link.missing` を `text-decoration: line-through` にすると、Cosense の `[- strike]` 装飾と「壊れた装飾入れ子」と「未作成ページリンク」が全部同じ見た目になり混乱します。theme-default では **ドットアンダーライン** にして、ユーザーが装飾入れ子のミスを誤って strikethrough と読まないようにしています。新しいテーマでも同じ慣習を強く推奨します。
+
 ---
 
 ## スタイル
