@@ -12,20 +12,22 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "astro": "^5.0.0"
+    "astro": "^6.3.5"
   },
   "dependencies": {
     "@cosense-site-kit/core": "*"
   },
   "devDependencies": {
-    "astro": "^5.0.0",
+    "astro": "^6.3.5",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   }

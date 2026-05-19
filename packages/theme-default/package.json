@@ -15,21 +15,27 @@
     "./templates/*": "./src/templates/*",
     "./styles/*": "./src/styles/*"
   },
-  "files": ["dist", "src/components", "src/templates", "src/styles", "src/virtual"],
+  "files": [
+    "dist",
+    "src/components",
+    "src/templates",
+    "src/styles",
+    "src/virtual"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "astro": "^5.0.0"
+    "astro": "^6.3.5"
   },
   "dependencies": {
     "@cosense-site-kit/core": "*",
     "@cosense-site-kit/theme-utils": "*"
   },
   "devDependencies": {
-    "astro": "^5.0.0",
+    "astro": "^6.3.5",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   }
