@@ -1,6 +1,8 @@
 ---
 import type { InlineNode } from "@cosense-site-kit/core";
-import { isHiddenTag, isPublicTag, path, renderInlineMath } from "@cosense-site-kit/theme-utils";
+import { isHiddenTag, isPublicTag } from "../tags";
+import { path } from "../structure";
+import { renderInlineMath } from "../math";
 import Inline from "./Inline.astro";
 
 interface Props {
@@ -22,8 +24,8 @@ const { nodes } = Astro.props;
     case "code":
       return <code>{node.value}</code>;
     case "formula":
-      // Cosense only emits inline math ([$ …]); render server-side with KaTeX.
-      // Requires the KaTeX stylesheet to be linked in Layout.
+      // Cosense only emits inline math ([$ …]); SSR via KaTeX. Themes need to
+      // ship the KaTeX stylesheet (use <KaTeXLink /> in Layout).
       return <span class="math-inline" set:html={renderInlineMath(node.value)} />;
     case "link":
       return <a href={node.href} rel="noopener noreferrer"><Inline nodes={node.children} /></a>;
@@ -33,12 +35,10 @@ const { nodes } = Astro.props;
       }
       return <span class="page-link missing">{node.title}</span>;
     case "tag":
-      // Publish-control tags (publish/draft/...) carry no visible value; omit.
-      // Namespaced tags (template/x, slug/x) are framework metadata; render as
-      // plain inline text rather than dead links.
-      if (isHiddenTag(node.name)) {
-        return null;
-      }
+      // publish/draft/... are control-flow tags with no visible value.
+      // Namespaced tags (template/x, slug/x) are framework metadata and
+      // would render as dead links.
+      if (isHiddenTag(node.name)) return null;
       if (!isPublicTag(node.name)) {
         return <span class="tag tag-meta">#{node.name}</span>;
       }

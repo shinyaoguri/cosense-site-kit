@@ -3,7 +3,7 @@ import { getCollection } from "astro:content";
 import options from "virtual:cosense-theme-default/options";
 import site from "virtual:cosense-site-kit/site";
 import Layout from "../components/Layout.astro";
-import PageContent from "../components/PageContent.astro";
+import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import { loadStructure, loadTitleToSlug, path } from "@cosense-site-kit/theme-utils";
 
 const structure = await loadStructure();

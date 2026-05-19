@@ -13,7 +13,7 @@
     },
     "./components/*": "./src/components/*"
   },
-  "files": ["dist", "src/components"],
+  "files": ["dist", "src"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

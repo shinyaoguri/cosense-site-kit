@@ -2,17 +2,26 @@
 import type { CosenseBlock } from "@cosense-site-kit/core";
 import Inline from "./Inline.astro";
 
-interface Props { blocks: CosenseBlock[] }
-const { blocks } = Astro.props;
+interface Props {
+  blocks: CosenseBlock[];
+  /**
+   * Extra `code:<filename>` blocks whose body should be hidden from prose.
+   * `site.yaml` is always hidden (the framework consumes it as site config);
+   * a theme that uses YAML data blocks like `cv.yaml` passes them here.
+   */
+  hideFilenames?: string[];
+  /** Wrapper class on the root <div>. Default: "page-content". */
+  class?: string;
+}
 
-// Hide framework-internal data blocks (the .site page's YAML) from prose
-// rendering.
-const DATA_FILENAMES = new Set(["site.yaml"]);
+const { blocks, hideFilenames = [], class: wrapperClass = "page-content" } =
+  Astro.props;
+const hidden = new Set(["site.yaml", ...hideFilenames]);
 const visible = blocks.filter(
-  (b) => !(b.type === "code" && b.filename && DATA_FILENAMES.has(b.filename)),
+  (b) => !(b.type === "code" && b.filename && hidden.has(b.filename)),
 );
 ---
-<div class="page-content">
+<div class={wrapperClass}>
   {visible.map((block) => {
     switch (block.type) {
       case "paragraph":
@@ -28,9 +37,8 @@ const visible = blocks.filter(
           </ul>
         );
       case "code":
-        // Keep <pre><code> on one line: <pre> preserves whitespace literally,
-        // so any newline/indentation between the tags would render as leading
-        // blank space before the first line of the code.
+        // <pre> on a single line: whitespace between <pre> and <code> would
+        // be preserved literally and shift the first code line.
         return <pre data-language={block.lang ?? ""}><code class={block.lang ? `language-${block.lang}` : undefined}>{block.value}</code></pre>;
       case "image":
         return <img src={block.url} alt={block.alt ?? ""} loading="lazy" />;

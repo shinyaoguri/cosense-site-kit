@@ -117,19 +117,21 @@ packages/my-theme/
       structure.d.ts          # virtual:cosense-site-kit/structure の型シム (theme-utils 経由なら不要)
       options.d.ts            # 自分のテーマの options の型シム
     components/
-      Layout.astro
-      PageContent.astro
-      Inline.astro
+      Layout.astro              # head + Header + slot + Footer
+      Header.astro              # サイトナビ
+      Footer.astro              # フッタ
     templates/
-      _dispatcher.astro       # /<slug> をテンプレ振り分け
-      home.astro              # /
-      page.astro              # default テンプレ
-      profile.astro           # オプション例
-      tag.astro               # /tags/[tag]
+      _dispatcher.astro         # /<slug> をテンプレ振り分け
+      home.astro                # /
+      page.astro                # default テンプレ
+      profile.astro             # オプション例
+      tag.astro                 # /tags/[tag]
     styles/
       global.css
-    lib/                      # 補助関数 (必要なら)
+    lib/                        # 補助関数 (必要なら)
 ```
+
+`PageContent.astro` / `Inline.astro` は `@cosense-site-kit/theme-utils/components/` から **そのまま import するのを推奨** します。Cosense AST → HTML マッピングはテーマ毎に持つ意味がなく、parser に新しいノードが増えた時の追随コストが下がります。レイアウト・配色・ナビなどテーマらしさが出る部分（Layout / Header / Footer / global.css）に集中してください。
 
 最小限なら `templates/` と `components/Layout.astro` だけでも作れますが、`theme-default` を参考にすると着地点が見えやすいです。
 
@@ -369,43 +371,35 @@ import options from "virtual:my-theme/options";
 
 ## Inline / PageContent の実装
 
-`CosenseSitePage.blocks` は構造化されたパース済みデータ (`paragraph` / `heading` / `list` / `code` / `image` / `embed` / `table` / `raw`) です。`page.blocks` をそのまま HTML に変換するには、自分の見た目で `PageContent.astro` と `Inline.astro` を書きます。
+`CosenseSitePage.blocks` は構造化されたパース済みデータ (`paragraph` / `heading` / `list` / `code` / `image` / `embed` / `table` / `raw`) です。**通常はテーマ作者がこれを HTML に変換するロジックを書く必要はありません**。`@cosense-site-kit/theme-utils/components/` の `PageContent.astro` と `Inline.astro` をそのまま import してください:
 
 ```astro
 ---
-// src/components/PageContent.astro
-import type { CosenseBlock } from "@cosense-site-kit/core";
-import Inline from "./Inline.astro";
+// src/templates/page.astro
+import Layout from "../components/Layout.astro";
+import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 
-interface Props { blocks: CosenseBlock[]; }
-const { blocks } = Astro.props;
+interface Props { entry: { data: CosenseSitePage } }
+const { entry } = Astro.props;
 ---
-<div class="page-content">
-  {blocks.map((block) => {
-    switch (block.type) {
-      case "paragraph": return <p><Inline nodes={block.children} /></p>;
-      case "heading":
-        if (block.depth === 1) return <h2><Inline nodes={block.children} /></h2>;
-        if (block.depth === 2) return <h3><Inline nodes={block.children} /></h3>;
-        return <h4><Inline nodes={block.children} /></h4>;
-      case "list":
-        return (
-          <ul style={`margin-left: ${(block.depth - 1) * 1.5}em`}>
-            <li><Inline nodes={block.children} /></li>
-          </ul>
-        );
-      case "code":
-        return <pre><code class={block.lang && `language-${block.lang}`}>{block.value}</code></pre>;
-      case "image":
-        return <img src={block.url} alt={block.alt ?? ""} loading="lazy" />;
-      // ... embed / table / raw も同様
-      default: return null;
-    }
-  })}
-</div>
+<Layout title={entry.data.title}>
+  <PageContent blocks={entry.data.blocks} />
+</Layout>
 ```
 
-`Inline.astro` は再帰コンポーネント。`InlineNode` の `type` に応じて分岐します。タグの扱いには [`isPublicTag` / `isHiddenTag`](#cosense-site-kittheme-utils) を使うのが推奨:
+`PageContent` は以下のオプションを受けます:
+
+| Prop | Default | 用途 |
+|---|---|---|
+| `blocks` | (必須) | `CosenseSitePage.blocks` |
+| `hideFilenames` | `[]` | `code:<filename>` のうち本文表示から除外するもの。`site.yaml` は常に除外（フレームワークがサイト設定として消費するため） |
+| `class` | `"page-content"` | wrapper `<div>` のクラス。例: `class="page-content prose"` |
+
+タグ・公開フィルタなど Cosense 固有の意味論は `Inline.astro` 内で正しく扱われます (`isPublicTag` / `isHiddenTag`)。
+
+### 自前で実装したい場合
+
+CSS だけでは届かない構造変更（例: heading レベルを `h2`/`h3`/`h4` ではなく `h3`/`h4`/`h5` にする、コードブロックをカスタム element でラップする）が必要なら、theme-utils のコンポーネントを直接 import せず、自分で `PageContent.astro` を書きます。実装は theme-utils のソースをコピーして調整するのが早いです:
 
 ```astro
 case "tag":
@@ -416,7 +410,7 @@ case "tag":
   return <a class="tag" href={path(`tags/${node.name}`)}>#{node.name}</a>;
 ```
 
-実装例は `theme-default/src/components/PageContent.astro` と `Inline.astro` を参照。
+実装例は [`packages/theme-utils/src/components/`](../packages/theme-utils/src/components/) を参照。
 
 ### Cosense の装飾はネストしない
 
