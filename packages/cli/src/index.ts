@@ -93,7 +93,7 @@ deploy
   .option("--config <file>", "Path to cosense.config.{ts,js,mjs}")
   .option(
     "--target <target>",
-    "cloudflare-workers | github-pages (overrides config)",
+    "cloudflare-workers (Workers Static Assets) | github-pages — overrides config",
   )
   .option("--schedule <cron>", "Cron schedule for the build job")
   .option(

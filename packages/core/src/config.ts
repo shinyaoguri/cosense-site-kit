@@ -40,6 +40,14 @@ export const cosenseSiteConfigSchema = z.object({
   plugins: z.array(z.unknown()).default([]),
   deploy: z
     .object({
+      /**
+       * Where the generated GitHub Actions workflow ships the built site.
+       * - "github-pages":    actions/deploy-pages, no extra account needed.
+       * - "cloudflare-workers":  wrangler deploy → Cloudflare Workers Static
+       *   Assets (Cloudflare's current static-site delivery surface; not
+       *   legacy Cloudflare Pages). Requires CLOUDFLARE_API_TOKEN and
+       *   CLOUDFLARE_ACCOUNT_ID secrets on the repo.
+       */
       target: z.enum(["cloudflare-workers", "github-pages"]),
       schedule: z.string().optional(),
     })

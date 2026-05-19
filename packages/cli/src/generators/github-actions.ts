@@ -109,7 +109,7 @@ jobs:
 ${buildStep(a)}
 ${a.buildWorkspaces ? renderMonorepoRunSteps() : renderRunSteps()}
 
-      - name: Deploy to Cloudflare Workers
+      - name: Deploy to Cloudflare Workers (Static Assets)
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: \${{ secrets.CLOUDFLARE_API_TOKEN }}

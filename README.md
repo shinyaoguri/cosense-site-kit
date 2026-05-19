@@ -219,7 +219,7 @@ Cosense public project
 @cosense-site-kit/theme-*    （ルートを inject する Astro Integration）
    │
    ▼
-静的サイト → CDN（Cloudflare Workers Static Assets / GitHub Pages）
+静的サイト → 配信先（GitHub Pages / Cloudflare Workers Static Assets）
    │
 GitHub Actions cron（デフォルトで 1 日 2 回）が全体を再ビルド。
 ```
