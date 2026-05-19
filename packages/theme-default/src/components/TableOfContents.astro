@@ -10,7 +10,11 @@
   </div>
 </nav>
 
-<style>
+<style is:global>
+  /* The bars/items/links inside the TOC are created at runtime by the script
+     below, so they don't get Astro's scoped data-astro-cid attribute. Using
+     `is:global` keeps the dynamically-built elements styled. The class names
+     are TOC-specific enough to be safe globally. */
   .toc {
     position: fixed;
     right: 1rem;
