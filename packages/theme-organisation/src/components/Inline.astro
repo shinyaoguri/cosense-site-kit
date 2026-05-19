@@ -1,6 +1,6 @@
 ---
 import type { InlineNode } from "@cosense-site-kit/core";
-import { isHiddenTag, isPublicTag, path } from "@cosense-site-kit/theme-utils";
+import { isHiddenTag, isPublicTag, path, renderInlineMath } from "@cosense-site-kit/theme-utils";
 import Inline from "./Inline.astro";
 
 interface Props { nodes: InlineNode[] }
@@ -13,7 +13,7 @@ const { nodes } = Astro.props;
     case "emphasis": return <em><Inline nodes={node.children} /></em>;
     case "strikethrough": return <s><Inline nodes={node.children} /></s>;
     case "code": return <code>{node.value}</code>;
-    case "formula": return <code class="formula">{node.value}</code>;
+    case "formula": return <span class="math-inline" set:html={renderInlineMath(node.value)} />;
     case "link":
       return (
         <a href={node.href} target="_blank" rel="noopener noreferrer">

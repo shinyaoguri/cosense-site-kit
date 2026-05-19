@@ -11,5 +11,6 @@ export default defineConfig({
     "astro",
     "astro:content",
     "virtual:cosense-site-kit/structure",
+    "katex",
   ],
 });

@@ -23,7 +23,8 @@
     "astro": "^5.0.0"
   },
   "dependencies": {
-    "@cosense-site-kit/core": "*"
+    "@cosense-site-kit/core": "*",
+    "katex": "^0.16.11"
   },
   "devDependencies": {
     "astro": "^5.0.0",
