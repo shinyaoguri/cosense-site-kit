@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  emptySiteStructure,
-  parseSitePage,
-  siteStructureSchema,
-  SiteConfigParseError,
-} from "../src";
+import { emptySiteStructure, siteStructureSchema } from "../src/schema/v1/site-structure";
+import { parseSitePage, SiteConfigParseError } from "../src/parse/site-config";
 import type { CosenseSitePage } from "../src";
 
 function pageWith(blocks: CosenseSitePage["blocks"]): CosenseSitePage {

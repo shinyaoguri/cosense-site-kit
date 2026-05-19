@@ -1,13 +1,10 @@
 import { describe, expect, it } from "vitest";
-import {
-  applyPublishRules,
-  assignSlugs,
-  buildIntermediate,
-  defineCosenseSite,
-  normalizePage,
-  resolveInternalLinks,
-  resolveLinkData,
-} from "../src";
+import { buildIntermediate, defineCosenseSite } from "../src";
+import { applyPublishRules } from "../src/publish/filter";
+import { assignSlugs } from "../src/resolve/slug";
+import { resolveInternalLinks } from "../src/resolve/links";
+import { resolveLinkData } from "../src/resolve/backlinks";
+import { normalizePage } from "../src/source/cosense/normalize";
 import type { SiteSource, SourcePageRaw } from "../src/source/types";
 
 function rawPage(o: Partial<SourcePageRaw> & { id: string; title: string; text: string }): SourcePageRaw {

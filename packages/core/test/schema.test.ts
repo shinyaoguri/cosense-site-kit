@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  blockSchema,
-  defineCosenseSite,
-  inlineNodeSchema,
-  pageSchema,
-  SCHEMA_VERSION,
-} from "../src";
+import { defineCosenseSite, pageSchema, SCHEMA_VERSION } from "../src";
+import { blockSchema } from "../src/schema/v1/block";
+import { inlineNodeSchema } from "../src/schema/v1/inline";
 
 describe("inline node schema", () => {
   it("accepts a plain text node", () => {

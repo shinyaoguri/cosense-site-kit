@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignTemplates, DEFAULT_TEMPLATE, resolveTemplate } from "../src";
+import { assignTemplates, DEFAULT_TEMPLATE, resolveTemplate } from "../src/resolve/template";
 import { emptySiteStructure } from "../src/schema/v1/site-structure";
 import type { CosenseSitePage, SiteStructure } from "../src";
 
