@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { generateGithubActionsWorkflow, generateWranglerJsonc } from "../src";
+import { generateGithubActionsWorkflow } from "../src/generators/github-actions";
+import { generateWranglerJsonc } from "../src/generators/wrangler";
 
 describe("generateGithubActionsWorkflow", () => {
   it("emits a cloudflare-workers workflow with the configured schedule", () => {
