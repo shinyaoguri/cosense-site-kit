@@ -35,7 +35,7 @@ export interface CosenseLoaderOptions {
 export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
   return {
     name: "cosense-site-kit/pages",
-    schema: () => pageSchema,
+    schema: pageSchema,
     async load({ store, logger, generateDigest, parseData }) {
       const built = await getSharedIntermediate(opts);
       logger.info(`Loaded ${built.pages.length} page(s); excluded ${built.excluded.length}`);

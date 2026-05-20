@@ -20,14 +20,14 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "astro": "^5.0.0"
+    "astro": "^5.0.0 || ^6.0.0"
   },
   "dependencies": {
     "@cosense-site-kit/core": "*",
     "katex": "^0.16.11"
   },
   "devDependencies": {
-    "astro": "^5.0.0",
+    "astro": "^6.0.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   }

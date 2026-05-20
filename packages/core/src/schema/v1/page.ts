@@ -37,7 +37,7 @@ export interface CosenseSitePage {
   };
 }
 
-export const pageSchema: z.ZodType<CosenseSitePage> = z.object({
+export const pageSchema = z.object({
   schemaVersion: z.literal("1"),
   id: z.string(),
   title: z.string(),

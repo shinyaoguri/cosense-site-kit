@@ -18,7 +18,7 @@
   "dependencies": {
     "@cosense-site-kit/core": "*",
     "c12": "^3.3.4",
-    "commander": "^12.1.0",
+    "commander": "^14.0.0",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
