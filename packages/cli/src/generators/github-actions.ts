@@ -60,10 +60,12 @@ function buildStep(a: RenderArgs): string {
 // In a monorepo, the workspace cli is locally linked, but its bin target
 // (packages/cli/dist/index.js) doesn't exist when npm ci runs, so npm skips
 // creating the bin symlink. Calling the file directly through node sidesteps
-// that race entirely.
+// that race entirely. astro is a normal published dependency, so its bin link
+// is created reliably — `npx astro build` resolves the version-correct entry
+// (the internal path moved between Astro 5 and 6) and runs in working-directory.
 function renderMonorepoRunSteps(): string {
   return `      - run: node \${{ github.workspace }}/packages/cli/dist/index.js fetch
-      - run: node \${{ github.workspace }}/node_modules/astro/astro.js build`;
+      - run: npx astro build`;
 }
 
 // Single-package consumers install @cosense-site-kit/cli from npm where the

@@ -48,7 +48,7 @@ jobs:
         run: npm run build
         working-directory: ${{ github.workspace }}
       - run: node ${{ github.workspace }}/packages/cli/dist/index.js fetch
-      - run: node ${{ github.workspace }}/node_modules/astro/astro.js build
+      - run: npx astro build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5

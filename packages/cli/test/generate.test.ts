@@ -14,14 +14,16 @@ describe("generateGithubActionsWorkflow", () => {
     expect(yml).toContain("npx astro build");
   });
 
-  it("uses direct node invocation for the bins in monorepo mode", () => {
+  it("uses direct node for the local cli but npx for astro in monorepo mode", () => {
     const yml = generateGithubActionsWorkflow({
       target: "github-pages",
       workingDirectory: "site",
     });
     expect(yml).toContain("node ${{ github.workspace }}/packages/cli/dist/index.js fetch");
-    expect(yml).toContain("node ${{ github.workspace }}/node_modules/astro/astro.js build");
+    expect(yml).toContain("npx astro build");
     expect(yml).not.toContain("npx cosense-site");
+    // The astro bin entry moved between Astro 5 and 6, so we must not hardcode it.
+    expect(yml).not.toContain("node_modules/astro/astro.js");
   });
 
   it("emits a github-pages workflow with build/deploy jobs and env binding", () => {
