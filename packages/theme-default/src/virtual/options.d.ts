@@ -8,6 +8,8 @@ declare module "virtual:cosense-theme-default/options" {
     nav: ThemeDefaultNavItem[];
     homePage?: string;
     siteTitle?: string;
+    copyright?: string;
+    copyrightUrl?: string;
   }
   const options: ThemeDefaultRuntimeOptions;
   export default options;

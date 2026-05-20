@@ -20,6 +20,14 @@ export interface ThemeDefaultOptions {
   nav?: ThemeDefaultNavItem[];
   /** Page slug to use as the home page body. Default: render a list of pages. */
   homePage?: string;
+  /**
+   * Copyright holder shown in the footer after "© <year>". Defaults to
+   * cosense.config.ts site.title. Set this to display a different name (e.g.
+   * an organization) without changing the header site title.
+   */
+  copyright?: string;
+  /** When set, the copyright holder is rendered as a link to this URL. */
+  copyrightUrl?: string;
 }
 
 const VIRTUAL_ID = "virtual:cosense-theme-default/options";
@@ -30,6 +38,8 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
     nav: opts.nav ?? [],
     homePage: opts.homePage,
     siteTitle: opts.siteTitle,
+    copyright: opts.copyright,
+    copyrightUrl: opts.copyrightUrl,
   };
 
   return {

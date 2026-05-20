@@ -1,10 +1,12 @@
 ---
 import site from "virtual:cosense-site-kit/site";
+import options from "virtual:cosense-theme-default/options";
 const year = new Date().getFullYear();
-const title = site?.title;
+const holder = options.copyright ?? site?.title;
+const holderUrl = options.copyrightUrl;
 ---
 <footer class="site-footer">
   <div class="site-footer-inner">
-    <span>&copy; {year} {title} · Built with cosense-site-kit</span>
+    <span>&copy; {year} {holderUrl ? <a href={holderUrl} target="_blank" rel="noopener noreferrer">{holder}</a> : holder} · Built with <a href="https://github.com/shinyaoguri/cosense-site-kit" target="_blank" rel="noopener noreferrer">cosense-site-kit</a></span>
   </div>
 </footer>

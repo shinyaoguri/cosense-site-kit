@@ -9,6 +9,8 @@ export default defineConfig({
       // siteTitle is picked up from cosense.config.ts site.title via the
       // virtual:cosense-site-kit/site module exposed by cosense().
       nav: [],
+      copyright: "Shinya Oguri",
+      copyrightUrl: "https://github.com/shinyaoguri",
     }),
   ],
 });
