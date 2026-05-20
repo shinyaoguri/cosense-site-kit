@@ -18,7 +18,7 @@ export interface ParsedPage {
   images: string[];
 }
 
-export function parseScrapboxText(text: string): ParsedPage {
+export function parseScrapboxText(text: string, project: string): ParsedPage {
   const parsed = scrapboxParse(text, { hasTitle: true });
 
   let title = "";
@@ -26,6 +26,7 @@ export function parseScrapboxText(text: string): ParsedPage {
   const tags: string[] = [];
   const pageLinks: string[] = [];
   const images: string[] = [];
+  const ctx: Context = { project, tags, pageLinks, images };
 
   for (const block of parsed) {
     switch (block.type) {
@@ -48,7 +49,7 @@ export function parseScrapboxText(text: string): ParsedPage {
         });
         break;
       case "line":
-        appendLineBlock(block, blocks, { tags, pageLinks, images });
+        appendLineBlock(block, blocks, ctx);
         break;
     }
   }
@@ -62,7 +63,9 @@ export function parseScrapboxText(text: string): ParsedPage {
   };
 }
 
-interface Collected {
+interface Context {
+  /** Source Cosense project — used to resolve icon URLs and ambient pageLinks. */
+  project: string;
   tags: string[];
   pageLinks: string[];
   images: string[];
@@ -71,7 +74,7 @@ interface Collected {
 function appendLineBlock(
   line: Extract<SbBlock, { type: "line" }>,
   out: CosenseBlock[],
-  collect: Collected,
+  ctx: Context,
 ): void {
   const nodes = line.nodes;
 
@@ -83,12 +86,12 @@ function appendLineBlock(
   if (nodes.length === 1) {
     const only = nodes[0];
     if (only && only.type === "image") {
-      collect.images.push(only.src);
+      ctx.images.push(only.src);
       out.push({ type: "image", url: only.src });
       return;
     }
     if (only && only.type === "strongImage") {
-      collect.images.push(only.src);
+      ctx.images.push(only.src);
       out.push({ type: "image", url: only.src });
       return;
     }
@@ -101,12 +104,12 @@ function appendLineBlock(
     out.push({
       type: "heading",
       depth: heading.depth,
-      children: heading.children.flatMap((n) => convertInline(n, collect)),
+      children: heading.children.flatMap((n) => convertInline(n, ctx)),
     });
     return;
   }
 
-  const children = nodes.flatMap((n) => convertInline(n, collect));
+  const children = nodes.flatMap((n) => convertInline(n, ctx));
   if (line.indent > 0) {
     out.push({ type: "list", depth: line.indent, children });
   } else {
@@ -133,7 +136,7 @@ function detectHeading(
   return { depth, children: only.nodes };
 }
 
-function convertInline(node: SbNode, collect: Collected): InlineNode[] {
+function convertInline(node: SbNode, ctx: Context): InlineNode[] {
   switch (node.type) {
     case "plain":
     case "blank":
@@ -150,7 +153,7 @@ function convertInline(node: SbNode, collect: Collected): InlineNode[] {
       return [{ type: "formula", value: node.formula }];
 
     case "hashTag":
-      collect.tags.push(node.href);
+      ctx.tags.push(node.href);
       return [{ type: "tag", name: node.href }];
 
     case "link": {
@@ -175,16 +178,16 @@ function convertInline(node: SbNode, collect: Collected): InlineNode[] {
       // relative → internal page link. The page title is in `href`
       // (`content` is empty for `[Page]` notation).
       const title = node.href || node.content;
-      collect.pageLinks.push(title);
+      ctx.pageLinks.push(title);
       return [{ type: "pageLink", title, exists: true }];
     }
 
     case "icon":
     case "strongIcon":
-      return [{ type: "icon", pageTitle: node.path.replace(/^\//, "") }];
+      return [resolveIcon(node.path, ctx.project)];
 
     case "image":
-      collect.images.push(node.src);
+      ctx.images.push(node.src);
       return [
         {
           type: "link",
@@ -194,7 +197,7 @@ function convertInline(node: SbNode, collect: Collected): InlineNode[] {
       ];
 
     case "strongImage":
-      collect.images.push(node.src);
+      ctx.images.push(node.src);
       return [
         {
           type: "link",
@@ -207,12 +210,12 @@ function convertInline(node: SbNode, collect: Collected): InlineNode[] {
       return [
         {
           type: "strong",
-          children: node.nodes.flatMap((n) => convertInline(n, collect)),
+          children: node.nodes.flatMap((n) => convertInline(n, ctx)),
         },
       ];
 
     case "decoration": {
-      const inner = node.nodes.flatMap((n) => convertInline(n, collect));
+      const inner = node.nodes.flatMap((n) => convertInline(n, ctx));
       let result: InlineNode[] = inner;
       if (node.decos.some((d) => d.startsWith("*-"))) {
         result = [{ type: "strong", children: result }];
@@ -227,10 +230,10 @@ function convertInline(node: SbNode, collect: Collected): InlineNode[] {
     }
 
     case "quote":
-      return node.nodes.flatMap((n) => convertInline(n, collect));
+      return node.nodes.flatMap((n) => convertInline(n, ctx));
 
     case "numberList":
-      return node.nodes.flatMap((n) => convertInline(n, collect));
+      return node.nodes.flatMap((n) => convertInline(n, ctx));
 
     case "commandLine":
       return [{ type: "code", value: `${node.symbol} ${node.text}` }];
@@ -304,6 +307,25 @@ function inferLang(filename: string | undefined): string | undefined {
     css: "css",
   };
   return map[ext.toLowerCase()] ?? ext.toLowerCase();
+}
+
+// `[foo.icon]` (relative) → icon of `foo` in the current project.
+// `[/other/foo.icon]` (root) → icon of `foo` in project `other`.
+function resolveIcon(path: string, defaultProject: string): InlineNode {
+  let project = defaultProject;
+  let pageTitle = path;
+  if (path.startsWith("/")) {
+    const rest = path.slice(1);
+    const sep = rest.indexOf("/");
+    if (sep > 0) {
+      project = rest.slice(0, sep);
+      pageTitle = rest.slice(sep + 1);
+    } else {
+      pageTitle = rest;
+    }
+  }
+  const src = `https://scrapbox.io/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(pageTitle)}/icon`;
+  return { type: "icon", pageTitle, project, src };
 }
 
 function dedupe<T>(xs: T[]): T[] {

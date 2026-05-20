@@ -10,8 +10,8 @@ import type { SourcePageRaw } from "../types";
 // during parse. Slug, backlinks, and pageLink.slug/exists are filled in later
 // by the pipeline once the full set of published pages is known.
 
-export function normalizePage(raw: SourcePageRaw): CosenseSitePage {
-  const parsed = parseScrapboxText(raw.text);
+export function normalizePage(raw: SourcePageRaw, project: string): CosenseSitePage {
+  const parsed = parseScrapboxText(raw.text, project);
   const links = dedupe([...raw.links, ...parsed.pageLinks]);
 
   return {

@@ -48,9 +48,9 @@ describe("applyPublishRules", () => {
 
   it("includes pages with #publish and excludes pages with #draft", () => {
     const pages = [
-      normalizePage(rawPage({ id: "a", title: "A", text: "A\n#publish" })),
-      normalizePage(rawPage({ id: "b", title: "B", text: "B\n#draft" })),
-      normalizePage(rawPage({ id: "c", title: "C", text: "C\nno tags" })),
+      normalizePage(rawPage({ id: "a", title: "A", text: "A\n#publish" }), "p"),
+      normalizePage(rawPage({ id: "b", title: "B", text: "B\n#draft" }), "p"),
+      normalizePage(rawPage({ id: "c", title: "C", text: "C\nno tags" }), "p"),
     ];
     const { kept, excluded } = applyPublishRules(pages, config.publish);
     expect(kept.map((p) => p.title)).toEqual(["A"]);
@@ -58,7 +58,7 @@ describe("applyPublishRules", () => {
   });
 
   it("excludeTags override includeTags", () => {
-    const pages = [normalizePage(rawPage({ id: "a", title: "A", text: "A\n#publish #draft" }))];
+    const pages = [normalizePage(rawPage({ id: "a", title: "A", text: "A\n#publish #draft" }), "p")];
     const { kept, excluded } = applyPublishRules(pages, config.publish);
     expect(kept).toHaveLength(0);
     expect(excluded[0]?.reason).toMatch(/draft/);
@@ -68,8 +68,8 @@ describe("applyPublishRules", () => {
 describe("slug + link + backlink resolution", () => {
   it("assigns unique slugs and resolves internal pageLinks", () => {
     const pages = [
-      normalizePage(rawPage({ id: "1", title: "Welcome", text: "Welcome\n#publish\nsee [Other]" })),
-      normalizePage(rawPage({ id: "2", title: "Other", text: "Other\n#publish\nbody" })),
+      normalizePage(rawPage({ id: "1", title: "Welcome", text: "Welcome\n#publish\nsee [Other]" }), "p"),
+      normalizePage(rawPage({ id: "2", title: "Other", text: "Other\n#publish\nbody" }), "p"),
     ];
     const slugged = assignSlugs(pages, { slug: "metadata-or-encoded-title" });
     expect(new Set(slugged.map((p) => p.slug)).size).toBe(2);
@@ -91,6 +91,7 @@ describe("slug + link + backlink resolution", () => {
     const pages = [
       normalizePage(
         rawPage({ id: "1", title: "研究テーマ", text: "研究テーマ\n#publish\n#slug/research" }),
+        "p",
       ),
     ];
     const [slugged] = assignSlugs(pages, { slug: "metadata-or-encoded-title" });
@@ -99,8 +100,8 @@ describe("slug + link + backlink resolution", () => {
 
   it("computes backlinks and slug-based link graph in one pass", () => {
     const pages = [
-      normalizePage(rawPage({ id: "1", title: "A", text: "A\n#publish\nsee [B]" })),
-      normalizePage(rawPage({ id: "2", title: "B", text: "B\n#publish" })),
+      normalizePage(rawPage({ id: "1", title: "A", text: "A\n#publish\nsee [B]" }), "p"),
+      normalizePage(rawPage({ id: "2", title: "B", text: "B\n#publish" }), "p"),
     ];
     const slugged = assignSlugs(pages, { slug: "encoded-title" });
     const { pages: withBacklinks, linkGraph } = resolveLinkData(slugged);
@@ -117,7 +118,7 @@ describe("slug + link + backlink resolution", () => {
 
   it("skips links to unpublished pages in both backlinks and link graph", () => {
     const pages = [
-      normalizePage(rawPage({ id: "1", title: "A", text: "A\n#publish\nsee [Ghost]" })),
+      normalizePage(rawPage({ id: "1", title: "A", text: "A\n#publish\nsee [Ghost]" }), "p"),
     ];
     const slugged = assignSlugs(pages, { slug: "encoded-title" });
     const { pages: out, linkGraph } = resolveLinkData(slugged);

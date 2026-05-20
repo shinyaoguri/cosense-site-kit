@@ -64,7 +64,7 @@ export async function buildIntermediate(
     raws.push(...results);
   }
 
-  const normalized = raws.map(normalizePage);
+  const normalized = raws.map((raw) => normalizePage(raw, config.source.project));
   opts.onProgress?.({ kind: "normalize", total: normalized.length });
 
   // Separate the site-config page (if any) before the publish filter. It is

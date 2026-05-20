@@ -17,52 +17,61 @@ const sample: SourcePageRaw = {
 
 describe("normalizePage", () => {
   it("produces a schema-valid intermediate page", () => {
-    const page = normalizePage(sample);
+    const page = normalizePage(sample, "my-proj");
     expect(() =>
       pageSchema.parse({ ...page, slug: "welcome" }),
     ).not.toThrow();
   });
 
   it("merges parsed page links with source-side links and dedupes", () => {
-    const page = normalizePage(sample);
+    const page = normalizePage(sample, "my-proj");
     expect(page.links).toContain("Other");
     expect(page.links).toContain("Linked-From-Side");
     expect(new Set(page.links).size).toBe(page.links.length);
   });
 
   it("captures tags from the body", () => {
-    const page = normalizePage(sample);
+    const page = normalizePage(sample, "my-proj");
     expect(page.tags).toContain("publish");
   });
 
   it("keeps backlinks empty until the pipeline computes them", () => {
-    expect(normalizePage(sample).backlinks).toEqual([]);
+    expect(normalizePage(sample, "my-proj").backlinks).toEqual([]);
   });
 
   it("derives summary from the first paragraph with visible text, skipping tag-only lines", () => {
-    const page = normalizePage({
-      ...sample,
-      text: ["Welcome", "#publish #post", "", "actual intro text"].join("\n"),
-      descriptions: [],
-    });
+    const page = normalizePage(
+      {
+        ...sample,
+        text: ["Welcome", "#publish #post", "", "actual intro text"].join("\n"),
+        descriptions: [],
+      },
+      "my-proj",
+    );
     expect(page.summary).toBe("actual intro text");
   });
 
   it("falls back to descriptions[0] when no paragraph has content", () => {
-    const page = normalizePage({
-      ...sample,
-      text: ["Welcome"].join("\n"),
-      descriptions: ["api description"],
-    });
+    const page = normalizePage(
+      {
+        ...sample,
+        text: ["Welcome"].join("\n"),
+        descriptions: ["api description"],
+      },
+      "my-proj",
+    );
     expect(page.summary).toBe("api description");
   });
 
   it("rejects an all-tag descriptions[0] fallback", () => {
-    const page = normalizePage({
-      ...sample,
-      text: "Welcome",
-      descriptions: ["#publish #post"],
-    });
+    const page = normalizePage(
+      {
+        ...sample,
+        text: "Welcome",
+        descriptions: ["#publish #post"],
+      },
+      "my-proj",
+    );
     expect(page.summary).toBeUndefined();
   });
 });
