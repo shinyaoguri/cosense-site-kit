@@ -129,4 +129,5 @@ function virtualOptionsPlugin(options: ThemeDefaultRuntimeOptions) {
   };
 }
 
+export { type ActiveSkin, PRESETS, resolveActiveSkin } from "./presets";
 export { presetDark } from "./presets/dark";

@@ -6,6 +6,8 @@ import Footer from "./Footer.astro";
 import TableOfContents from "./TableOfContents.astro";
 import CodeBlockEnhancer from "./CodeBlockEnhancer.astro";
 import KaTeXLink from "@cosense-site-kit/theme-utils/components/KaTeXLink.astro";
+import { loadStructure } from "@cosense-site-kit/theme-utils";
+import { resolveActiveSkin } from "../presets";
 import "../styles/global.css";
 
 interface Props {
@@ -25,10 +27,13 @@ const fullTitle = siteTitle && siteTitle !== title ? `${title} | ${siteTitle}` :
 const metaDescription = description ?? site?.description ?? "";
 const lang = site?.lang ?? "ja";
 
-// Preset (skin) support. Token overrides go on the <html> inline style so they
-// beat the :root defaults in global.css regardless of stylesheet order; fonts
-// are preset-driven because they load via a <link>, not a CSS variable alone.
-const { tokens = {}, colorScheme, fontHref } = options;
+// Preset (skin) support. The active skin comes from `.site` YAML `theme.skin`
+// (operator-controlled, switchable in Cosense with no repo edit) and falls back
+// to the preset wired in astro.config.ts. Token overrides go on the <html>
+// inline style so they beat the :root defaults in global.css regardless of
+// stylesheet order; fonts are preset-driven (they load via a <link>).
+const structure = await loadStructure();
+const { tokens, colorScheme, fontHref } = resolveActiveSkin(structure.theme?.skin, options);
 const htmlStyle = [
   colorScheme ? `color-scheme:${colorScheme}` : null,
   ...Object.entries(tokens).map(([k, v]) => `${k}:${v}`),

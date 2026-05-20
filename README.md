@@ -192,6 +192,16 @@ const TEMPLATES = { page: Page, profile: Profile, landing: Landing };
 
 配色やフォントだけを変える「着せ替え」は、**新しいテーマパッケージを作らず preset で行います**。preset は `:root` の CSS 変数（デザイントークン）を上書きするだけのデータで、`.astro` を一切書く必要がありません。新テンプレと違って描画ロジックを複製しないので、保守コストが増えません。
 
+**いちばん簡単な切り替え方（コード不要・ブラウザだけ）**: Cosense の `.site` ページの `code:site.yaml` に `theme.skin` を書くだけ。リポジトリもコードも触らず、次回のビルドで反映されます。
+
+```yaml
+# .site の code:site.yaml（Cosense 上＝ブラウザで編集）
+theme:
+  skin: dark        # 同梱: light / dark
+```
+
+`astro.config.ts` 側で `preset` を指定する開発者向けの方法もあります（既定のスキン）。両方ある場合は **`.site` の指定が優先**されます（運用者が Cosense だけで切り替えられるように）。
+
 ```ts
 // astro.config.ts
 import themeDefault, { presetDark } from "@cosense-site-kit/theme-default";

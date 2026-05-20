@@ -28,6 +28,13 @@ export const siteStructureSchema = z
     // Map from Cosense page title to template name. Used as a fallback when
     // the page itself doesn't carry a `#template/<name>` tag. The tag wins.
     templates: z.record(z.string(), z.string().min(1)).default({}),
+    // Visual theme selection an operator can set from `.site` (browser-only,
+    // no repo edit). A theme reads `theme.skin` to pick a named skin. `.loose()`
+    // leaves room for future fields (e.g. ad-hoc `tokens`).
+    theme: z
+      .object({ skin: z.string().min(1).optional() })
+      .loose()
+      .optional(),
   })
   // .loose() keeps unknown top-level keys so plugins / custom themes can ship
   // their own sections (e.g. `members:`, `profile:`) without core changes.
