@@ -16,6 +16,13 @@ describe("catalog data", () => {
     expect(theme?.skins.map((s) => s.id)).toEqual(["light", "dark"]);
   });
 
+  it("includes the lab theme as a structural (preset-less) theme", () => {
+    const lab = findTheme("lab");
+    expect(lab?.package).toBe("@cosense-site-kit/theme-lab");
+    expect(lab?.integration).toBe("themeLab");
+    expect(lab?.skins).toHaveLength(1);
+  });
+
   it("findSkin returns undefined for an unknown skin", () => {
     expect(findSkin(resolveTheme("default"), "neon")).toBeUndefined();
   });
@@ -74,5 +81,12 @@ describe("buildThemeWiring", () => {
       'import themeDefault, { presetDark } from "@cosense-site-kit/theme-default";',
     );
     expect(w.integration).toBe("themeDefault({ preset: presetDark })");
+  });
+
+  it("wires a preset-less theme with a bare integration call", () => {
+    const lab = resolveTheme("lab");
+    const w = buildThemeWiring(lab, resolveSkin(lab));
+    expect(w.import).toBe('import themeLab from "@cosense-site-kit/theme-lab";');
+    expect(w.integration).toBe("themeLab()");
   });
 });

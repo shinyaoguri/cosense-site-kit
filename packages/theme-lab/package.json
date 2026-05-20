@@ -1,0 +1,48 @@
+{
+  "name": "@cosense-site-kit/theme-lab",
+  "version": "0.1.0",
+  "description": "University research lab theme for cosense-site-kit (members, research, publications, news)",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./components/*": "./src/components/*",
+    "./templates/*": "./src/templates/*",
+    "./styles/*": "./src/styles/*"
+  },
+  "files": [
+    "dist",
+    "src/components",
+    "src/templates",
+    "src/styles",
+    "src/virtual",
+    "!dist/.tsbuildinfo"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "astro": "^5.0.0 || ^6.0.0"
+  },
+  "dependencies": {
+    "@cosense-site-kit/core": "^0.1.0",
+    "@cosense-site-kit/theme-utils": "^0.1.0",
+    "yaml": "^2.6.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "astro": "^6.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

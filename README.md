@@ -183,7 +183,8 @@ const TEMPLATES = { page: Page, profile: Profile, landing: Landing };
 
 | パッケージ | キャラクター | 主な用途 |
 |---|---|---|
-| `@cosense-site-kit/theme-default` | ニュートラルな汎用テーマ。`page` / `profile`、ホーム / アーカイブ / タグ、Notion 風ホバー TOC、コードブロック copy ボタン | ドキュメントサイト、wiki、ノート公開、個人サイト |
+| `@cosense-site-kit/theme-default` | ニュートラルな汎用テーマ。`page` / `profile`、ホーム / アーカイブ / タグ、Notion 風ホバー TOC、コードブロック copy ボタン。`light` / `dark` スキン | ドキュメントサイト、wiki、ノート公開、個人サイト |
+| `@cosense-site-kit/theme-lab` | 大学・研究室向け。メンバー一覧 / 研究テーマ / 業績 / お知らせ を 1 つの Cosense プロジェクトから。`/research`・`/news` ルート、`code:members.yaml` / `code:publications.yaml` を構造化描画 | 研究室・研究所サイト |
 
 他のテーマを作りたい場合は [docs/THEMES.md](./docs/THEMES.md) を参照。`@cosense-site-kit/theme-utils` の共有コンポーネント（`Inline.astro` / `PageContent.astro` / `Backlinks.astro` / `KaTeXLink.astro`）を再利用すれば、Layout と CSS を書くだけで自前テーマが立ち上がります。
 

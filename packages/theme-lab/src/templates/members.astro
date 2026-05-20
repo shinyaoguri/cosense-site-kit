@@ -1,0 +1,59 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Layout from "../components/Layout.astro";
+import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
+import { asGroups, extractMembers, initialsOf } from "../lib/members";
+
+interface Props { entry: CollectionEntry<"pages"> }
+const { entry } = Astro.props;
+const page = entry.data;
+const data = extractMembers(page.blocks);
+const groups = data ? asGroups(data) : [];
+---
+<Layout title={page.title} description={page.summary} wide>
+  <article>
+    <h1 style="font-family: var(--font-serif); font-size: 1.75rem; margin: 0 0 1.5rem">
+      {page.title}
+    </h1>
+
+    {data ? (
+      groups.map((group) => (
+        <section class="members-group">
+          {group.name && <h2>{group.name}</h2>}
+          <ul class="members-list">
+            {group.members.map((m) => (
+              <li class="member-card">
+                {m.photo ? (
+                  <img class="member-photo" src={m.photo} alt={m.name} loading="lazy" />
+                ) : (
+                  <span class="member-photo-placeholder">{initialsOf(m.name)}</span>
+                )}
+                <div>
+                  <p class="member-name">{m.name}</p>
+                  {m.role && <p class="member-role">{m.role}</p>}
+                  {m.bio && <p class="member-bio">{m.bio}</p>}
+                  {(m.links?.length || m.email) && (
+                    <div class="member-links">
+                      {m.email && <a href={`mailto:${m.email}`}>Email</a>}
+                      {m.links?.map((l) => (
+                        <a href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    ) : (
+      <div class="prose">
+        <p style="color: var(--color-text-muted)">
+          メンバー一覧は <code>code:members.yaml</code> ブロックで定義してください
+          (詳細は <a href="https://github.com/shinyaoguri/cosense-site-kit/blob/main/packages/theme-lab/README.md">theme-lab README</a>)。
+        </p>
+        <PageContent blocks={page.blocks} hideFilenames={["members.yaml"]} />
+      </div>
+    )}
+  </article>
+</Layout>

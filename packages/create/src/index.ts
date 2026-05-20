@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import pc from "picocolors";
 import prompts from "prompts";
-import { buildThemeWiring, type CatalogTheme, resolveSkin, resolveTheme } from "./catalog";
+import { buildThemeWiring, type CatalogTheme, catalog, resolveSkin, resolveTheme } from "./catalog";
 
 export const VERSION = "0.0.0";
 
@@ -32,11 +32,10 @@ async function main(): Promise<void> {
 
   const argDir = positionals[0];
 
-  // Resolve the theme up front (validates `--theme`, defaults to the first
-  // theme when omitted). A multi-theme picker is future work — with a single
-  // official theme we default to it; `--theme` still names it and fails loudly
-  // on a typo.
-  const theme = resolveTheme(values.theme);
+  // Resolve the theme: an explicit `--theme` wins (and fails loudly on a typo);
+  // otherwise the interactive picker offers the catalog when there's more than
+  // one theme, falling back to the first.
+  const theme = await resolveThemeChoice(values.theme, !values.yes);
 
   const fromFlags = {
     targetDir: argDir,
@@ -91,6 +90,33 @@ async function main(): Promise<void> {
 
 interface FlagAnswers extends Partial<Answers> {
   skin?: string;
+}
+
+// Pick the theme: an explicit flag wins; otherwise prompt only when the catalog
+// has more than one theme. Falls back to the first theme (no-prompt single-theme
+// case and --yes).
+async function resolveThemeChoice(
+  themeFlag: string | undefined,
+  interactive: boolean,
+): Promise<CatalogTheme> {
+  if (themeFlag) return resolveTheme(themeFlag);
+  if (interactive && catalog.themes.length > 1) {
+    const { theme } = (await prompts(
+      {
+        type: "select",
+        name: "theme",
+        message: "Theme",
+        choices: catalog.themes.map((t) => ({
+          title: t.name,
+          description: t.description,
+          value: t.id,
+        })),
+      },
+      { onCancel: () => process.exit(1) },
+    )) as { theme?: string };
+    return resolveTheme(theme);
+  }
+  return resolveTheme();
 }
 
 async function ask(initial: FlagAnswers, theme: CatalogTheme): Promise<FlagAnswers> {

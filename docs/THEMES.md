@@ -632,4 +632,5 @@ export default defineConfig({
 | | 役割 | ポイント |
 |---|---|---|
 | [`packages/theme-default/`](../packages/theme-default/) | `page` / `profile` の2テンプレ + `/posts` archive + `/tags/[tag]` + Notion 風ホバー TOC | テーマの最小実用形 |
+| [`packages/theme-lab/`](../packages/theme-lab/) | `/research`・`/news` を inject する**構造が違うテーマ**。`code:members.yaml` / `code:publications.yaml` を lib でパースし、タグ駆動ディスパッチ (`#research`→research-post) を使う | 独立ルートを持つテーマ・データ block の扱いの参考 |
 | [`packages/theme-utils/`](../packages/theme-utils/) | 共有ヘルパ + 共有コンポーネント (`Inline.astro`, `PageContent.astro`, `Backlinks.astro`, `KaTeXLink.astro`) | 自前で同等の処理を書く前に参照 |

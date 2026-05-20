@@ -1,0 +1,40 @@
+---
+import Header from "./Header.astro";
+import Footer from "./Footer.astro";
+import KaTeXLink from "@cosense-site-kit/theme-utils/components/KaTeXLink.astro";
+import options from "virtual:cosense-theme-lab/options";
+import site from "virtual:cosense-site-kit/site";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Use the wide page width (e.g. members / research grids). */
+  wide?: boolean;
+}
+
+const { title, description, wide = false } = Astro.props;
+
+const siteTitle = options.siteTitle ?? site?.title ?? title;
+const fullTitle = siteTitle && siteTitle !== title ? `${title} | ${siteTitle}` : title;
+const metaDescription =
+  description ?? options.siteDescription ?? site?.description ?? "";
+const lang = site?.lang ?? "ja";
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {metaDescription && <meta name="description" content={metaDescription} />}
+    <KaTeXLink />
+    <title>{fullTitle}</title>
+  </head>
+  <body>
+    <Header currentPath={Astro.url.pathname} />
+    <main class:list={["site-main", { wide }]}>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
