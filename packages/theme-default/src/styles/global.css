@@ -418,12 +418,17 @@ h1, h2, h3, h4, h5, h6 {
 
 /* `[name.icon]` renders as an inline image. Scrapbox sizes these to the line's
    text so they read like emoji — height tied to the surrounding font-size,
-   width following the aspect ratio, nudged down to sit on the text baseline. */
+   width following the aspect ratio, nudged down to sit on the text baseline.
+   The `.page-content img.icon` selector outranks the body-image rule
+   (`.page-content img`), which would otherwise force height:auto (full size)
+   and add block margins / rounded corners. */
+.page-content img.icon,
 .icon {
   height: 1.3em;
   width: auto;
   vertical-align: -0.3em;
   margin: 0 0.0625em;
+  border-radius: 0;
 }
 
 /* ===================== Featured / Recent lists ===================== */
