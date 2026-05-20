@@ -416,11 +416,14 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0.5rem 0 0;
 }
 
+/* `[name.icon]` renders as an inline image. Scrapbox sizes these to the line's
+   text so they read like emoji — height tied to the surrounding font-size,
+   width following the aspect ratio, nudged down to sit on the text baseline. */
 .icon {
-  display: inline-block;
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  padding: 0 0.125rem;
+  height: 1.3em;
+  width: auto;
+  vertical-align: -0.3em;
+  margin: 0 0.0625em;
 }
 
 /* ===================== Featured / Recent lists ===================== */
