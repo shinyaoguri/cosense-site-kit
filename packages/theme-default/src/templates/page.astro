@@ -11,15 +11,27 @@ interface Props {
 
 const { entry } = Astro.props;
 const page = entry.data;
+
+const day = (iso?: string) => (iso ? new Date(iso).toISOString().slice(0, 10) : undefined);
+const publishedDay = day(page.publishedAt);
+const updatedDay = day(page.modifiedAt);
+// Only show the updated date when it actually differs from the publish date,
+// so a page edited the same day it was published shows a single date.
+const showUpdated = updatedDay && updatedDay !== publishedDay;
 ---
 <Layout title={page.title} description={page.summary}>
   <article>
     <header class="page-header">
       <h1>{page.title}</h1>
       <div style="display: flex; flex-wrap: wrap; gap: 0.625rem; align-items: center;">
-        {page.updatedAt && (
-          <time class="updated" datetime={page.updatedAt}>
-            {new Date(page.updatedAt).toISOString().slice(0, 10)}
+        {publishedDay && (
+          <time class="updated" datetime={page.publishedAt}>
+            {publishedDay}
+          </time>
+        )}
+        {showUpdated && (
+          <time class="updated" datetime={page.modifiedAt}>
+            Updated {updatedDay}
           </time>
         )}
         {page.tags.some(isPublicTag) && (

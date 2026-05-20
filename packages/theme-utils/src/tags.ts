@@ -15,8 +15,16 @@ const HIDDEN_CONTROL_TAGS = new Set([
   "internal",
 ]);
 
+// Namespaced framework-metadata tags carry a value, not a category, so they
+// should never render. #published/<date> and #updated/<date> set a page's
+// display dates.
+const HIDDEN_TAG_PREFIXES = ["published/", "updated/"];
+
 export function isHiddenTag(name: string): boolean {
-  return HIDDEN_CONTROL_TAGS.has(name);
+  return (
+    HIDDEN_CONTROL_TAGS.has(name) ||
+    HIDDEN_TAG_PREFIXES.some((prefix) => name.startsWith(prefix))
+  );
 }
 
 export function isPublicTag(name: string): boolean {

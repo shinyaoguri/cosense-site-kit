@@ -15,8 +15,17 @@ export interface CosenseSitePage {
    * map; unknown names should fall back to "page".
    */
   template: string;
+  /** Raw Cosense timestamps (source of truth, never overridden by the user). */
   createdAt?: string;
   updatedAt?: string;
+  /**
+   * Resolved display dates. Users may override the Cosense timestamps with
+   * `#published/YYYY-MM-DD` and `#updated/YYYY-MM-DD` tags; an absent or invalid
+   * tag falls back to createdAt / updatedAt respectively. Themes sort and render
+   * these rather than the raw createdAt/updatedAt.
+   */
+  publishedAt?: string;
+  modifiedAt?: string;
   summary?: string;
   tags: string[];
   links: string[];
@@ -37,6 +46,8 @@ export const pageSchema: z.ZodType<CosenseSitePage> = z.object({
   template: z.string().min(1),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
+  publishedAt: z.string().optional(),
+  modifiedAt: z.string().optional(),
   summary: z.string().optional(),
   tags: z.array(z.string()),
   links: z.array(z.string()),

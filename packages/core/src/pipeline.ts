@@ -3,6 +3,7 @@ import { dirname } from "node:path";
 import type { CosenseSiteConfig } from "./config";
 import { parseSitePage, SiteConfigParseError } from "./parse/site-config";
 import { applyPublishRules } from "./publish/filter";
+import { assignDates } from "./resolve/dates";
 import { resolveLinkData } from "./resolve/backlinks";
 import { buildTitleToSlug, resolveInternalLinks } from "./resolve/links";
 import { assignSlugs } from "./resolve/slug";
@@ -90,16 +91,18 @@ export async function buildIntermediate(
   const linked = resolveInternalLinks(slugged, titleToSlug);
   const { pages: withBacklinks, linkGraph } = resolveLinkData(linked, titleToSlug);
   const withTemplates = assignTemplates(withBacklinks, structure);
+  const { pages: withDates, warnings: dateWarnings } = assignDates(withTemplates);
+  for (const w of dateWarnings) opts.onProgress?.({ kind: "warn", message: w });
 
   const data: IntermediateData = {
     schemaVersion: "1",
     generatedAt: new Date().toISOString(),
     site: config.site,
-    pages: withTemplates,
+    pages: withDates,
     excluded,
     linkGraph,
     structure,
-    warnings,
+    warnings: [...warnings, ...dateWarnings],
   };
 
   return intermediateDataSchema.parse(data);
