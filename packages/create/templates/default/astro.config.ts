@@ -1,10 +1,10 @@
 import { defineConfig } from "astro/config";
 import cosense from "@cosense-site-kit/astro";
-import themeDefault from "@cosense-site-kit/theme-default";
+__THEME_IMPORT__
 
 export default defineConfig({
   integrations: [
     cosense({ configFile: "./cosense.config.ts" }),
-    themeDefault(),
+    __THEME_INTEGRATION__,
   ],
 });

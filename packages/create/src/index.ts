@@ -1,9 +1,10 @@
-import { cp, mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
-import { parseArgs } from "node:util";
+import { cp, mkdir, readdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import prompts from "prompts";
+import { parseArgs } from "node:util";
 import pc from "picocolors";
+import prompts from "prompts";
+import { buildThemeWiring, type CatalogTheme, resolveSkin, resolveTheme } from "./catalog";
 
 export const VERSION = "0.0.0";
 
@@ -23,20 +24,29 @@ async function main(): Promise<void> {
       title: { type: "string" },
       url: { type: "string" },
       project: { type: "string" },
+      theme: { type: "string" },
+      skin: { type: "string" },
       yes: { type: "boolean", short: "y", default: false },
     },
   });
 
   const argDir = positionals[0];
 
+  // Resolve the theme up front (validates `--theme`, defaults to the first
+  // theme when omitted). A multi-theme picker is future work — with a single
+  // official theme we default to it; `--theme` still names it and fails loudly
+  // on a typo.
+  const theme = resolveTheme(values.theme);
+
   const fromFlags = {
     targetDir: argDir,
     siteTitle: values.title,
     baseUrl: values.url,
     cosenseProject: values.project,
+    skin: values.skin,
   };
 
-  const answers = values.yes ? fromFlags : await ask(fromFlags);
+  const answers = values.yes ? fromFlags : await ask(fromFlags, theme);
 
   const final: Answers = {
     targetDir: answers.targetDir ?? "my-cosense-site",
@@ -47,13 +57,13 @@ async function main(): Promise<void> {
   };
   final.projectName = final.targetDir.replace(/[^a-z0-9-_]+/gi, "-").toLowerCase();
 
+  const skin = resolveSkin(theme, answers.skin);
+  const wiring = buildThemeWiring(theme, skin);
+
   const targetPath = resolve(process.cwd(), final.targetDir);
   await ensureEmpty(targetPath);
 
-  const templatePath = resolve(
-    dirname(fileURLToPath(import.meta.url)),
-    "../templates/default",
-  );
+  const templatePath = resolve(dirname(fileURLToPath(import.meta.url)), "../templates/default");
 
   await copyTree(templatePath, targetPath);
   await renameDotfiles(targetPath);
@@ -62,10 +72,15 @@ async function main(): Promise<void> {
     __SITE_TITLE__: final.siteTitle,
     __BASE_URL__: final.baseUrl,
     __PROJECT__: final.cosenseProject,
+    __THEME_IMPORT__: wiring.import,
+    __THEME_INTEGRATION__: wiring.integration,
+    __THEME_PACKAGE__: theme.package,
+    __THEME_VERSION__: theme.version,
   });
 
   console.log();
   console.log(pc.green("✓ created"), targetPath);
+  console.log(pc.dim(`  theme: ${theme.name} · skin: ${skin.name}`));
   console.log();
   console.log("Next:");
   console.log(pc.cyan(`  cd ${final.targetDir}`));
@@ -74,7 +89,11 @@ async function main(): Promise<void> {
   console.log(pc.cyan(`  npm run dev`));
 }
 
-async function ask(initial: Partial<Answers>): Promise<Partial<Answers>> {
+interface FlagAnswers extends Partial<Answers> {
+  skin?: string;
+}
+
+async function ask(initial: FlagAnswers, theme: CatalogTheme): Promise<FlagAnswers> {
   const result = (await prompts(
     [
       {
@@ -101,9 +120,24 @@ async function ask(initial: Partial<Answers>): Promise<Partial<Answers>> {
         message: "Public Cosense project name",
         initial: "your-public-project",
       },
+      {
+        // Offer the chosen theme's skins. Skipped when --skin was passed or the
+        // theme ships a single look.
+        type: initial.skin || theme.skins.length < 2 ? null : "select",
+        name: "skin",
+        message: `Skin (${theme.name})`,
+        choices: theme.skins.map((s) => ({
+          title: s.default ? `${s.name} (default)` : s.name,
+          value: s.id,
+        })),
+        initial: Math.max(
+          0,
+          theme.skins.findIndex((s) => s.default),
+        ),
+      },
     ],
     { onCancel: () => process.exit(1) },
-  )) as Partial<Answers>;
+  )) as FlagAnswers;
   return { ...initial, ...result };
 }
 

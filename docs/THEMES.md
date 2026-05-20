@@ -596,6 +596,35 @@ export default defineConfig({
 
 ---
 
+## カタログに登録する
+
+公式テーマとスキンは [`packages/create/src/catalog.ts`](../packages/create/src/catalog.ts) のカタログで一元管理されています。これが `create-cosense-site --theme` / `--skin` の唯一の真実で、対話ピッカーと、生成される `astro.config.ts` / `package.json` の依存の両方を駆動します。
+
+カタログのエントリは2種類です:
+
+- **theme** — 自前でルートを inject する独立パッケージ（構造が違うもの）
+- **skin** — ベーステーマに preset（CSS トークンのデータ）を当てたもの（配色だけ違うもの）。skin はそのテーマの下にぶら下がる
+
+公式テーマ／スキンを足すときは、このカタログにエントリを1つ追加し、`packages/create/test/catalog.test.ts` にテストを足すだけです。ピッカー側のコードを書く必要はありません。スキンの `export` には preset の名前付きエクスポート（例: `presetDark`）を書きます:
+
+```ts
+{
+  id: "default",
+  name: "Default",
+  package: "@cosense-site-kit/theme-default",
+  version: "^0.1.0",
+  integration: "themeDefault",        // astro.config.ts の default export 関数名
+  schemaVersion: "1",                  // 消費する中間スキーマバージョン
+  kind: "theme",
+  skins: [
+    { id: "light", name: "Light", default: true },
+    { id: "dark", name: "Dark", export: "presetDark" },
+  ],
+}
+```
+
+将来コミュニティテーマを受け入れる場合も、リモートレジストリが返すべき形はこのカタログと同じです。
+
 ## 参考実装
 
 迷ったら以下の実装を読むのが早いです:

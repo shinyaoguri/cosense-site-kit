@@ -223,6 +223,14 @@ themeDefault({
 });
 ```
 
+新規サイト作成時にスキンを選ぶこともできます（`create-cosense-site` の対話ピッカー、または `--skin` フラグ）:
+
+```bash
+npm create cosense-site my-site --skin dark --project your-public-project --yes
+```
+
+利用可能なテーマ／スキンは [`packages/create/src/catalog.ts`](packages/create/src/catalog.ts) のカタログで一元管理されています。公式テーマを足す手順は [docs/THEMES.md](./docs/THEMES.md#カタログに登録する) を参照。
+
 ### doctor のサポート
 
 `cosense-site doctor` は使われているテンプレートの内訳と、`.site` の `templates:` マッピングが解決するかを検証します:
