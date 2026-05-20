@@ -21,21 +21,21 @@ export const cosenseSiteConfigSchema = z.object({
       includeTags: z.array(z.string()).default(["publish"]),
       excludeTags: z.array(z.string()).default(["draft", "private", "internal"]),
     })
-    .default({}),
+    .prefault({}),
   routing: z
     .object({
       slug: z.enum(["title", "encoded-title", "metadata-or-encoded-title"]).default(
         "metadata-or-encoded-title",
       ),
     })
-    .default({}),
+    .prefault({}),
   siteConfig: z
     .object({
       // The Cosense page title that holds the site-config YAML block.
       // Set to null to disable site-config-page support entirely.
       page: z.string().min(1).nullable().default(".site"),
     })
-    .default({}),
+    .prefault({}),
   theme: z.unknown().optional(),
   plugins: z.array(z.unknown()).default([]),
   deploy: z

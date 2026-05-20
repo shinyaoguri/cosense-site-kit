@@ -23,10 +23,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@progfay/scrapbox-parser": "^9.0.0",
+    "@progfay/scrapbox-parser": "^10.0.0",
     "c12": "^3.3.4",
     "yaml": "^2.6.1",
-    "zod": "^3.23.8"
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

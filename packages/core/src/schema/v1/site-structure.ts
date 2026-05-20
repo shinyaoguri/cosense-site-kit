@@ -29,9 +29,9 @@ export const siteStructureSchema = z
     // the page itself doesn't carry a `#template/<name>` tag. The tag wins.
     templates: z.record(z.string(), z.string().min(1)).default({}),
   })
-  // .passthrough() keeps unknown top-level keys so plugins / custom themes can
-  // ship their own sections (e.g. `members:`, `profile:`) without core changes.
-  .passthrough();
+  // .loose() keeps unknown top-level keys so plugins / custom themes can ship
+  // their own sections (e.g. `members:`, `profile:`) without core changes.
+  .loose();
 
 export type SiteStructure = z.infer<typeof siteStructureSchema>;
 export type SiteStructureInput = z.input<typeof siteStructureSchema>;
