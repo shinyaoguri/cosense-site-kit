@@ -1,4 +1,11 @@
-import { pageSchema, type CosenseSiteConfig } from "@cosense-site-kit/core";
+import { join } from "node:path";
+import {
+  loadCosenseSiteConfig,
+  normalizeBase,
+  pageSchema,
+  vendorIcons,
+  type CosenseSiteConfig,
+} from "@cosense-site-kit/core";
 import type { Loader } from "astro/loaders";
 import { getSharedIntermediate } from "./intermediate-cache";
 
@@ -30,9 +37,25 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
     name: "cosense-site-kit/pages",
     schema: () => pageSchema,
     async load({ store, logger, generateDigest, parseData }) {
-      const data = await getSharedIntermediate(opts);
-      logger.info(`Loaded ${data.pages.length} page(s); excluded ${data.excluded.length}`);
-      for (const w of data.warnings) logger.warn(w);
+      const built = await getSharedIntermediate(opts);
+      logger.info(`Loaded ${built.pages.length} page(s); excluded ${built.excluded.length}`);
+      for (const w of built.warnings) logger.warn(w);
+
+      // Vendor `[name.icon]` images here, in the loader, because this is the
+      // data that actually reaches the rendered pages. scrapbox.io's icon
+      // endpoint serves with Cross-Origin-Resource-Policy: same-origin, so a
+      // hot-linked <img> is blocked from the generated origin. We download each
+      // icon and rewrite its src to a local copy under the site's public dir.
+      // (Doing this in the integration instead doesn't work: content.config.ts
+      // loads in a separate module realm, so the integration's result isn't
+      // shared with this loader.)
+      const config = opts.config ?? (await loadCosenseSiteConfig(opts.configFile));
+      const base = normalizeBase(config.site.base).replace(/\/$/, "");
+      const data = await vendorIcons(built, {
+        dir: join(process.cwd(), "public", "cosense-icons"),
+        baseUrl: `${base}/cosense-icons`,
+        onWarn: (m) => logger.warn(m),
+      });
 
       store.clear();
       for (const page of data.pages) {

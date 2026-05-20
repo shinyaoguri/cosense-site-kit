@@ -31,6 +31,12 @@ export { pageSchema, emptySiteStructure, SCHEMA_VERSION } from "./schema";
 // ── Pipeline (consumed by the Astro integration and the CLI) ─────────────
 export { buildIntermediate, writeIntermediate } from "./pipeline";
 
+// ── Asset vendoring (consumed by the Astro integration) ──────────────────
+// Downloads `[name.icon]` images at build time so the site serves its own
+// copies instead of hot-linking scrapbox.io (which blocks cross-origin <img>
+// via Cross-Origin-Resource-Policy).
+export { vendorIcons, type VendorIconsOptions } from "./assets/icons";
+
 // ── Diagnostics (consumed by the CLI) ────────────────────────────────────
 export { runDoctor, type DoctorCheck } from "./doctor";
 
