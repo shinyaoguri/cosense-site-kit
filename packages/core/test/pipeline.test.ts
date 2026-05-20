@@ -98,6 +98,14 @@ describe("slug + link + backlink resolution", () => {
     expect(slugged?.slug).toBe("research");
   });
 
+  it("strips leading dots so dot-titled pages get a host-servable slug", () => {
+    const pages = [
+      normalizePage(rawPage({ id: "1", title: ".site page", text: ".site page\n#publish" }), "p"),
+    ];
+    const [slugged] = assignSlugs(pages, { slug: "encoded-title" });
+    expect(slugged?.slug).toBe("site_page");
+  });
+
   it("computes backlinks and slug-based link graph in one pass", () => {
     const pages = [
       normalizePage(rawPage({ id: "1", title: "A", text: "A\n#publish\nsee [B]" }), "p"),

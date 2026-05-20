@@ -33,7 +33,10 @@ export function assignSlugs(
 ): CosenseSitePage[] {
   const used = new Set<string>();
   return pages.map((page) => {
-    const base = computeSlug(page, routing.slug) || encodeTitle(page.title);
+    const base =
+      hostSafeSlug(computeSlug(page, routing.slug)) ||
+      hostSafeSlug(encodeTitle(page.title)) ||
+      page.id;
     let slug = base;
     let i = 2;
     while (used.has(slug)) {
@@ -61,6 +64,16 @@ export function normalizeBase(base: string): string {
 export function pathFor(slug: string, base = "/"): string {
   const encoded = slug.split("/").map(encodeURIComponent).join("/");
   return `${normalizeBase(base)}${encoded}`;
+}
+
+// GitHub Pages (and most static hosts/CDNs) refuse to serve URL segments that
+// begin with a dot — they look like hidden dotfiles — so a page titled ".foo"
+// would 404 despite being generated. Strip leading dots from each path segment.
+function hostSafeSlug(slug: string): string {
+  return slug
+    .split("/")
+    .map((seg) => seg.replace(/^\.+/, ""))
+    .join("/");
 }
 
 function encodeTitle(title: string): string {
