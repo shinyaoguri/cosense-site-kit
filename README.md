@@ -187,6 +187,42 @@ const TEMPLATES = { page: Page, profile: Profile, landing: Landing };
 
 他のテーマを作りたい場合は [docs/THEMES.md](./docs/THEMES.md) を参照。`@cosense-site-kit/theme-utils` の共有コンポーネント（`Inline.astro` / `PageContent.astro` / `Backlinks.astro` / `KaTeXLink.astro`）を再利用すれば、Layout と CSS を書くだけで自前テーマが立ち上がります。
 
+### スキン（preset）
+
+配色やフォントだけを変える「着せ替え」は、**新しいテーマパッケージを作らず preset で行います**。preset は `:root` の CSS 変数（デザイントークン）を上書きするだけのデータで、`.astro` を一切書く必要がありません。新テンプレと違って描画ロジックを複製しないので、保守コストが増えません。
+
+```ts
+// astro.config.ts
+import themeDefault, { presetDark } from "@cosense-site-kit/theme-default";
+
+export default defineConfig({
+  integrations: [
+    cosense({ configFile: "./cosense.config.ts" }),
+    themeDefault({ preset: presetDark }),   // ダークスキン
+  ],
+});
+```
+
+`preset` に渡せる形:
+
+| フィールド | 用途 |
+|---|---|
+| `tokens` | `:root` の CSS 変数上書き（例 `{ "--color-bg": "#191919" }`）。`<html>` のインライン style として注入されるので stylesheet の順序に関係なく確実に勝つ |
+| `colorScheme` | `"light"` / `"dark"`。`<html>` の color-scheme を設定し、スクロールバー等ネイティブ UI の配色を合わせる |
+| `fontHref` | フォントの stylesheet URL を差し替える（`--font-*` トークンと併用） |
+| `options` | nav / copyright などテーマ options の既定値。直接渡した options が優先 |
+
+同梱 preset は `presetDark`（Notion 風の暖色を保ったダーク）。独自スキンは preset オブジェクトを書いて `preset:` に渡すだけです:
+
+```ts
+themeDefault({
+  preset: {
+    name: "sepia",
+    tokens: { "--color-bg": "#faf4e8", "--color-text": "#433422" },
+  },
+});
+```
+
 ### doctor のサポート
 
 `cosense-site doctor` は使われているテンプレートの内訳と、`.site` の `templates:` マッピングが解決するかを検証します:

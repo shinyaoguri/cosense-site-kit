@@ -1,5 +1,5 @@
-import type { AstroIntegration } from "astro";
 import { fileURLToPath } from "node:url";
+import type { AstroIntegration } from "astro";
 
 export interface ThemeDefaultNavItem {
   label: string;
@@ -28,19 +28,65 @@ export interface ThemeDefaultOptions {
   copyright?: string;
   /** When set, the copyright holder is rendered as a link to this URL. */
   copyrightUrl?: string;
+  /**
+   * Visual skin. A preset recolors the theme by overriding the `:root` CSS
+   * custom properties (and optionally fonts) — no new templates. Its `options`
+   * act as defaults; options passed directly here win. See `presetDark`.
+   */
+  preset?: ThemeDefaultPreset;
+}
+
+/**
+ * A skin for theme-default: pure data, no new .astro. Recolors the theme by
+ * overriding the design tokens declared in styles/global.css `:root`.
+ */
+export interface ThemeDefaultPreset {
+  /** Identifier (e.g. "dark"). Informational; surfaced to a future catalog. */
+  name?: string;
+  /** CSS custom property overrides, e.g. `{ "--color-bg": "#191919" }`. */
+  tokens?: Record<string, string>;
+  /** Sets `<html>` color-scheme so native UI (scrollbars, form fields) matches. */
+  colorScheme?: "light" | "dark";
+  /** Replace the built-in M PLUS font stylesheet. Pair with `--font-*` tokens. */
+  fontHref?: string;
+  /** Default theme options the preset ships with; explicit options override. */
+  options?: Omit<ThemeDefaultOptions, "preset">;
+}
+
+/** Shape injected into templates via virtual:cosense-theme-default/options. */
+export interface ThemeDefaultRuntimeOptions {
+  nav: ThemeDefaultNavItem[];
+  homePage?: string;
+  siteTitle?: string;
+  copyright?: string;
+  copyrightUrl?: string;
+  tokens: Record<string, string>;
+  colorScheme?: "light" | "dark";
+  fontHref?: string;
 }
 
 const VIRTUAL_ID = "virtual:cosense-theme-default/options";
 const VIRTUAL_RESOLVED = `\0${VIRTUAL_ID}`;
 
-export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroIntegration {
-  const options: Required<Pick<ThemeDefaultOptions, "nav">> & ThemeDefaultOptions = {
-    nav: opts.nav ?? [],
-    homePage: opts.homePage,
-    siteTitle: opts.siteTitle,
-    copyright: opts.copyright,
-    copyrightUrl: opts.copyrightUrl,
+// Merge user options with the chosen preset. Explicit options win; the preset's
+// own options fill the gaps. tokens/colorScheme/fontHref come from the preset.
+// Pure and exported so it can be unit-tested without spinning up Astro.
+export function resolveThemeOptions(opts: ThemeDefaultOptions = {}): ThemeDefaultRuntimeOptions {
+  const base = opts.preset?.options ?? {};
+  return {
+    nav: opts.nav ?? base.nav ?? [],
+    homePage: opts.homePage ?? base.homePage,
+    siteTitle: opts.siteTitle ?? base.siteTitle,
+    copyright: opts.copyright ?? base.copyright,
+    copyrightUrl: opts.copyrightUrl ?? base.copyrightUrl,
+    tokens: opts.preset?.tokens ?? {},
+    colorScheme: opts.preset?.colorScheme,
+    fontHref: opts.preset?.fontHref,
   };
+}
+
+export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroIntegration {
+  const options = resolveThemeOptions(opts);
 
   return {
     name: "@cosense-site-kit/theme-default",
@@ -67,7 +113,7 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
   };
 }
 
-function virtualOptionsPlugin(options: ThemeDefaultOptions) {
+function virtualOptionsPlugin(options: ThemeDefaultRuntimeOptions) {
   return {
     name: "cosense-theme-default-virtual-options",
     resolveId(id: string) {
@@ -82,3 +128,5 @@ function virtualOptionsPlugin(options: ThemeDefaultOptions) {
     },
   };
 }
+
+export { presetDark } from "./presets/dark";

@@ -24,19 +24,34 @@ const siteTitle =
 const fullTitle = siteTitle && siteTitle !== title ? `${title} | ${siteTitle}` : title;
 const metaDescription = description ?? site?.description ?? "";
 const lang = site?.lang ?? "ja";
+
+// Preset (skin) support. Token overrides go on the <html> inline style so they
+// beat the :root defaults in global.css regardless of stylesheet order; fonts
+// are preset-driven because they load via a <link>, not a CSS variable alone.
+const { tokens = {}, colorScheme, fontHref } = options;
+const htmlStyle = [
+  colorScheme ? `color-scheme:${colorScheme}` : null,
+  ...Object.entries(tokens).map(([k, v]) => `${k}:${v}`),
+]
+  .filter(Boolean)
+  .join(";");
 ---
 <!doctype html>
-<html lang={lang}>
+<html lang={lang} data-theme={colorScheme ?? undefined} style={htmlStyle || undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     {metaDescription && <meta name="description" content={metaDescription} />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=M+PLUS+1+Code:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    {fontHref ? (
+      <link href={fontHref} rel="stylesheet" />
+    ) : (
+      <link
+        href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=M+PLUS+1+Code:wght@400;500&display=swap"
+        rel="stylesheet"
+      />
+    )}
     <KaTeXLink />
     <title>{fullTitle}</title>
   </head>

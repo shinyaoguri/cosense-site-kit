@@ -32,6 +32,9 @@
   --color-tag-bg: rgb(135 131 120 / 0.15);
   --color-tag-text: #6f6e69;
 
+  /* Sticky header backdrop (semi-transparent over the page) */
+  --color-header-bg: rgb(255 255 255 / 0.78);
+
   /* Sizes */
   --width-content: 46rem;
   --width-narrow: 36rem;
@@ -93,7 +96,7 @@ h1, h2, h3, h4, h5, h6 {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgb(255 255 255 / 0.78);
+  background: var(--color-header-bg);
   backdrop-filter: saturate(180%) blur(8px);
   -webkit-backdrop-filter: saturate(180%) blur(8px);
   border-bottom: 1px solid var(--color-border);

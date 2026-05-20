@@ -10,6 +10,9 @@ declare module "virtual:cosense-theme-default/options" {
     siteTitle?: string;
     copyright?: string;
     copyrightUrl?: string;
+    tokens: Record<string, string>;
+    colorScheme?: "light" | "dark";
+    fontHref?: string;
   }
   const options: ThemeDefaultRuntimeOptions;
   export default options;
