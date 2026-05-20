@@ -1,6 +1,6 @@
 {
   "name": "@cosense-site-kit/theme-utils",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Shared runtime helpers for cosense-site-kit themes",
   "license": "MIT",
   "type": "module",
@@ -13,7 +13,10 @@
     },
     "./components/*": "./src/components/*"
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -23,12 +26,15 @@
     "astro": "^5.0.0 || ^6.0.0"
   },
   "dependencies": {
-    "@cosense-site-kit/core": "*",
+    "@cosense-site-kit/core": "^0.1.0",
     "katex": "^0.16.11"
   },
   "devDependencies": {
     "astro": "^6.0.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

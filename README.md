@@ -4,6 +4,8 @@
 
 Cosense で執筆 → Cloudflare Workers Static Assets または GitHub Pages に公開、ビルドは GitHub Actions の cron が定期実行。
 
+> 本プロジェクトは非公式のコミュニティ製ツールであり、Cosense およびその運営会社とは提携・関係はありません。「Cosense」は各権利者の商標です。
+
 > ステータス: pre-1.0。MVP は実プロジェクトに対して end-to-end で動作確認済み。
 >
 > **ライブ例**: 公式ドキュメントサイト自身が cosense-site-kit で生成されています — <https://shinyaoguri.github.io/cosense-site-kit/> （データソース: <https://scrapbox.io/cosense-site-kit/>、設定: [site/](site/)）

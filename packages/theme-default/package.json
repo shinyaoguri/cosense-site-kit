@@ -1,6 +1,6 @@
 {
   "name": "@cosense-site-kit/theme-default",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Default theme for cosense-site-kit",
   "license": "MIT",
   "type": "module",
@@ -15,7 +15,13 @@
     "./templates/*": "./src/templates/*",
     "./styles/*": "./src/styles/*"
   },
-  "files": ["dist", "src/components", "src/templates", "src/styles", "src/virtual"],
+  "files": [
+    "dist",
+    "src/components",
+    "src/templates",
+    "src/styles",
+    "src/virtual"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -25,12 +31,15 @@
     "astro": "^5.0.0 || ^6.0.0"
   },
   "dependencies": {
-    "@cosense-site-kit/core": "*",
-    "@cosense-site-kit/theme-utils": "*"
+    "@cosense-site-kit/core": "^0.1.0",
+    "@cosense-site-kit/theme-utils": "^0.1.0"
   },
   "devDependencies": {
     "astro": "^6.0.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -11,10 +11,10 @@
     "validate": "cosense-site validate"
   },
   "dependencies": {
-    "@cosense-site-kit/astro": "^0.0.0",
-    "@cosense-site-kit/cli": "^0.0.0",
-    "@cosense-site-kit/core": "^0.0.0",
-    "@cosense-site-kit/theme-default": "^0.0.0",
-    "astro": "^5.0.0"
+    "@cosense-site-kit/astro": "^0.1.0",
+    "@cosense-site-kit/cli": "^0.1.0",
+    "@cosense-site-kit/core": "^0.1.0",
+    "@cosense-site-kit/theme-default": "^0.1.0",
+    "astro": "^6.0.0"
   }
 }
