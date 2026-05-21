@@ -1,6 +1,6 @@
 {
   "name": "@cosense-site-kit/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "cosense-site CLI",
   "license": "MIT",
   "type": "module",
