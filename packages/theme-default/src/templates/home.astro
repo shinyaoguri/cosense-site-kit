@@ -4,7 +4,7 @@ import options from "virtual:cosense-theme-default/options";
 import site from "virtual:cosense-site-kit/site";
 import Layout from "../components/Layout.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
-import { loadStructure, loadTitleToSlug, path } from "@cosense-site-kit/theme-utils";
+import { formatDate, loadStructure, loadTitleToSlug, path } from "@cosense-site-kit/theme-utils";
 
 const structure = await loadStructure();
 const titleToSlug = await loadTitleToSlug();
@@ -67,7 +67,7 @@ const siteDescription = site?.description;
           {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
           {entry.data.publishedAt && (
             <time class="updated" datetime={entry.data.publishedAt}>
-              {new Date(entry.data.publishedAt).toISOString().slice(0, 10)}
+              {formatDate(entry.data.publishedAt)}
             </time>
           )}
         </li>

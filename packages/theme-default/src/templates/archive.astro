@@ -1,7 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import Layout from "../components/Layout.astro";
-import { loadStructure, path } from "@cosense-site-kit/theme-utils";
+import { formatDate, loadStructure, path } from "@cosense-site-kit/theme-utils";
 
 const structure = await loadStructure();
 
@@ -29,7 +29,7 @@ const posts = postTag
             {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
             {entry.data.publishedAt && (
               <time class="updated" datetime={entry.data.publishedAt}>
-                {new Date(entry.data.publishedAt).toISOString().slice(0, 10)}
+                {formatDate(entry.data.publishedAt)}
               </time>
             )}
           </li>

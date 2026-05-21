@@ -11,20 +11,16 @@ export interface GithubActionsOptions {
    * Default: "." (repo root).
    */
   workingDirectory?: string;
-  /**
-   * When true, inject `npm run build` at the repo root before fetch so
-   * workspace packages with unbuilt dist/ get compiled. Required when the
-   * site consumes local workspace packages (i.e. inside this monorepo).
-   * Default: true when workingDirectory is set, false otherwise.
-   */
-  buildWorkspaces?: boolean;
 }
 
 export function generateGithubActionsWorkflow(opts: GithubActionsOptions): string {
   const schedule = opts.schedule ?? "17 1,13 * * *";
   const nodeVersion = opts.nodeVersion ?? 24;
   const wd = opts.workingDirectory && opts.workingDirectory !== "." ? opts.workingDirectory : null;
-  const buildWorkspaces = opts.buildWorkspaces ?? wd !== null;
+  // Build local workspace packages before fetch only inside a monorepo (i.e.
+  // when the site lives in a subdirectory); single-package consumers install
+  // the framework from npm with dist/ already present.
+  const buildWorkspaces = wd !== null;
 
   if (opts.target === "github-pages") {
     return renderPagesWorkflow({
@@ -76,7 +72,9 @@ function renderRunSteps(): string {
 }
 
 function renderCloudflareWorkflow(a: RenderArgs): string {
-  const wd = a.workingDirectory ? `\n    defaults:\n      run:\n        working-directory: ${a.workingDirectory}` : "";
+  const wd = a.workingDirectory
+    ? `\n    defaults:\n      run:\n        working-directory: ${a.workingDirectory}`
+    : "";
   const cachePath = a.workingDirectory ? `${a.workingDirectory}/.cosense-cache` : ".cosense-cache";
 
   return `name: Build and deploy
@@ -121,7 +119,9 @@ ${a.buildWorkspaces ? renderMonorepoRunSteps() : renderRunSteps()}
 }
 
 function renderPagesWorkflow(a: RenderArgs): string {
-  const wd = a.workingDirectory ? `\n    defaults:\n      run:\n        working-directory: ${a.workingDirectory}` : "";
+  const wd = a.workingDirectory
+    ? `\n    defaults:\n      run:\n        working-directory: ${a.workingDirectory}`
+    : "";
   const cachePath = a.workingDirectory ? `${a.workingDirectory}/.cosense-cache` : ".cosense-cache";
   const distPath = a.workingDirectory ? `./${a.workingDirectory}/dist` : "./dist";
 

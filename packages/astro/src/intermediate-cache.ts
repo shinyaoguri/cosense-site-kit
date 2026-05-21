@@ -1,25 +1,16 @@
 import {
   buildIntermediate,
-  loadCosenseSiteConfig,
-  type CosenseSiteConfig,
   type IntermediateData,
+  loadCosenseSiteConfig,
 } from "@cosense-site-kit/core";
-
-export interface SharedIntermediateOptions {
-  configFile?: string;
-  config?: CosenseSiteConfig;
-  cacheDir?: string;
-  force?: boolean;
-}
+import type { CosenseLoaderOptions } from "./loader";
 
 // Module-level memo so the cosense() integration and both content loaders
 // share a single buildIntermediate() invocation per process. Keyed on the
 // loader-args JSON so multiple sites in one Astro install stay isolated.
 let memo: { key: string; data: Promise<IntermediateData> } | null = null;
 
-export function getSharedIntermediate(
-  opts: SharedIntermediateOptions,
-): Promise<IntermediateData> {
+export function getSharedIntermediate(opts: CosenseLoaderOptions): Promise<IntermediateData> {
   const key = JSON.stringify({
     configFile: opts.configFile,
     config: opts.config,

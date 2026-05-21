@@ -3,7 +3,7 @@ import type { CollectionEntry } from "astro:content";
 import Layout from "../components/Layout.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
-import { isPublicTag, path } from "@cosense-site-kit/theme-utils";
+import { formatDate, isPublicTag, path } from "@cosense-site-kit/theme-utils";
 
 interface Props {
   entry: CollectionEntry<"pages">;
@@ -12,9 +12,8 @@ interface Props {
 const { entry } = Astro.props;
 const page = entry.data;
 
-const day = (iso?: string) => (iso ? new Date(iso).toISOString().slice(0, 10) : undefined);
-const publishedDay = day(page.publishedAt);
-const updatedDay = day(page.modifiedAt);
+const publishedDay = formatDate(page.publishedAt);
+const updatedDay = formatDate(page.modifiedAt);
 // Only show the updated date when it actually differs from the publish date,
 // so a page edited the same day it was published shows a single date.
 const showUpdated = updatedDay && updatedDay !== publishedDay;
