@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { blockSchema, type CosenseBlock } from "./block";
-import { siteStructureSchema, type SiteStructure } from "./site-structure";
+import { type SiteStructure, siteStructureSchema } from "./site-structure";
 
 export interface CosenseSitePage {
   schemaVersion: "1";
@@ -32,9 +32,6 @@ export interface CosenseSitePage {
   backlinks: string[];
   authors?: string[];
   blocks: CosenseBlock[];
-  raw?: {
-    text?: string;
-  };
 }
 
 export const pageSchema = z.object({
@@ -54,11 +51,6 @@ export const pageSchema = z.object({
   backlinks: z.array(z.string()),
   authors: z.array(z.string()).optional(),
   blocks: z.array(blockSchema),
-  raw: z
-    .object({
-      text: z.string().optional(),
-    })
-    .optional(),
 });
 
 // Inferred from the schema so fields with `.default()` (inside SiteStructure)

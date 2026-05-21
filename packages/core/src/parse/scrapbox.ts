@@ -1,7 +1,8 @@
-import { parse as scrapboxParse } from "@progfay/scrapbox-parser";
 import type { Block as SbBlock, Node as SbNode } from "@progfay/scrapbox-parser";
+import { parse as scrapboxParse } from "@progfay/scrapbox-parser";
 import type { CosenseBlock } from "../schema/v1/block";
 import type { InlineNode } from "../schema/v1/inline";
+import { dedupe } from "../util/dedupe";
 
 // Wraps @progfay/scrapbox-parser and converts its AST to the framework's
 // intermediate AST. The parser's types are NEVER exposed outside this file.
@@ -117,9 +118,7 @@ function appendLineBlock(
   }
 }
 
-function detectHeading(
-  nodes: SbNode[],
-): { depth: 1 | 2 | 3; children: SbNode[] } | null {
+function detectHeading(nodes: SbNode[]): { depth: 1 | 2 | 3; children: SbNode[] } | null {
   // Heading = a line that is a single decoration node with at least one `*-N`
   // where N >= 2. (N=1 is just regular bold, not a heading.)
   if (nodes.length !== 1) return null;
@@ -326,8 +325,4 @@ function resolveIcon(path: string, defaultProject: string): InlineNode {
   }
   const src = `https://scrapbox.io/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(pageTitle)}/icon`;
   return { type: "icon", pageTitle, project, src };
-}
-
-function dedupe<T>(xs: T[]): T[] {
-  return Array.from(new Set(xs));
 }

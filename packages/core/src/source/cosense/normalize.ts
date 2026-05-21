@@ -3,6 +3,7 @@ import { DEFAULT_TEMPLATE } from "../../resolve/template";
 import type { CosenseBlock } from "../../schema/v1/block";
 import type { InlineNode } from "../../schema/v1/inline";
 import type { CosenseSitePage } from "../../schema/v1/page";
+import { dedupe } from "../../util/dedupe";
 import type { SourcePageRaw } from "../types";
 
 // Convert a raw source page into the intermediate model. Links are populated
@@ -29,7 +30,6 @@ export function normalizePage(raw: SourcePageRaw, project: string): CosenseSiteP
     backlinks: [],
     authors: raw.authors,
     blocks: parsed.blocks,
-    raw: { text: raw.text },
   };
 }
 
@@ -83,8 +83,4 @@ function cleanDescription(raw: string | undefined): string | undefined {
   const trimmed = raw.trim();
   if (/^(#\S+\s*)+$/.test(trimmed)) return undefined;
   return trimmed.length > 0 ? trimmed : undefined;
-}
-
-function dedupe<T>(xs: T[]): T[] {
-  return Array.from(new Set(xs));
 }

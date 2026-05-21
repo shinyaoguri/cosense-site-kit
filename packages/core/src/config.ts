@@ -24,9 +24,9 @@ export const cosenseSiteConfigSchema = z.object({
     .prefault({}),
   routing: z
     .object({
-      slug: z.enum(["title", "encoded-title", "metadata-or-encoded-title"]).default(
-        "metadata-or-encoded-title",
-      ),
+      slug: z
+        .enum(["title", "encoded-title", "metadata-or-encoded-title"])
+        .default("metadata-or-encoded-title"),
     })
     .prefault({}),
   siteConfig: z
@@ -36,8 +36,6 @@ export const cosenseSiteConfigSchema = z.object({
       page: z.string().min(1).nullable().default(".site"),
     })
     .prefault({}),
-  theme: z.unknown().optional(),
-  plugins: z.array(z.unknown()).default([]),
   deploy: z
     .object({
       /**

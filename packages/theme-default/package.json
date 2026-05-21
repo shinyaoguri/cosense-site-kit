@@ -42,23 +42,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "cosenseSiteKit": {
-    "kind": "theme",
-    "schemaVersion": "1",
-    "name": "Default",
-    "description": "Neutral, general-purpose theme: page/profile, home, archive, tags, hover TOC.",
-    "skins": [
-      {
-        "id": "light",
-        "name": "Light",
-        "default": true
-      },
-      {
-        "id": "dark",
-        "name": "Dark",
-        "export": "presetDark"
-      }
-    ]
   }
 }

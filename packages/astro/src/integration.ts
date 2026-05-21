@@ -1,12 +1,12 @@
-import type { AstroIntegration } from "astro";
 import {
+  type CosenseSiteConfig,
   emptySiteStructure,
+  loadCosenseSiteConfig,
   normalizeBase,
   pathFor,
-  type CosenseSiteConfig,
   type SiteStructure,
 } from "@cosense-site-kit/core";
-import { loadCosenseSiteConfig } from "./config-loader";
+import type { AstroIntegration } from "astro";
 import { getSharedIntermediate } from "./intermediate-cache";
 
 export interface CosenseIntegrationOptions {
@@ -101,9 +101,7 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
         updateConfig({
           site: config.site.baseUrl,
           vite: {
-            plugins: [
-              virtualSitePlugin(() => ({ site: config.site, structure })),
-            ],
+            plugins: [virtualSitePlugin(() => ({ site: config.site, structure }))],
           },
         });
         if (normalized !== "/") {
@@ -119,9 +117,7 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           logger.info(`cosense: ${Object.keys(redirects).length} redirect(s) wired`);
         }
 
-        logger.info(
-          `cosense: site=${config.site.baseUrl}, project=${config.source.project}`,
-        );
+        logger.info(`cosense: site=${config.site.baseUrl}, project=${config.source.project}`);
       },
     },
   };
