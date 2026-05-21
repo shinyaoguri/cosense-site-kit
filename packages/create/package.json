@@ -1,6 +1,6 @@
 {
   "name": "create-cosense-site",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Scaffold a new cosense-site-kit project by fetching a starter template repo",
   "license": "MIT",
   "type": "module",
