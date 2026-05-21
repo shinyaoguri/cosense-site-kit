@@ -1,6 +1,6 @@
 {
   "name": "create-cosense-site",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Scaffold a new cosense-site-kit project",
   "license": "MIT",
   "type": "module",
