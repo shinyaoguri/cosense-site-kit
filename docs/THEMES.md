@@ -270,6 +270,9 @@ const TEMPLATES: Record<string, typeof Page> = {
   cv: Cv,
 };
 
+// この getStaticPaths 定型は theme-utils の `pagePaths()` で共通化できます:
+//   import { pagePaths } from "@cosense-site-kit/theme-utils";
+//   export const getStaticPaths = () => pagePaths();
 export async function getStaticPaths() {
   const pages = await getCollection("pages");
   return pages.map((entry) => ({
@@ -307,13 +310,12 @@ const Template = isBlogPost
 
 ```ts
 // src/index.ts
+import { optionsVirtualModule } from "@cosense-site-kit/theme-utils/integration";
+
 export interface MyThemeOptions {
   siteTitle?: string;
   nav?: { label: string; page?: string; href?: string }[];
 }
-
-const VIRTUAL_ID = "virtual:my-theme/options";
-const VIRTUAL_RESOLVED = `\0${VIRTUAL_ID}`;
 
 export default function myTheme(opts: MyThemeOptions = {}): AstroIntegration {
   const options = {
@@ -325,31 +327,19 @@ export default function myTheme(opts: MyThemeOptions = {}): AstroIntegration {
     name: "my-theme",
     hooks: {
       "astro:config:setup": ({ injectRoute, updateConfig }) => {
+        // theme-utils builds the virtual-module Vite plugin for you, so every
+        // theme shares the same plumbing instead of copy-pasting it.
         updateConfig({
-          vite: { plugins: [virtualOptionsPlugin(options)] },
+          vite: { plugins: [optionsVirtualModule("virtual:my-theme/options", options)] },
         });
         // ... injectRoute calls ...
       },
     },
   };
 }
-
-function virtualOptionsPlugin(options: unknown) {
-  return {
-    name: "my-theme-virtual-options",
-    resolveId(id: string) {
-      if (id === VIRTUAL_ID) return VIRTUAL_RESOLVED;
-      return null;
-    },
-    load(id: string) {
-      if (id === VIRTUAL_RESOLVED) {
-        return `export default ${JSON.stringify(options)};`;
-      }
-      return null;
-    },
-  };
-}
 ```
+
+> `optionsVirtualModule` / `pagePaths` は `@cosense-site-kit/theme-utils/integration` ・ `@cosense-site-kit/theme-utils` から import できる**共有プラミング**です。theme-default も同じものを使っており、テーマ固有のボイラープレートは要りません。
 
 これでテンプレート側から:
 

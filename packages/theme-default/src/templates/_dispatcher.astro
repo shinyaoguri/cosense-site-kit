@@ -1,5 +1,6 @@
 ---
-import { getCollection, type CollectionEntry } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+import { pagePaths } from "@cosense-site-kit/theme-utils";
 import Page from "./page.astro";
 import Profile from "./profile.astro";
 
@@ -13,11 +14,7 @@ const TEMPLATES: Record<string, typeof Page> = {
 };
 
 export async function getStaticPaths() {
-  const pages = await getCollection("pages");
-  return pages.map((entry) => ({
-    params: { slug: entry.data.slug },
-    props: { entry },
-  }));
+  return pagePaths();
 }
 
 const { entry } = Astro.props as { entry: CollectionEntry<"pages"> };

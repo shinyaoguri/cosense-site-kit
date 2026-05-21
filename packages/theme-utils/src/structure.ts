@@ -24,10 +24,7 @@ export async function loadStructure(): Promise<SiteStructure> {
 export async function loadTitleToSlug(): Promise<Map<string, string>> {
   const pages = await getCollection(PAGES_COLLECTION as never);
   return new Map(
-    (pages as { data: { title: string; slug: string } }[]).map((e) => [
-      e.data.title,
-      e.data.slug,
-    ]),
+    (pages as { data: { title: string; slug: string } }[]).map((e) => [e.data.title, e.data.slug]),
   );
 }
 
@@ -60,4 +57,18 @@ export function navHref(
 // import.meta.env.BASE_URL is "/" by default and reflects site.base when set.
 export function path(slug: string): string {
   return pathFor(slug, import.meta.env.BASE_URL);
+}
+
+// getStaticPaths for a per-page route (the `/[...slug]` dispatcher): one path
+// per published page, keyed by slug, with the entry passed as a prop. Themes
+// do `export async function getStaticPaths() { return pagePaths(); }` instead
+// of rewriting the getCollection().map(...) boilerplate in every theme.
+export async function pagePaths(): Promise<
+  { params: { slug: string }; props: { entry: { data: { slug: string } } } }[]
+> {
+  const pages = await getCollection(PAGES_COLLECTION as never);
+  return (pages as { data: { slug: string } }[]).map((entry) => ({
+    params: { slug: entry.data.slug },
+    props: { entry },
+  }));
 }

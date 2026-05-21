@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { optionsVirtualModule } from "@cosense-site-kit/theme-utils/integration";
 import type { AstroIntegration } from "astro";
 
 export interface ThemeDefaultNavItem {
@@ -66,7 +67,6 @@ export interface ThemeDefaultRuntimeOptions {
 }
 
 const VIRTUAL_ID = "virtual:cosense-theme-default/options";
-const VIRTUAL_RESOLVED = `\0${VIRTUAL_ID}`;
 
 // Merge user options with the chosen preset. Explicit options win; the preset's
 // own options fill the gaps. tokens/colorScheme/fontHref come from the preset.
@@ -94,7 +94,7 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
       "astro:config:setup": ({ injectRoute, updateConfig }) => {
         updateConfig({
           vite: {
-            plugins: [virtualOptionsPlugin(options)],
+            plugins: [optionsVirtualModule(VIRTUAL_ID, options)],
           },
         });
 
@@ -109,22 +109,6 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
         // (templates/page.astro by default, others via #template/<name>).
         injectRoute({ pattern: "/[...slug]", entrypoint: here("templates/_dispatcher.astro") });
       },
-    },
-  };
-}
-
-function virtualOptionsPlugin(options: ThemeDefaultRuntimeOptions) {
-  return {
-    name: "cosense-theme-default-virtual-options",
-    resolveId(id: string) {
-      if (id === VIRTUAL_ID) return VIRTUAL_RESOLVED;
-      return null;
-    },
-    load(id: string) {
-      if (id === VIRTUAL_RESOLVED) {
-        return `export default ${JSON.stringify(options)};`;
-      }
-      return null;
     },
   };
 }
