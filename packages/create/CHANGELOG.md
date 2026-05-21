@@ -1,0 +1,12 @@
+# create-cosense-site
+
+## 0.2.0
+
+### Minor Changes
+
+- b68984c: Add a theme/skin catalog. `create-cosense-site --theme <id> --skin <id>` (plus an interactive skin picker) scaffolds with the chosen look — e.g. `--skin dark` wires `themeDefault({ preset: presetDark })` into the generated `astro.config.ts`. The catalog in `packages/create/src/catalog.ts` is the single source of truth driving both the picker and the generated config + package.json dependency; adding an official theme/skin is a data edit plus a test, no picker code.
+- 5fe1058: `create-cosense-site --theme` now accepts any published npm theme package, not just featured ids. A theme declares a `cosenseSiteKit` block in its package.json (`{ kind, schemaVersion, skins }`); create reads it via `npm view` and wires `astro.config.ts` + the dependency — no core-repo edit or central registry needed. Featured ids (e.g. `default`) remain as curated shortcuts. theme-default ships this metadata.
+
+### Patch Changes
+
+- f9e4de8: theme-lab is no longer a bundled package or a `--theme lab` featured shortcut. Themes are distributed as template repositories that vendor the theme source (framework from npm), so the lab theme now lives in its own template repo (cosense-site-lab). `create --theme default` and `--theme <npm-pkg>` are unaffected.
