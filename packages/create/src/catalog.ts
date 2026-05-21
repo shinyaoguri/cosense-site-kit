@@ -139,3 +139,53 @@ export function buildThemeWiring(theme: CatalogTheme, skin: CatalogSkin): ThemeW
     integration: `${theme.integration}()`,
   };
 }
+
+// ── External (third-party) themes ──────────────────────────────────────────
+// Any npm package can be a theme: it default-exports an Astro Integration,
+// depends on @cosense-site-kit/core + theme-utils, and declares this metadata
+// under a "cosenseSiteKit" key in its package.json. `create --theme <pkg>`
+// reads it (via `npm view`) and wires the package just like a featured theme —
+// no core-repo edit, no central registry.
+export interface ThemePackageMeta {
+  kind: "theme";
+  /** Intermediate schema version the theme consumes. */
+  schemaVersion: "1";
+  /** Display label / one-line description for the picker (optional). */
+  name?: string;
+  description?: string;
+  /** Selectable skins; a skin's `export` names a preset to pass as `preset:`. */
+  skins?: { id: string; name?: string; export?: string; default?: boolean }[];
+}
+
+// Synthesize a CatalogTheme from an npm package's name/version + its declared
+// metadata. The integration is assumed to be the package's default export and
+// is bound locally as `theme` in the generated astro.config.ts.
+export function themeFromMetadata(
+  pkg: string,
+  version: string,
+  meta: ThemePackageMeta,
+): CatalogTheme {
+  const skins: CatalogSkin[] =
+    meta.skins && meta.skins.length > 0
+      ? meta.skins.map((s) => ({
+          id: s.id,
+          name: s.name ?? s.id,
+          export: s.export,
+          default: s.default,
+        }))
+      : [{ id: "light", name: "Light", default: true }];
+  // Guarantee exactly one default skin.
+  if (!skins.some((s) => s.default) && skins[0]) skins[0].default = true;
+  const range = /^[\^~]/.test(version) ? version : `^${version}`;
+  return {
+    id: pkg,
+    name: meta.name ?? pkg,
+    package: pkg,
+    version: range,
+    integration: "theme",
+    description: meta.description ?? "",
+    schemaVersion: meta.schemaVersion,
+    kind: "theme",
+    skins,
+  };
+}

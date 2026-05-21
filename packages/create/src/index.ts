@@ -1,10 +1,20 @@
+import { execFileSync } from "node:child_process";
 import { cp, mkdir, readdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import pc from "picocolors";
 import prompts from "prompts";
-import { buildThemeWiring, type CatalogTheme, catalog, resolveSkin, resolveTheme } from "./catalog";
+import {
+  buildThemeWiring,
+  type CatalogTheme,
+  catalog,
+  findTheme,
+  resolveSkin,
+  resolveTheme,
+  type ThemePackageMeta,
+  themeFromMetadata,
+} from "./catalog";
 
 export const VERSION = "0.0.0";
 
@@ -32,9 +42,9 @@ async function main(): Promise<void> {
 
   const argDir = positionals[0];
 
-  // Resolve the theme: an explicit `--theme` wins (and fails loudly on a typo);
-  // otherwise the interactive picker offers the catalog when there's more than
-  // one theme, falling back to the first.
+  // Resolve the theme: `--theme` takes a featured id (e.g. "default") or any
+  // published npm theme package; otherwise the interactive picker offers the
+  // featured themes, falling back to the first.
   const theme = await resolveThemeChoice(values.theme, !values.yes);
 
   const fromFlags = {
@@ -92,14 +102,14 @@ interface FlagAnswers extends Partial<Answers> {
   skin?: string;
 }
 
-// Pick the theme: an explicit flag wins; otherwise prompt only when the catalog
-// has more than one theme. Falls back to the first theme (no-prompt single-theme
-// case and --yes).
+// Pick the theme: an explicit flag wins — a featured id (e.g. "default") or any
+// published npm theme package. Otherwise prompt over featured themes when there
+// is more than one. Falls back to the first featured theme (single-theme + --yes).
 async function resolveThemeChoice(
   themeFlag: string | undefined,
   interactive: boolean,
 ): Promise<CatalogTheme> {
-  if (themeFlag) return resolveTheme(themeFlag);
+  if (themeFlag) return findTheme(themeFlag) ?? resolveExternalTheme(themeFlag);
   if (interactive && catalog.themes.length > 1) {
     const { theme } = (await prompts(
       {
@@ -117,6 +127,34 @@ async function resolveThemeChoice(
     return resolveTheme(theme);
   }
   return resolveTheme();
+}
+
+// Resolve a theme that isn't a featured catalog entry: treat the spec as an npm
+// package and read its `cosenseSiteKit` metadata via `npm view` (no install).
+function resolveExternalTheme(spec: string): CatalogTheme {
+  let raw: string;
+  try {
+    raw = execFileSync("npm", ["view", spec, "name", "version", "cosenseSiteKit", "--json"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch {
+    throw new Error(
+      `Could not fetch "${spec}" from npm. Check the package name (it must be published), or use a featured theme id.`,
+    );
+  }
+  const data = JSON.parse(raw) as {
+    name?: string;
+    version?: string;
+    cosenseSiteKit?: ThemePackageMeta;
+  };
+  const meta = data.cosenseSiteKit;
+  if (!meta || meta.kind !== "theme") {
+    throw new Error(
+      `"${spec}" is not a cosense-site-kit theme (its package.json needs a "cosenseSiteKit" entry).`,
+    );
+  }
+  return themeFromMetadata(data.name ?? spec, data.version ?? "latest", meta);
 }
 
 async function ask(initial: FlagAnswers, theme: CatalogTheme): Promise<FlagAnswers> {

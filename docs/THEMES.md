@@ -596,34 +596,35 @@ export default defineConfig({
 
 ---
 
-## カタログに登録する
+## 配布と発見（メタデータ契約）
 
-公式テーマとスキンは [`packages/create/src/catalog.ts`](../packages/create/src/catalog.ts) のカタログで一元管理されています。これが `create-cosense-site --theme` / `--skin` の唯一の真実で、対話ピッカーと、生成される `astro.config.ts` / `package.json` の依存の両方を駆動します。
+テーマは**独立した npm パッケージ**として配布します。本体リポジトリに入れる必要はありません。`package.json` に `cosenseSiteKit` メタデータを宣言すれば、`create-cosense-site --theme <あなたのパッケージ名>` が `npm view` でそれを読み、`astro.config.ts` と依存を自動配線します。
 
-カタログのエントリは2種類です:
-
-- **theme** — 自前でルートを inject する独立パッケージ（構造が違うもの）
-- **skin** — ベーステーマに preset（CSS トークンのデータ）を当てたもの（配色だけ違うもの）。skin はそのテーマの下にぶら下がる
-
-公式テーマ／スキンを足すときは、このカタログにエントリを1つ追加し、`packages/create/test/catalog.test.ts` にテストを足すだけです。ピッカー側のコードを書く必要はありません。スキンの `export` には preset の名前付きエクスポート（例: `presetDark`）を書きます:
-
-```ts
-{
-  id: "default",
-  name: "Default",
-  package: "@cosense-site-kit/theme-default",
-  version: "^0.1.0",
-  integration: "themeDefault",        // astro.config.ts の default export 関数名
-  schemaVersion: "1",                  // 消費する中間スキーマバージョン
-  kind: "theme",
-  skins: [
-    { id: "light", name: "Light", default: true },
-    { id: "dark", name: "Dark", export: "presetDark" },
-  ],
+```jsonc
+// あなたのテーマの package.json
+"cosenseSiteKit": {
+  "kind": "theme",
+  "schemaVersion": "1",                       // 消費する中間スキーマ
+  "name": "Foo",                              // 任意: ピッカー表示名
+  "description": "...",                       // 任意
+  "skins": [
+    { "id": "light", "default": true },
+    { "id": "dark", "export": "presetDark" }  // export は preset の名前付きエクスポート
+  ]
 }
 ```
 
-将来コミュニティテーマを受け入れる場合も、リモートレジストリが返すべき形はこのカタログと同じです。
+規約:
+
+- Integration は **default export**（`export default function themeFoo(): AstroIntegration`）。`create` はローカル別名 `theme` で import します。
+- skin の `export` は preset の名前付きエクスポート名で、`theme({ preset: presetDark })` のように配線されます。skin が無ければ単一の既定 look。
+- `@cosense-site-kit/core` / `theme-utils` は通常の dependencies、`astro` は peerDependency。
+
+これで第三者は本体に PR せずにテーマを公開でき、利用者は `--theme <pkg>` で使えます。
+
+**発見**はゆるく運用します。公式リポジトリの README にコミュニティテーマへのリンクを並べる程度で十分です（npm キーワード `cosense-site-theme` を付けると検索性が上がります）。
+
+**Featured（おすすめ）テーマ**は [`packages/create/src/catalog.ts`](../packages/create/src/catalog.ts) に短縮 id（`default` 等）として登録され、`--theme default` のように選べます。これは利便のためのキュレーションであってゲートキーパーではありません — 任意のパッケージは上記メタデータ経由で常に使えます。
 
 ## 参考実装
 

@@ -44,5 +44,12 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "cosenseSiteKit": {
+    "kind": "theme",
+    "schemaVersion": "1",
+    "name": "Lab",
+    "description": "University research lab: members, research, publications, news.",
+    "skins": [{ "id": "default", "name": "Default", "default": true }]
   }
 }

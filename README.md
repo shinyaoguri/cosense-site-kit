@@ -188,6 +188,30 @@ const TEMPLATES = { page: Page, profile: Profile, landing: Landing };
 
 他のテーマを作りたい場合は [docs/THEMES.md](./docs/THEMES.md) を参照。`@cosense-site-kit/theme-utils` の共有コンポーネント（`Inline.astro` / `PageContent.astro` / `Backlinks.astro` / `KaTeXLink.astro`）を再利用すれば、Layout と CSS を書くだけで自前テーマが立ち上がります。
 
+### サードパーティのテーマ
+
+テーマは **「`@cosense-site-kit/core` と `theme-utils` に依存する npm パッケージ」** です。本体リポジトリに入れる必要はなく、誰でも自分のリポジトリで作って npm publish できます。`package.json` に `cosenseSiteKit` メタデータを宣言しておけば、**任意の公開テーマをパッケージ名で scaffold** できます:
+
+```bash
+npm create cosense-site my-site --theme @someone/cosense-theme-foo
+```
+
+```jsonc
+// テーマ側の package.json
+"cosenseSiteKit": {
+  "kind": "theme",
+  "schemaVersion": "1",                 // 消費する中間スキーマ
+  "skins": [
+    { "id": "light", "default": true },
+    { "id": "dark", "export": "presetDark" }   // export は preset の名前付きエクスポート
+  ]
+}
+```
+
+`create` は `npm view <pkg> cosenseSiteKit` でこのメタデータを読み、`astro.config.ts` と依存を自動配線します（中央カタログ不要）。発見はゆるく運用します — 既知のコミュニティテーマはここにリンクを並べます（PR 歓迎）:
+
+- _（準備中）_
+
 ### スキン（preset）
 
 配色やフォントだけを変える「着せ替え」は、**新しいテーマパッケージを作らず preset で行います**。preset は `:root` の CSS 変数（デザイントークン）を上書きするだけのデータで、`.astro` を一切書く必要がありません。新テンプレと違って描画ロジックを複製しないので、保守コストが増えません。

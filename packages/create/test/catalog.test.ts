@@ -7,6 +7,8 @@ import {
   findTheme,
   resolveSkin,
   resolveTheme,
+  type ThemePackageMeta,
+  themeFromMetadata,
 } from "../src/catalog";
 
 describe("catalog data", () => {
@@ -88,5 +90,45 @@ describe("buildThemeWiring", () => {
     const w = buildThemeWiring(lab, resolveSkin(lab));
     expect(w.import).toBe('import themeLab from "@cosense-site-kit/theme-lab";');
     expect(w.integration).toBe("themeLab()");
+  });
+});
+
+describe("themeFromMetadata (third-party themes)", () => {
+  const meta: ThemePackageMeta = {
+    kind: "theme",
+    schemaVersion: "1",
+    name: "Foo",
+    skins: [
+      { id: "light", default: true },
+      { id: "dark", export: "presetDark" },
+    ],
+  };
+
+  it("synthesizes a theme bound to the package's default export", () => {
+    const t = themeFromMetadata("@someone/cosense-theme-foo", "1.2.3", meta);
+    expect(t.package).toBe("@someone/cosense-theme-foo");
+    expect(t.version).toBe("^1.2.3"); // bare version gets a caret range
+    expect(t.integration).toBe("theme"); // generic local alias for any package
+    expect(t.name).toBe("Foo");
+    // wiring uses the generic alias + the declared preset export
+    const w = buildThemeWiring(t, resolveSkin(t, "dark"));
+    expect(w.import).toBe('import theme, { presetDark } from "@someone/cosense-theme-foo";');
+    expect(w.integration).toBe("theme({ preset: presetDark })");
+  });
+
+  it("defaults to a single light skin when metadata declares none", () => {
+    const t = themeFromMetadata("x", "^2.0.0", { kind: "theme", schemaVersion: "1" });
+    expect(t.version).toBe("^2.0.0"); // existing range kept as-is
+    expect(t.skins).toHaveLength(1);
+    expect(defaultSkin(t).id).toBe("light");
+  });
+
+  it("forces a default skin when none is marked", () => {
+    const t = themeFromMetadata("y", "0.1.0", {
+      kind: "theme",
+      schemaVersion: "1",
+      skins: [{ id: "a" }, { id: "b" }],
+    });
+    expect(defaultSkin(t).id).toBe("a");
   });
 });
