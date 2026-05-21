@@ -11,9 +11,9 @@
     "validate": "cosense-site validate"
   },
   "dependencies": {
-    "@cosense-site-kit/astro": "^0.1.0",
-    "@cosense-site-kit/cli": "^0.1.0",
-    "@cosense-site-kit/core": "^0.1.0",
+    "@cosense-site-kit/astro": "^0.1.1",
+    "@cosense-site-kit/cli": "^0.1.1",
+    "@cosense-site-kit/core": "^0.2.0",
     "__THEME_PACKAGE__": "__THEME_VERSION__",
     "astro": "^6.0.0"
   }

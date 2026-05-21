@@ -56,7 +56,7 @@ export const catalog: Catalog = {
       id: "default",
       name: "Default",
       package: "@cosense-site-kit/theme-default",
-      version: "^0.1.0",
+      version: "^0.2.0",
       integration: "themeDefault",
       description:
         "Neutral, general-purpose theme: page/profile templates, home, archive, tags, Notion-style hover TOC.",
