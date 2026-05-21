@@ -1,6 +1,6 @@
 {
   "name": "@cosense-site-kit/theme-utils",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Shared runtime helpers for cosense-site-kit themes",
   "license": "MIT",
   "type": "module",
