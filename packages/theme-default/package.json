@@ -36,7 +36,7 @@
     "@cosense-site-kit/theme-utils": "^0.1.0"
   },
   "devDependencies": {
-    "astro": "^6.0.0",
+    "astro": "^6.1.10",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   },
@@ -49,8 +49,16 @@
     "name": "Default",
     "description": "Neutral, general-purpose theme: page/profile, home, archive, tags, hover TOC.",
     "skins": [
-      { "id": "light", "name": "Light", "default": true },
-      { "id": "dark", "name": "Dark", "export": "presetDark" }
+      {
+        "id": "light",
+        "name": "Light",
+        "default": true
+      },
+      {
+        "id": "dark",
+        "name": "Dark",
+        "export": "presetDark"
+      }
     ]
   }
 }
