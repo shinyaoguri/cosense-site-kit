@@ -586,35 +586,30 @@ export default defineConfig({
 
 ---
 
-## 配布と発見（メタデータ契約）
+## 配布と発見（テンプレートリポジトリ）
 
-テーマは**独立した npm パッケージ**として配布します。本体リポジトリに入れる必要はありません。`package.json` に `cosenseSiteKit` メタデータを宣言すれば、`create-cosense-site --theme <あなたのパッケージ名>` が `npm view` でそれを読み、`astro.config.ts` と依存を自動配線します。
+テーマは **テンプレートリポジトリ**として配布します（npm パッケージにする必要はありません）。テーマのソースをリポジトリに同梱（vendored）し、フレームワーク（`@cosense-site-kit/*`）だけを npm 依存にします。利用者は GitHub の「Use this template」、または CLI で取得します:
 
-```jsonc
-// あなたのテーマの package.json
-"cosenseSiteKit": {
-  "kind": "theme",
-  "schemaVersion": "1",                       // 消費する中間スキーマ
-  "name": "Foo",                              // 任意: ピッカー表示名
-  "description": "...",                       // 任意
-  "skins": [
-    { "id": "light", "default": true },
-    { "id": "dark", "export": "presetDark" }  // export は preset の名前付きエクスポート
-  ]
-}
+```bash
+npm create cosense-site my-site --template <user/repo>
 ```
+
+テンプレートリポジトリの構成（[cosense-site-lab](https://github.com/shinyaoguri/cosense-site-lab) が参考実装）:
+
+- `theme/` … テーマのソース（Integration + Layout / templates / styles / lib）。`astro.config.ts` は `import theme from "./theme"` でローカル参照
+- `astro.config.ts` / `cosense.config.ts` / `src/content.config.ts`
+- `.github/workflows/build.yml`（GitHub Pages 等へのデプロイ）
+- `package.json` … `@cosense-site-kit/{astro,cli,core,theme-utils}`（＋テーマが使う `yaml`/`zod` 等）を npm 依存
 
 規約:
 
-- Integration は **default export**（`export default function themeFoo(): AstroIntegration`）。`create` はローカル別名 `theme` で import します。
-- skin の `export` は preset の名前付きエクスポート名で、`theme({ preset: presetDark })` のように配線されます。skin が無ければ単一の既定 look。
+- テーマの Integration は **default export**。`astro.config.ts` でローカルの `./theme` を import して使う。
+- 本文描画は `@cosense-site-kit/theme-utils`（`PageContent` / `Inline`）に委譲する（自前で複製しない）。プラミングは `optionsVirtualModule`（`/integration`）/ `pagePaths` を使う。
 - `@cosense-site-kit/core` / `theme-utils` は通常の dependencies、`astro` は peerDependency。
 
-これで第三者は本体に PR せずにテーマを公開でき、利用者は `--theme <pkg>` で使えます。
+**発見**はゆるく運用します。公式リポジトリの README にテンプレートへのリンクを並べる程度で十分です（GitHub で「Use this template」を有効化し、リポジトリトピックに `cosense-site-template` を付けると見つけやすい）。
 
-**発見**はゆるく運用します。公式リポジトリの README にコミュニティテーマへのリンクを並べる程度で十分です（npm キーワード `cosense-site-theme` を付けると検索性が上がります）。
-
-**Featured（おすすめ）テーマ**は [`packages/create/src/catalog.ts`](../packages/create/src/catalog.ts) に短縮 id（`default` 等）として登録され、`--theme default` のように選べます。これは利便のためのキュレーションであってゲートキーパーではありません — 任意のパッケージは上記メタデータ経由で常に使えます。
+**Featured（おすすめ）テンプレート**は [`packages/create/src/catalog.ts`](../packages/create/src/catalog.ts) に短縮 id（`default` → cosense-site-starter、`lab` → cosense-site-lab）として登録され、`--template default` のように選べます。キュレーションであってゲートキーパーではなく、任意の `user/repo` は常に `--template user/repo` で使えます。
 
 ## 参考実装
 
