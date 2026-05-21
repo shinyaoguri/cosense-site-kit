@@ -1,208 +1,85 @@
 import { execFileSync } from "node:child_process";
-import { cp, mkdir, readdir, readFile, rename, stat, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { mkdir, readdir, rm } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import pc from "picocolors";
 import prompts from "prompts";
-import {
-  buildThemeWiring,
-  type CatalogTheme,
-  catalog,
-  findTheme,
-  resolveSkin,
-  resolveTheme,
-  type ThemePackageMeta,
-  themeFromMetadata,
-} from "./catalog";
+import { resolveTemplate, templates } from "./catalog";
 
 export const VERSION = "0.0.0";
-
-interface Answers {
-  targetDir: string;
-  projectName: string;
-  siteTitle: string;
-  baseUrl: string;
-  cosenseProject: string;
-}
 
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
     allowPositionals: true,
     options: {
-      title: { type: "string" },
-      url: { type: "string" },
-      project: { type: "string" },
-      theme: { type: "string" },
-      skin: { type: "string" },
+      template: { type: "string", short: "t" },
       yes: { type: "boolean", short: "y", default: false },
     },
   });
 
-  const argDir = positionals[0];
+  let dir = positionals[0];
+  let templateSpec = values.template;
 
-  // Resolve the theme: `--theme` takes a featured id (e.g. "default") or any
-  // published npm theme package; otherwise the interactive picker offers the
-  // featured themes, falling back to the first.
-  const theme = await resolveThemeChoice(values.theme, !values.yes);
+  if (!values.yes) {
+    const answers = (await prompts(
+      [
+        {
+          type: dir ? null : "text",
+          name: "dir",
+          message: "Where should we create the site?",
+          initial: "my-cosense-site",
+        },
+        {
+          // Pick a template only when one wasn't named and there's a choice.
+          type: templateSpec || templates.length < 2 ? null : "select",
+          name: "template",
+          message: "Template",
+          choices: templates.map((t) => ({
+            title: t.name,
+            description: t.description,
+            value: t.id,
+          })),
+        },
+      ],
+      { onCancel: () => process.exit(1) },
+    )) as { dir?: string; template?: string };
+    dir = dir ?? answers.dir;
+    templateSpec = templateSpec ?? answers.template;
+  }
 
-  const fromFlags = {
-    targetDir: argDir,
-    siteTitle: values.title,
-    baseUrl: values.url,
-    cosenseProject: values.project,
-    skin: values.skin,
-  };
+  const targetDir = dir ?? "my-cosense-site";
+  const tpl = resolveTemplate(templateSpec);
+  const targetPath = resolve(process.cwd(), targetDir);
 
-  const answers = values.yes ? fromFlags : await ask(fromFlags, theme);
-
-  const final: Answers = {
-    targetDir: answers.targetDir ?? "my-cosense-site",
-    projectName: "",
-    siteTitle: answers.siteTitle ?? "My Cosense Site",
-    baseUrl: answers.baseUrl ?? "https://example.com",
-    cosenseProject: answers.cosenseProject ?? "your-public-project",
-  };
-  final.projectName = final.targetDir.replace(/[^a-z0-9-_]+/gi, "-").toLowerCase();
-
-  const skin = resolveSkin(theme, answers.skin);
-  const wiring = buildThemeWiring(theme, skin);
-
-  const targetPath = resolve(process.cwd(), final.targetDir);
   await ensureEmpty(targetPath);
-
-  const templatePath = resolve(dirname(fileURLToPath(import.meta.url)), "../templates/default");
-
-  await copyTree(templatePath, targetPath);
-  await renameDotfiles(targetPath);
-  await applyPlaceholders(targetPath, {
-    __PROJECT_NAME__: final.projectName,
-    __SITE_TITLE__: final.siteTitle,
-    __BASE_URL__: final.baseUrl,
-    __PROJECT__: final.cosenseProject,
-    __THEME_IMPORT__: wiring.import,
-    __THEME_INTEGRATION__: wiring.integration,
-    __THEME_PACKAGE__: theme.package,
-    __THEME_VERSION__: theme.version,
-  });
+  cloneTemplate(tpl.repo, targetPath);
+  // Drop the template's git history so the new site starts clean (degit-style).
+  await rm(join(targetPath, ".git"), { recursive: true, force: true });
 
   console.log();
   console.log(pc.green("✓ created"), targetPath);
-  console.log(pc.dim(`  theme: ${theme.name} · skin: ${skin.name}`));
+  console.log(pc.dim(`  from ${tpl.name} (${tpl.repo})`));
   console.log();
   console.log("Next:");
-  console.log(pc.cyan(`  cd ${final.targetDir}`));
-  console.log(pc.cyan(`  npm install`));
-  console.log(pc.cyan(`  npm run fetch`));
-  console.log(pc.cyan(`  npm run dev`));
+  console.log(pc.cyan(`  cd ${targetDir}`));
+  console.log(pc.dim("  # edit cosense.config.ts — set source.project to your public Cosense"));
+  console.log(pc.dim("  # project, plus site.title / site.baseUrl"));
+  console.log(pc.cyan("  npm install"));
+  console.log(pc.cyan("  npm run fetch"));
+  console.log(pc.cyan("  npm run dev"));
 }
 
-interface FlagAnswers extends Partial<Answers> {
-  skin?: string;
-}
-
-// Pick the theme: an explicit flag wins — a featured id (e.g. "default") or any
-// published npm theme package. Otherwise prompt over featured themes when there
-// is more than one. Falls back to the first featured theme (single-theme + --yes).
-async function resolveThemeChoice(
-  themeFlag: string | undefined,
-  interactive: boolean,
-): Promise<CatalogTheme> {
-  if (themeFlag) return findTheme(themeFlag) ?? resolveExternalTheme(themeFlag);
-  if (interactive && catalog.themes.length > 1) {
-    const { theme } = (await prompts(
-      {
-        type: "select",
-        name: "theme",
-        message: "Theme",
-        choices: catalog.themes.map((t) => ({
-          title: t.name,
-          description: t.description,
-          value: t.id,
-        })),
-      },
-      { onCancel: () => process.exit(1) },
-    )) as { theme?: string };
-    return resolveTheme(theme);
-  }
-  return resolveTheme();
-}
-
-// Resolve a theme that isn't a featured catalog entry: treat the spec as an npm
-// package and read its `cosenseSiteKit` metadata via `npm view` (no install).
-function resolveExternalTheme(spec: string): CatalogTheme {
-  let raw: string;
+// Fetch a template repo's latest tree (no history) via a shallow clone.
+function cloneTemplate(repo: string, dir: string): void {
+  const url = `https://github.com/${repo}.git`;
   try {
-    raw = execFileSync("npm", ["view", spec, "name", "version", "cosenseSiteKit", "--json"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
+    execFileSync("git", ["clone", "--depth", "1", "--single-branch", url, dir], {
+      stdio: ["ignore", "ignore", "inherit"],
     });
   } catch {
-    throw new Error(
-      `Could not fetch "${spec}" from npm. Check the package name (it must be published), or use a featured theme id.`,
-    );
+    throw new Error(`Failed to clone ${url}. Is git installed and the repository public?`);
   }
-  const data = JSON.parse(raw) as {
-    name?: string;
-    version?: string;
-    cosenseSiteKit?: ThemePackageMeta;
-  };
-  const meta = data.cosenseSiteKit;
-  if (!meta || meta.kind !== "theme") {
-    throw new Error(
-      `"${spec}" is not a cosense-site-kit theme (its package.json needs a "cosenseSiteKit" entry).`,
-    );
-  }
-  return themeFromMetadata(data.name ?? spec, data.version ?? "latest", meta);
-}
-
-async function ask(initial: FlagAnswers, theme: CatalogTheme): Promise<FlagAnswers> {
-  const result = (await prompts(
-    [
-      {
-        type: initial.targetDir ? null : "text",
-        name: "targetDir",
-        message: "Where should we create the site?",
-        initial: "my-cosense-site",
-      },
-      {
-        type: initial.siteTitle ? null : "text",
-        name: "siteTitle",
-        message: "Site title",
-        initial: "My Cosense Site",
-      },
-      {
-        type: initial.baseUrl ? null : "text",
-        name: "baseUrl",
-        message: "Site URL",
-        initial: "https://example.com",
-      },
-      {
-        type: initial.cosenseProject ? null : "text",
-        name: "cosenseProject",
-        message: "Public Cosense project name",
-        initial: "your-public-project",
-      },
-      {
-        // Offer the chosen theme's skins. Skipped when --skin was passed or the
-        // theme ships a single look.
-        type: initial.skin || theme.skins.length < 2 ? null : "select",
-        name: "skin",
-        message: `Skin (${theme.name})`,
-        choices: theme.skins.map((s) => ({
-          title: s.default ? `${s.name} (default)` : s.name,
-          value: s.id,
-        })),
-        initial: Math.max(
-          0,
-          theme.skins.findIndex((s) => s.default),
-        ),
-      },
-    ],
-    { onCancel: () => process.exit(1) },
-  )) as FlagAnswers;
-  return { ...initial, ...result };
 }
 
 async function ensureEmpty(path: string): Promise<void> {
@@ -217,53 +94,6 @@ async function ensureEmpty(path: string): Promise<void> {
       return;
     }
     throw err;
-  }
-}
-
-async function copyTree(from: string, to: string): Promise<void> {
-  await cp(from, to, { recursive: true });
-}
-
-async function renameDotfiles(root: string): Promise<void> {
-  await walk(root, async (filePath) => {
-    const base = filePath.split("/").pop() ?? "";
-    if (base.startsWith("_") && !base.startsWith("__")) {
-      const renamed = join(dirname(filePath), `.${base.slice(1)}`);
-      await rename(filePath, renamed);
-    }
-  });
-}
-
-async function applyPlaceholders(
-  root: string,
-  replacements: Record<string, string>,
-): Promise<void> {
-  await walk(root, async (filePath) => {
-    const st = await stat(filePath);
-    if (!st.isFile()) return;
-    let content: string;
-    try {
-      content = await readFile(filePath, "utf8");
-    } catch {
-      return;
-    }
-    let next = content;
-    for (const [k, v] of Object.entries(replacements)) {
-      next = next.split(k).join(v);
-    }
-    if (next !== content) await writeFile(filePath, next);
-  });
-}
-
-async function walk(root: string, fn: (path: string) => Promise<void>): Promise<void> {
-  const entries = await readdir(root, { withFileTypes: true });
-  for (const e of entries) {
-    const p = join(root, e.name);
-    if (e.isDirectory()) {
-      await walk(p, fn);
-    } else {
-      await fn(p);
-    }
   }
 }
 

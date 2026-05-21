@@ -1,178 +1,57 @@
-// Curated catalog of official themes (and their skins) that the scaffolder can
-// wire up. This is the single source of truth for `create-cosense-site --theme`
-// / `--skin`: it drives both the interactive picker and the generated
-// astro.config.ts + package.json dependency.
+// Curated catalog of starter TEMPLATE REPOSITORIES that `create-cosense-site`
+// fetches. Each is a GitHub "Use this template" repo that vendors a theme + the
+// GitHub Pages workflow and depends on the framework from npm. `--template`
+// takes a featured id (below) or any "user/repo".
 //
-// Two kinds of variation, per the theme-scaling design:
-//   - a theme  = a package that injects its own routes (structural)
-//   - a skin   = a preset (CSS-token data) applied to a base theme (cosmetic)
-// Skins live under their theme because a preset is theme-specific.
-//
-// Adding an official entry = editing the data below (+ a test). No new picker
-// code. When community themes are opened up later, this is also the shape a
-// remote registry would serve.
+// Adding an official template = one entry here. Third-party templates work via
+// `--template user/repo` with no change.
 
-export interface CatalogSkin {
-  /** Stable id used on the CLI (`--skin <id>`). */
+export interface Template {
+  /** Short id used on the CLI (`--template <id>`). */
   id: string;
   /** Human label shown in the picker. */
   name: string;
-  /**
-   * Named export from the theme package to pass as `preset`, e.g. "presetDark".
-   * Omit for the theme's built-in look (no preset wiring).
-   */
-  export?: string;
-  /** The skin chosen when `--skin` is not given. Exactly one per theme. */
-  default?: boolean;
-}
-
-export interface CatalogTheme {
-  /** Stable id used on the CLI (`--theme <id>`). */
-  id: string;
-  /** Human label shown in the picker. */
-  name: string;
-  /** npm package name, written into the scaffold's package.json dependencies. */
-  package: string;
-  /** Dependency range written into package.json. */
-  version: string;
-  /** Default-export function name used in astro.config.ts, e.g. "themeDefault". */
-  integration: string;
+  /** GitHub "user/repo" the template lives in. */
+  repo: string;
   /** One-line description for the picker. */
   description: string;
-  /** Intermediate schema version this theme consumes (compat contract). */
-  schemaVersion: "1";
-  kind: "theme";
-  /** Available skins (always includes one `default`). */
-  skins: CatalogSkin[];
 }
 
-export interface Catalog {
-  themes: CatalogTheme[];
+export const templates: Template[] = [
+  {
+    id: "default",
+    name: "Default",
+    repo: "shinyaoguri/cosense-site-starter",
+    description: "Neutral, general-purpose site (theme-default): docs, wiki, notes, personal.",
+  },
+  {
+    id: "lab",
+    name: "Lab",
+    repo: "shinyaoguri/cosense-site-lab",
+    description: "University research lab: members, research, publications, news.",
+  },
+];
+
+export interface ResolvedTemplate {
+  /** GitHub "user/repo". */
+  repo: string;
+  /** Display label (the featured name, or the repo itself). */
+  name: string;
 }
 
-export const catalog: Catalog = {
-  themes: [
-    {
-      id: "default",
-      name: "Default",
-      package: "@cosense-site-kit/theme-default",
-      version: "^0.2.0",
-      integration: "themeDefault",
-      description:
-        "Neutral, general-purpose theme: page/profile templates, home, archive, tags, Notion-style hover TOC.",
-      schemaVersion: "1",
-      kind: "theme",
-      skins: [
-        { id: "light", name: "Light", default: true },
-        { id: "dark", name: "Dark", export: "presetDark" },
-      ],
-    },
-  ],
-};
+const USER_REPO = /^[\w.-]+\/[\w.-]+$/;
 
-export function findTheme(id: string): CatalogTheme | undefined {
-  return catalog.themes.find((t) => t.id === id);
-}
-
-export function findSkin(theme: CatalogTheme, id: string): CatalogSkin | undefined {
-  return theme.skins.find((s) => s.id === id);
-}
-
-export function defaultSkin(theme: CatalogTheme): CatalogSkin {
-  const skin = theme.skins.find((s) => s.default) ?? theme.skins[0];
-  if (!skin) throw new Error(`Theme "${theme.id}" has no skins`);
-  return skin;
-}
-
-/** Resolve a `--theme` id (or the first theme when omitted), throwing on a bad id. */
-export function resolveTheme(id?: string): CatalogTheme {
-  const theme = id ? findTheme(id) : catalog.themes[0];
-  if (!theme) {
-    const ids = catalog.themes.map((t) => t.id).join(", ");
-    throw new Error(`Unknown theme "${id}". Available: ${ids}`);
+// Resolve a `--template` spec to a GitHub repo: a featured id (e.g. "lab"), or
+// any "user/repo". Omitted → the first featured template.
+export function resolveTemplate(spec?: string): ResolvedTemplate {
+  if (!spec) {
+    const first = templates[0];
+    if (!first) throw new Error("No templates are configured.");
+    return { repo: first.repo, name: first.name };
   }
-  return theme;
-}
-
-/** Resolve a `--skin` id within a theme (or its default when omitted), throwing on a bad id. */
-export function resolveSkin(theme: CatalogTheme, id?: string): CatalogSkin {
-  if (!id) return defaultSkin(theme);
-  const skin = findSkin(theme, id);
-  if (!skin) {
-    const ids = theme.skins.map((s) => s.id).join(", ");
-    throw new Error(`Unknown skin "${id}" for theme "${theme.id}". Available: ${ids}`);
-  }
-  return skin;
-}
-
-export interface ThemeWiring {
-  /** Import line for astro.config.ts. */
-  import: string;
-  /** Integration expression for the `integrations: [...]` array. */
-  integration: string;
-}
-
-// Build the astro.config.ts wiring for a theme + skin selection. A skin with an
-// `export` is passed as `preset:`; the built-in look needs no preset.
-export function buildThemeWiring(theme: CatalogTheme, skin: CatalogSkin): ThemeWiring {
-  if (skin.export) {
-    return {
-      import: `import ${theme.integration}, { ${skin.export} } from "${theme.package}";`,
-      integration: `${theme.integration}({ preset: ${skin.export} })`,
-    };
-  }
-  return {
-    import: `import ${theme.integration} from "${theme.package}";`,
-    integration: `${theme.integration}()`,
-  };
-}
-
-// ── External (third-party) themes ──────────────────────────────────────────
-// Any npm package can be a theme: it default-exports an Astro Integration,
-// depends on @cosense-site-kit/core + theme-utils, and declares this metadata
-// under a "cosenseSiteKit" key in its package.json. `create --theme <pkg>`
-// reads it (via `npm view`) and wires the package just like a featured theme —
-// no core-repo edit, no central registry.
-export interface ThemePackageMeta {
-  kind: "theme";
-  /** Intermediate schema version the theme consumes. */
-  schemaVersion: "1";
-  /** Display label / one-line description for the picker (optional). */
-  name?: string;
-  description?: string;
-  /** Selectable skins; a skin's `export` names a preset to pass as `preset:`. */
-  skins?: { id: string; name?: string; export?: string; default?: boolean }[];
-}
-
-// Synthesize a CatalogTheme from an npm package's name/version + its declared
-// metadata. The integration is assumed to be the package's default export and
-// is bound locally as `theme` in the generated astro.config.ts.
-export function themeFromMetadata(
-  pkg: string,
-  version: string,
-  meta: ThemePackageMeta,
-): CatalogTheme {
-  const skins: CatalogSkin[] =
-    meta.skins && meta.skins.length > 0
-      ? meta.skins.map((s) => ({
-          id: s.id,
-          name: s.name ?? s.id,
-          export: s.export,
-          default: s.default,
-        }))
-      : [{ id: "light", name: "Light", default: true }];
-  // Guarantee exactly one default skin.
-  if (!skins.some((s) => s.default) && skins[0]) skins[0].default = true;
-  const range = /^[\^~]/.test(version) ? version : `^${version}`;
-  return {
-    id: pkg,
-    name: meta.name ?? pkg,
-    package: pkg,
-    version: range,
-    integration: "theme",
-    description: meta.description ?? "",
-    schemaVersion: meta.schemaVersion,
-    kind: "theme",
-    skins,
-  };
+  const featured = templates.find((t) => t.id === spec);
+  if (featured) return { repo: featured.repo, name: featured.name };
+  if (USER_REPO.test(spec)) return { repo: spec, name: spec };
+  const ids = templates.map((t) => t.id).join(", ");
+  throw new Error(`Unknown template "${spec}". Use one of: ${ids}, or a "user/repo".`);
 }

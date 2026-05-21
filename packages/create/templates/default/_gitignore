@@ -1,8 +1,0 @@
-node_modules/
-dist/
-.astro/
-.cosense-cache/
-public/cosense-icons/
-.env
-.env.local
-.DS_Store
