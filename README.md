@@ -184,33 +184,23 @@ const TEMPLATES = { page: Page, profile: Profile, landing: Landing };
 | パッケージ | キャラクター | 主な用途 |
 |---|---|---|
 | `@cosense-site-kit/theme-default` | ニュートラルな汎用テーマ。`page` / `profile`、ホーム / アーカイブ / タグ、Notion 風ホバー TOC、コードブロック copy ボタン。`light` / `dark` スキン | ドキュメントサイト、wiki、ノート公開、個人サイト |
-| `@cosense-site-kit/theme-lab` | 大学・研究室向け。メンバー一覧 / 研究テーマ / 業績 / お知らせ を 1 つの Cosense プロジェクトから。`/research`・`/news` ルート、`code:members.yaml` / `code:publications.yaml` を構造化描画 | 研究室・研究所サイト |
 
-他のテーマを作りたい場合は [docs/THEMES.md](./docs/THEMES.md) を参照。`@cosense-site-kit/theme-utils` の共有コンポーネント（`Inline.astro` / `PageContent.astro` / `Backlinks.astro` / `KaTeXLink.astro`）を再利用すれば、Layout と CSS を書くだけで自前テーマが立ち上がります。
+theme-default は本体同梱（npm）の「ライブラリ型」テーマです。**それ以外のテーマはテンプレートリポジトリとして配布**します（下記）。
 
-### サードパーティのテーマ
+### スターターテンプレート（Use this template）
 
-テーマは **「`@cosense-site-kit/core` と `theme-utils` に依存する npm パッケージ」** です。本体リポジトリに入れる必要はなく、誰でも自分のリポジトリで作って npm publish できます。`package.json` に `cosenseSiteKit` メタデータを宣言しておけば、**任意の公開テーマをパッケージ名で scaffold** できます:
+ブラウザだけで新しいサイトを作れます。**テーマのソースはリポジトリに同梱（vendored）され、自分のものとして自由に編集できます**。npm 依存はフレームワーク（`@cosense-site-kit/*`）だけ。
 
-```bash
-npm create cosense-site my-site --theme @someone/cosense-theme-foo
-```
+| テンプレート | テーマ | 用途 |
+|---|---|---|
+| [cosense-site-starter](https://github.com/shinyaoguri/cosense-site-starter) | default | 汎用・ドキュメント・個人サイト |
+| [cosense-site-lab](https://github.com/shinyaoguri/cosense-site-lab) | lab（研究室向け） | メンバー / 研究テーマ / 業績 / お知らせ |
 
-```jsonc
-// テーマ側の package.json
-"cosenseSiteKit": {
-  "kind": "theme",
-  "schemaVersion": "1",                 // 消費する中間スキーマ
-  "skins": [
-    { "id": "light", "default": true },
-    { "id": "dark", "export": "presetDark" }   // export は preset の名前付きエクスポート
-  ]
-}
-```
+### テーマを配布する
 
-`create` は `npm view <pkg> cosenseSiteKit` でこのメタデータを読み、`astro.config.ts` と依存を自動配線します（中央カタログ不要）。発見はゆるく運用します — 既知のコミュニティテーマはここにリンクを並べます（PR 歓迎）:
+テーマは **「フレームワークに依存し、`@cosense-site-kit/theme-utils` で本文を描画する Astro Integration」** です。配布は **テンプレートリポジトリ（テーマソースを同梱）が基本**で、[cosense-site-lab](https://github.com/shinyaoguri/cosense-site-lab) がその参考実装です。作り方は [docs/THEMES.md](./docs/THEMES.md)。発見はゆるく運用 — 既知のテンプレートをここにリンクします（PR 歓迎）。
 
-- _（準備中）_
+> npm パッケージとして配布したいテーマは、`package.json` に `cosenseSiteKit` メタデータ（`{ kind, schemaVersion, skins }`）を宣言すれば `npm create cosense-site --theme <pkg>` でも使えます。
 
 ### スキン（preset）
 

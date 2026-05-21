@@ -18,13 +18,6 @@ describe("catalog data", () => {
     expect(theme?.skins.map((s) => s.id)).toEqual(["light", "dark"]);
   });
 
-  it("includes the lab theme as a structural (preset-less) theme", () => {
-    const lab = findTheme("lab");
-    expect(lab?.package).toBe("@cosense-site-kit/theme-lab");
-    expect(lab?.integration).toBe("themeLab");
-    expect(lab?.skins).toHaveLength(1);
-  });
-
   it("findSkin returns undefined for an unknown skin", () => {
     expect(findSkin(resolveTheme("default"), "neon")).toBeUndefined();
   });
@@ -85,12 +78,6 @@ describe("buildThemeWiring", () => {
     expect(w.integration).toBe("themeDefault({ preset: presetDark })");
   });
 
-  it("wires a preset-less theme with a bare integration call", () => {
-    const lab = resolveTheme("lab");
-    const w = buildThemeWiring(lab, resolveSkin(lab));
-    expect(w.import).toBe('import themeLab from "@cosense-site-kit/theme-lab";');
-    expect(w.integration).toBe("themeLab()");
-  });
 });
 
 describe("themeFromMetadata (third-party themes)", () => {
@@ -130,5 +117,12 @@ describe("themeFromMetadata (third-party themes)", () => {
       skins: [{ id: "a" }, { id: "b" }],
     });
     expect(defaultSkin(t).id).toBe("a");
+  });
+
+  it("wires the built-in (no-export) skin with a bare call", () => {
+    const t = themeFromMetadata("@x/y", "1.0.0", { kind: "theme", schemaVersion: "1" });
+    const w = buildThemeWiring(t, resolveSkin(t));
+    expect(w.import).toBe('import theme from "@x/y";');
+    expect(w.integration).toBe("theme()");
   });
 });

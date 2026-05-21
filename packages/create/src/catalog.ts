@@ -67,19 +67,6 @@ export const catalog: Catalog = {
         { id: "dark", name: "Dark", export: "presetDark" },
       ],
     },
-    {
-      id: "lab",
-      name: "Lab",
-      package: "@cosense-site-kit/theme-lab",
-      version: "^0.1.0",
-      integration: "themeLab",
-      description:
-        "University research lab: members, research topics, publications, and news from one Cosense project.",
-      schemaVersion: "1",
-      kind: "theme",
-      // No preset system yet; the theme ships a single look.
-      skins: [{ id: "default", name: "Default", default: true }],
-    },
   ],
 };
 

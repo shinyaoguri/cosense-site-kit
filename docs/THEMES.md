@@ -633,5 +633,5 @@ export default defineConfig({
 | | 役割 | ポイント |
 |---|---|---|
 | [`packages/theme-default/`](../packages/theme-default/) | `page` / `profile` の2テンプレ + `/posts` archive + `/tags/[tag]` + Notion 風ホバー TOC | テーマの最小実用形 |
-| [`packages/theme-lab/`](../packages/theme-lab/) | `/research`・`/news` を inject する**構造が違うテーマ**。`code:members.yaml` / `code:publications.yaml` を lib でパースし、タグ駆動ディスパッチ (`#research`→research-post) を使う | 独立ルートを持つテーマ・データ block の扱いの参考 |
+| [cosense-site-lab](https://github.com/shinyaoguri/cosense-site-lab)（vendored テンプレ） | `/research`・`/news` を inject する**構造が違うテーマ**。`code:members.yaml` / `code:publications.yaml` を lib でパースし、タグ駆動ディスパッチ (`#research`→research-post) を使う。テーマソースを同梱した配布の参考 | 独立ルート・データ block・vendored 配布の参考 |
 | [`packages/theme-utils/`](../packages/theme-utils/) | 共有ヘルパ + 共有コンポーネント (`Inline.astro`, `PageContent.astro`, `Backlinks.astro`, `KaTeXLink.astro`) | 自前で同等の処理を書く前に参照 |
