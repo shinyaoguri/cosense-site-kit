@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# Don't let two release runs race.
+concurrency: release-${{ github.ref }}
+
+permissions:
+  contents: write # push the "Version Packages" commit + tags
+  pull-requests: write # open/update the Version Packages PR
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+
+      - run: npm ci
+
+      # On a push that contains changesets, this opens/updates a "Version
+      # Packages" PR (running `version`). When that PR is merged — changesets
+      # consumed, versions bumped — the next run finds no changesets and runs
+      # `publish` instead, publishing to npm and tagging the release.
+      - name: Version or publish
+        uses: changesets/action@v1
+        with:
+          version: npx changeset version
+          publish: npm run release
+          commit: "chore: version packages"
+          title: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
