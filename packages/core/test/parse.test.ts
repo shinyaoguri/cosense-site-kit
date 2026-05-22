@@ -79,6 +79,33 @@ describe("parseScrapboxText", () => {
     expect(first.children).toEqual([{ type: "text", value: "first" }]);
   });
 
+  it("turns a bare YouTube URL on its own line into a youtube embed block", () => {
+    for (const url of [
+      "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "https://youtu.be/dQw4w9WgXcQ",
+      "[https://www.youtube.com/watch?v=dQw4w9WgXcQ]",
+    ]) {
+      const { blocks } = parseScrapboxText(`T\n${url}`, "demo");
+      const b = blocks[0];
+      if (!b || b.type !== "embed") throw new Error(`expected embed for ${url}`);
+      expect(b.kind).toBe("youtube");
+      expect(b.url).toContain("dQw4w9WgXcQ");
+    }
+  });
+
+  it("keeps a labeled YouTube link and an inline one as plain links (not embeds)", () => {
+    const labeled = parseScrapboxText("T\n[https://youtu.be/dQw4w9WgXcQ My video]", "demo");
+    expect(labeled.blocks.some((b) => b.type === "embed")).toBe(false);
+
+    const inline = parseScrapboxText("T\nsee https://youtu.be/dQw4w9WgXcQ now", "demo");
+    expect(inline.blocks.some((b) => b.type === "embed")).toBe(false);
+  });
+
+  it("does not embed a bare non-provider URL", () => {
+    const { blocks } = parseScrapboxText("T\nhttps://example.com/page", "demo");
+    expect(blocks.some((b) => b.type === "embed")).toBe(false);
+  });
+
   it("converts [*** heading] to a heading block with depth 2", () => {
     const { blocks } = parseScrapboxText("Title\n[*** Section]", "demo");
     const h = blocks[0];

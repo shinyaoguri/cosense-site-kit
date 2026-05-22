@@ -1,6 +1,7 @@
 ---
 import { Code } from "astro:components";
 import type { CosenseBlock, InlineNode } from "@cosense-site-kit/core";
+import { youtubeEmbedSrc } from "../embeds";
 import { buildListTree } from "../lists";
 import Inline from "./Inline.astro";
 import ListTree from "./ListTree.astro";
@@ -98,8 +99,27 @@ for (const block of visible) {
       }
       case "image":
         return <img src={block.url} alt={block.alt ?? ""} loading="lazy" />;
-      case "embed":
+      case "embed": {
+        if (block.kind === "youtube") {
+          const src = youtubeEmbedSrc(block.url);
+          if (src) {
+            return (
+              <div class="embed embed-youtube">
+                <iframe
+                  src={src}
+                  title="YouTube video player"
+                  loading="lazy"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen
+                />
+              </div>
+            );
+          }
+        }
+        // Unknown/unsupported embed, or a URL we couldn't parse: plain link.
         return <a href={block.url} rel="noopener noreferrer" target="_blank">{block.url}</a>;
+      }
       case "table":
         return (
           <table>

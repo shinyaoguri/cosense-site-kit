@@ -133,6 +133,25 @@ function appendLineBlock(
     return;
   }
 
+  // A bare (unlabeled) link on its own line pointing at a known embed provider
+  // becomes an embed block — this mirrors Cosense, which auto-embeds e.g. a
+  // YouTube URL on its own line. Labeled links (`[url text]`) and links mixed
+  // with other text stay plain links. The theme turns the kind+url into the
+  // actual player; core only classifies.
+  const only = nodes[0];
+  if (
+    nodes.length === 1 &&
+    only?.type === "link" &&
+    only.pathType === "absolute" &&
+    !only.content
+  ) {
+    const kind = embedKind(only.href);
+    if (kind) {
+      out.push({ type: "embed", kind, url: only.href });
+      return;
+    }
+  }
+
   const children = nodes.flatMap((n) => convertInline(n, ctx));
   if (line.indent > 0) {
     out.push({ type: "list", depth: line.indent, children });
@@ -301,6 +320,23 @@ function renderInlineToText(nodes: SbNode[]): string {
       }
     })
     .join("");
+}
+
+// Classify a URL as a known embeddable provider, or undefined for an ordinary
+// link. Only providers Cosense itself auto-embeds belong here. Today: YouTube;
+// add a host check per provider as support grows (Vimeo, Spotify, …). The theme
+// owns the actual player markup — this only tags the kind.
+function embedKind(url: string): "youtube" | undefined {
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase().replace(/^(www|m)\./, "");
+  } catch {
+    return undefined;
+  }
+  if (host === "youtube.com" || host === "youtu.be" || host === "youtube-nocookie.com") {
+    return "youtube";
+  }
+  return undefined;
 }
 
 function inferLang(filename: string | undefined): string | undefined {
