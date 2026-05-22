@@ -467,6 +467,8 @@ export default defineCosenseSite({
 
 ビルドは cron + `workflow_dispatch` の併用が前提です。Cosense は分単位で更新するものではないので、1 日 2 回で十分です。
 
+**すぐ反映したいとき（手動リビルド）**: cron は最大で半日ほど遅延します。Cosense を編集してすぐ公開したい場合は、生成された `build.yml` が `workflow_dispatch` を持つので、GitHub の **Actions タブ → 対象ワークフロー → Run workflow** から手動実行できます（差分 fetch のキャッシュが効くので速い）。Cosense には Webhook がないため、これが「今すぐ再ビルド」の標準手段です。
+
 ### GitHub Pages 用の追加設定
 
 リポジトリの **Settings → Pages → Source** を **"GitHub Actions"** に切り替えます。

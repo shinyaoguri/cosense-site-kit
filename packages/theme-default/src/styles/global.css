@@ -725,6 +725,14 @@ html[data-theme="dark"] .page-content .astro-code span {
   color: var(--color-text-muted);
 }
 
+/* Display math (a formula alone on its line). KaTeX centers .katex-display;
+   allow horizontal scroll so a wide equation doesn't overflow on small screens. */
+.page-content .math-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 1.25rem 0;
+}
+
 /* ===================== Link preview card ===================== */
 
 .link-preview {

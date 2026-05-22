@@ -3,6 +3,7 @@ import { Code } from "astro:components";
 import type { CosenseBlock, InlineNode } from "@cosense-site-kit/core";
 import { type EmbedProvider, resolveEmbed } from "../embeds";
 import { buildListTree } from "../lists";
+import { renderMath } from "../math";
 import Inline from "./Inline.astro";
 import ListTree from "./ListTree.astro";
 
@@ -83,8 +84,15 @@ for (const block of visible) {
     }
     const block = group.block;
     switch (block.type) {
-      case "paragraph":
+      case "paragraph": {
+        // A formula alone on its line reads as display (block) math — Cosense
+        // has no [$$] syntax, so this is how a user gets a centered equation.
+        const lone = block.children.length === 1 ? block.children[0] : undefined;
+        if (lone?.type === "formula") {
+          return <div class="math-display" set:html={renderMath(lone.value, true)} />;
+        }
         return <p><Inline nodes={block.children} /></p>;
+      }
       case "heading":
         if (block.depth === 1) return <h2><Inline nodes={block.children} /></h2>;
         if (block.depth === 2) return <h3><Inline nodes={block.children} /></h3>;

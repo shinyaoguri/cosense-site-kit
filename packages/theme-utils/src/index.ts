@@ -8,7 +8,7 @@ export {
 } from "./embeds";
 export { buildRssFeed, type FeedItem, type FeedOptions } from "./feed";
 export { buildListTree, type FlatListItem, type ListTreeItem } from "./lists";
-export { renderInlineMath } from "./math";
+export { renderInlineMath, renderMath } from "./math";
 export { buildPreviewData, type PagePreview, type PreviewSource } from "./preview-data";
 export {
   isStructuralLink,

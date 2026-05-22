@@ -44,6 +44,25 @@ describe("PageContent rendering", () => {
     expect(html).toContain('class="embed embed-youtube"');
   });
 
+  it("renders a formula alone on its line as display math", async () => {
+    const container = await AstroContainer.create();
+    const blocks: CosenseBlock[] = [
+      { type: "paragraph", children: [{ type: "formula", value: "E = mc^2" }] },
+      {
+        type: "paragraph",
+        children: [
+          { type: "text", value: "inline " },
+          { type: "formula", value: "x^2" },
+        ],
+      },
+    ];
+    const html = await container.renderToString(PageContent, { props: { blocks } });
+    expect(html).toContain("math-display");
+    expect(html).toContain("katex-display"); // KaTeX display wrapper for the lone formula
+    // the mixed line stays inline prose, not a display block
+    expect(html).toMatch(/<p[^>]*>\s*inline /);
+  });
+
   it("renders a missing internal link as a non-link span", async () => {
     const container = await AstroContainer.create();
     const blocks: CosenseBlock[] = [

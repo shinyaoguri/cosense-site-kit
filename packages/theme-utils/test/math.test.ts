@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderInlineMath } from "../src/math";
+import { renderInlineMath, renderMath } from "../src/math";
 
 describe("renderInlineMath", () => {
   it("renders a simple expression as KaTeX HTML", () => {
@@ -26,5 +26,15 @@ describe("renderInlineMath", () => {
     // throwOnError: false → unknown commands are highlighted in the output,
     // not thrown. The important contract is the build doesn't crash.
     expect(() => renderInlineMath("\\definitelyNotAMacro{x}")).not.toThrow();
+  });
+});
+
+describe("renderMath display mode", () => {
+  it("emits the .katex-display wrapper when display is true", () => {
+    expect(renderMath("E = mc^2", true)).toContain("katex-display");
+  });
+
+  it("stays inline (no display wrapper) by default", () => {
+    expect(renderMath("E = mc^2")).not.toContain("katex-display");
   });
 });
