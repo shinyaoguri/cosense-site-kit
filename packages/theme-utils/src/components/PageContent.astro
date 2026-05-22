@@ -1,7 +1,7 @@
 ---
 import { Code } from "astro:components";
 import type { CosenseBlock, InlineNode } from "@cosense-site-kit/core";
-import { youtubeEmbedSrc } from "../embeds";
+import { type EmbedProvider, resolveEmbed } from "../embeds";
 import { buildListTree } from "../lists";
 import Inline from "./Inline.astro";
 import ListTree from "./ListTree.astro";
@@ -32,9 +32,15 @@ interface Props {
   hideFilenames?: string[];
   /** Wrapper class on the root <div>. Default: "page-content". */
   class?: string;
+  /**
+   * Extra embed providers, tried before the built-ins (YouTube/Vimeo/Spotify).
+   * The extension point for themes to support more services without a core
+   * change — a standalone URL with no matching provider renders as a link.
+   */
+  embedProviders?: EmbedProvider[];
 }
 
-const { blocks, hideFilenames = [], class: wrapperClass = "page-content" } =
+const { blocks, hideFilenames = [], class: wrapperClass = "page-content", embedProviders } =
   Astro.props;
 const hidden = new Set(["site.yaml", ...hideFilenames]);
 const visible = blocks.filter(
@@ -105,24 +111,26 @@ for (const block of visible) {
         // that host images reliably can opt into <Image> (see docs/THEMES.md).
         return <img src={block.url} alt={block.alt ?? ""} loading="lazy" decoding="async" />;
       case "embed": {
-        if (block.kind === "youtube") {
-          const src = youtubeEmbedSrc(block.url);
-          if (src) {
-            return (
-              <div class="embed embed-youtube">
-                <iframe
-                  src={src}
-                  title="YouTube video player"
-                  loading="lazy"
-                  referrerpolicy="strict-origin-when-cross-origin"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowfullscreen
-                />
-              </div>
-            );
-          }
+        const embed = resolveEmbed(block.url, embedProviders);
+        if (embed) {
+          return (
+            <div
+              class={`embed embed-${embed.provider}`}
+              style={embed.height ? undefined : `--embed-ratio: ${embed.aspectRatio ?? "16 / 9"}`}
+            >
+              <iframe
+                src={embed.src}
+                title={embed.title}
+                loading="lazy"
+                height={embed.height}
+                referrerpolicy="strict-origin-when-cross-origin"
+                allow={embed.allow}
+                allowfullscreen
+              />
+            </div>
+          );
         }
-        // Unknown/unsupported embed, or a URL we couldn't parse: plain link.
+        // No provider matched (or unparsable URL): plain link.
         return <a href={block.url} rel="noopener noreferrer" target="_blank">{block.url}</a>;
       }
       case "table":

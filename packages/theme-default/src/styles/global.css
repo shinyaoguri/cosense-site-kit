@@ -436,22 +436,31 @@ html[data-theme="dark"] .page-content .astro-code span {
   border-radius: 3px;
 }
 
-/* Embedded players (YouTube, …): responsive 16:9 box. */
-.page-content .embed-youtube {
+/* Embedded players (YouTube, Vimeo, …): responsive box from --embed-ratio. */
+.page-content .embed {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--embed-ratio, 16 / 9);
   margin: 1.25rem 0;
   border-radius: 8px;
   overflow: hidden;
   background: var(--color-bg-soft);
 }
-.page-content .embed-youtube iframe {
+.page-content .embed iframe {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   border: 0;
+}
+/* Spotify ships a fixed-height player rather than a 16:9 box. */
+.page-content .embed-spotify {
+  aspect-ratio: auto;
+}
+.page-content .embed-spotify iframe {
+  position: static;
+  height: auto;
+  display: block;
 }
 
 .page-content table {

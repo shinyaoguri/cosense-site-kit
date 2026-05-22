@@ -115,9 +115,15 @@ describe("parseScrapboxText", () => {
     expect(inline.blocks.some((b) => b.type === "embed")).toBe(false);
   });
 
-  it("does not embed a bare non-provider URL", () => {
+  it("tags a bare non-provider URL as a generic 'link' embed (theme resolves it)", () => {
+    // core is provider-agnostic: a bare standalone URL becomes an embed block
+    // with kind "link"; the theme's registry renders a player or falls back to
+    // a plain link.
     const { blocks } = parseScrapboxText("T\nhttps://example.com/page", "demo");
-    expect(blocks.some((b) => b.type === "embed")).toBe(false);
+    const b = blocks[0];
+    if (!b || b.type !== "embed") throw new Error("expected embed block");
+    expect(b.kind).toBe("link");
+    expect(b.url).toBe("https://example.com/page");
   });
 
   it("converts [*** heading] to a heading block with depth 2", () => {

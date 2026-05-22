@@ -135,11 +135,13 @@ function appendLineBlock(
     return;
   }
 
-  // A bare (unlabeled) link on its own line pointing at a known embed provider
-  // becomes an embed block — this mirrors Cosense, which auto-embeds e.g. a
-  // YouTube URL on its own line. Labeled links (`[url text]`) and links mixed
-  // with other text stay plain links. The theme turns the kind+url into the
-  // actual player; core only classifies.
+  // A bare (unlabeled) link on its own line becomes an embed block — this
+  // mirrors Cosense, which auto-embeds e.g. a YouTube URL on its own line.
+  // Labeled links (`[url text]`) and links mixed with other text stay plain
+  // links. core stays provider-agnostic: it hints `youtube` (kept for
+  // back-compat) and tags everything else `link`. The theme's embed registry
+  // decides what actually gets a player and falls back to a plain link, so new
+  // providers (Vimeo, Spotify, …) are added theme-side without touching core.
   const only = nodes[0];
   if (
     nodes.length === 1 &&
@@ -147,11 +149,8 @@ function appendLineBlock(
     only.pathType === "absolute" &&
     !only.content
   ) {
-    const kind = embedKind(only.href);
-    if (kind) {
-      out.push({ type: "embed", kind, url: only.href });
-      return;
-    }
+    out.push({ type: "embed", kind: embedKind(only.href) ?? "link", url: only.href });
+    return;
   }
 
   const children = nodes.flatMap((n) => convertInline(n, ctx));
@@ -291,10 +290,10 @@ function convertInline(node: SbNode, ctx: Context): InlineNode[] {
   }
 }
 
-// Classify a URL as a known embeddable provider, or undefined for an ordinary
-// link. Only providers Cosense itself auto-embeds belong here. Today: YouTube;
-// add a host check per provider as support grows (Vimeo, Spotify, …). The theme
-// owns the actual player markup — this only tags the kind.
+// A light `kind` hint for standalone-URL embed blocks. Kept youtube-only for
+// back-compat; every other bare URL is tagged "link" by the caller. Real
+// provider detection and player markup live in the theme's embed registry
+// (@cosense-site-kit/theme-utils resolveEmbed), so new providers don't touch core.
 function embedKind(url: string): "youtube" | undefined {
   let host: string;
   try {

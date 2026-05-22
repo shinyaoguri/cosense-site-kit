@@ -1,5 +1,11 @@
 export { formatDate } from "./dates";
-export { youtubeEmbedSrc } from "./embeds";
+export {
+  DEFAULT_EMBED_PROVIDERS,
+  type EmbedInfo,
+  type EmbedProvider,
+  resolveEmbed,
+  youtubeEmbedSrc,
+} from "./embeds";
 export { buildRssFeed, type FeedItem, type FeedOptions } from "./feed";
 export { buildListTree, type FlatListItem, type ListTreeItem } from "./lists";
 export { renderInlineMath } from "./math";
