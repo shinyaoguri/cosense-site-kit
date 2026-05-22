@@ -1,5 +1,13 @@
 # @cosense-site-kit/theme-default
 
+## 0.2.2
+
+### Patch Changes
+
+- bc233b0: Render the site favicon. The Layout now emits `<link rel="icon" href={site.icon}>` from `virtual:cosense-site-kit/site` — the icon of the project's first (or home) page, matching Cosense's favicon behavior.
+- Updated dependencies [bc233b0]
+  - @cosense-site-kit/core@0.2.1
+
 ## 0.2.1
 
 ### Patch Changes

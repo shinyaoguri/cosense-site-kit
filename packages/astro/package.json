@@ -1,6 +1,6 @@
 {
   "name": "@cosense-site-kit/astro",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Astro Content Loader and Integration for cosense-site-kit",
   "license": "MIT",
   "type": "module",
@@ -25,7 +25,7 @@
     "astro": "^5.0.0 || ^6.0.0"
   },
   "dependencies": {
-    "@cosense-site-kit/core": "^0.2.0"
+    "@cosense-site-kit/core": "^0.2.1"
   },
   "devDependencies": {
     "astro": "^6.0.0",
