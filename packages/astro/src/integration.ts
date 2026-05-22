@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import {
   type CosenseSiteConfig,
   emptySiteStructure,
@@ -5,6 +6,7 @@ import {
   normalizeBase,
   pathFor,
   type SiteStructure,
+  vendorImage,
 } from "@cosense-site-kit/core";
 import type { AstroIntegration } from "astro";
 import { getSharedIntermediate } from "./intermediate-cache";
@@ -32,7 +34,8 @@ export interface CosenseIntegrationOptions {
 //   1. Sets Astro's `site` and `base` from cosense.config.ts.
 //   2. Runs the fetch pipeline (memoed; the pages loader reuses the result).
 //   3. Exposes two virtual modules to themes:
-//        virtual:cosense-site-kit/site       — the site block from config
+//        virtual:cosense-site-kit/site       — the site block from config,
+//                                              plus a vendored `icon` (favicon)
 //        virtual:cosense-site-kit/structure  — the parsed .site SiteStructure
 //   4. Wires redirects from .site into Astro's `redirects` config.
 //
@@ -46,7 +49,7 @@ const STRUCTURE_VIRTUAL_ID = "virtual:cosense-site-kit/structure";
 const STRUCTURE_VIRTUAL_RESOLVED = `\0${STRUCTURE_VIRTUAL_ID}`;
 
 interface VirtualSnapshot {
-  site: CosenseSiteConfig["site"];
+  site: CosenseSiteConfig["site"] & { icon?: string };
   structure: SiteStructure;
 }
 
@@ -87,21 +90,37 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
         // process) so dev-mode reloads see fresh data without an extra fetch.
         // Empty fallback keeps the dev server alive when Cosense is offline.
         let structure: SiteStructure = emptySiteStructure();
+        let icon: string | undefined;
         try {
           const data = await getSharedIntermediate({
             configFile: opts.configFile,
             config: opts.config,
           });
           structure = data.structure;
+          icon = data.site.icon;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           logger.warn(`cosense: pipeline failed (${msg}); using empty structure`);
         }
 
+        // Vendor the favicon locally — same reason as in-page icons: scrapbox.io
+        // serves with Cross-Origin-Resource-Policy: same-origin, so hot-linking
+        // it from the generated origin can be blocked. Resolved here because the
+        // integration owns the virtual:cosense-site-kit/site module a theme reads.
+        if (icon) {
+          const assetBase = normalized.replace(/\/$/, "");
+          icon = await vendorImage(icon, {
+            dir: join(process.cwd(), "public", "cosense-icons"),
+            baseUrl: `${assetBase}/cosense-icons`,
+            onWarn: (m) => logger.warn(m),
+          });
+        }
+
+        const site = { ...config.site, icon };
         updateConfig({
           site: config.site.baseUrl,
           vite: {
-            plugins: [virtualSitePlugin(() => ({ site: config.site, structure }))],
+            plugins: [virtualSitePlugin(() => ({ site, structure }))],
           },
         });
         if (normalized !== "/") {

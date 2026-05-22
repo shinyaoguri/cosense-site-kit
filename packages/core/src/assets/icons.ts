@@ -85,6 +85,26 @@ export async function vendorIcons(
   };
 }
 
+// Vendor a single image URL (e.g. the site favicon) the same way as in-page
+// icons: download it in Node and return a local URL the site serves itself,
+// sidestepping scrapbox.io's Cross-Origin-Resource-Policy. Returns the original
+// `src` (and warns) on failure, so a missing favicon never breaks the build.
+export async function vendorImage(
+  src: string,
+  opts: Omit<VendorIconsOptions, "concurrency">,
+): Promise<string> {
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const baseUrl = opts.baseUrl.replace(/\/$/, "");
+  try {
+    await mkdir(opts.dir, { recursive: true });
+    return await downloadIcon(src, opts.dir, baseUrl, fetchImpl);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    opts.onWarn?.(`image vendor failed for ${src}: ${msg}`);
+    return src;
+  }
+}
+
 async function downloadIcon(
   src: string,
   dir: string,

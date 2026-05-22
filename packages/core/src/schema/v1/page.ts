@@ -64,6 +64,11 @@ export const intermediateDataSchema = z.object({
     description: z.string().optional(),
     baseUrl: z.string().url(),
     lang: z.string(),
+    // Favicon source: the representative image of the project's first page
+    // (or the configured home page). Mirrors Cosense, where the top page's
+    // icon becomes the project favicon. Resolved by the pipeline; the Astro
+    // integration vendors it locally and a theme renders it as <link rel=icon>.
+    icon: z.string().optional(),
   }),
   pages: z.array(pageSchema),
   excluded: z.array(

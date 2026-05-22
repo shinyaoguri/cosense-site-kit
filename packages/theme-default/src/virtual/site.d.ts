@@ -10,6 +10,8 @@ declare module "virtual:cosense-site-kit/site" {
     baseUrl: string;
     lang: string;
     base: string;
+    /** Favicon URL (the first/home page's icon), vendored locally. */
+    icon?: string;
   }
   const site: CosenseSiteInfo;
   export default site;

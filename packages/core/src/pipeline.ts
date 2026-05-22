@@ -1,16 +1,16 @@
-import { writeFile, mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { CosenseSiteConfig } from "./config";
 import { parseSitePage, SiteConfigParseError } from "./parse/site-config";
 import { applyPublishRules } from "./publish/filter";
-import { assignDates } from "./resolve/dates";
 import { resolveLinkData } from "./resolve/backlinks";
+import { assignDates } from "./resolve/dates";
 import { buildTitleToSlug, resolveInternalLinks } from "./resolve/links";
 import { assignSlugs } from "./resolve/slug";
 import { assignTemplates } from "./resolve/template";
-import { intermediateDataSchema, type IntermediateData } from "./schema/v1/page";
+import { type IntermediateData, intermediateDataSchema } from "./schema/v1/page";
 import { emptySiteStructure, type SiteStructure } from "./schema/v1/site-structure";
-import { createCosenseSource, type CosenseSourceOptions } from "./source/cosense";
+import { type CosenseSourceOptions, createCosenseSource } from "./source/cosense";
 import { normalizePage } from "./source/cosense/normalize";
 import type { SiteSource, SourcePageRaw } from "./source/types";
 
@@ -35,9 +35,7 @@ export type ProgressEvent =
   | { kind: "site-config"; found: boolean; warnings: string[] }
   | { kind: "warn"; message: string };
 
-export async function buildIntermediate(
-  opts: BuildIntermediateOptions,
-): Promise<IntermediateData> {
+export async function buildIntermediate(opts: BuildIntermediateOptions): Promise<IntermediateData> {
   const { config, signal } = opts;
   const source = opts.source ?? defaultSource(config, opts);
   const concurrency = Math.max(1, opts.concurrency ?? 4);
@@ -97,7 +95,7 @@ export async function buildIntermediate(
   const data: IntermediateData = {
     schemaVersion: "1",
     generatedAt: new Date().toISOString(),
-    site: config.site,
+    site: { ...config.site, icon: pickFavicon(raws, structure.home?.page) },
     pages: withDates,
     excluded,
     linkGraph,
@@ -106,6 +104,18 @@ export async function buildIntermediate(
   };
 
   return intermediateDataSchema.parse(data);
+}
+
+// Cosense uses the project's first page's icon as the favicon. We mirror that:
+// prefer the configured home page's image, otherwise the first source-listed
+// page that actually has one (`raws` preserves the source list order). Returns
+// undefined when no candidate has an image.
+function pickFavicon(raws: SourcePageRaw[], homePage: string | undefined): string | undefined {
+  if (homePage) {
+    const home = raws.find((r) => r.title === homePage);
+    if (home?.image) return home.image;
+  }
+  return raws.find((r) => r.image)?.image ?? undefined;
 }
 
 function extractStructure(
@@ -142,10 +152,7 @@ function extractStructure(
   }
 }
 
-function defaultSource(
-  config: CosenseSiteConfig,
-  opts: BuildIntermediateOptions,
-): SiteSource {
+function defaultSource(config: CosenseSiteConfig, opts: BuildIntermediateOptions): SiteSource {
   const sourceOpts: CosenseSourceOptions = {
     project: config.source.project,
     cacheDir: opts.cacheDir,
@@ -154,10 +161,7 @@ function defaultSource(
   return createCosenseSource(sourceOpts);
 }
 
-export async function writeIntermediate(
-  data: IntermediateData,
-  outFile: string,
-): Promise<void> {
+export async function writeIntermediate(data: IntermediateData, outFile: string): Promise<void> {
   await mkdir(dirname(outFile), { recursive: true });
   await writeFile(outFile, `${JSON.stringify(data, null, 2)}\n`);
 }

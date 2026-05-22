@@ -47,6 +47,7 @@ const htmlStyle = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     {metaDescription && <meta name="description" content={metaDescription} />}
+    {site?.icon && <link rel="icon" href={site.icon} />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     {fontHref ? (
