@@ -52,11 +52,8 @@ cosense-site-kit でサイトを立ち上げる手順。clone もターミナル
 [** ルート B: ローカルで作る（ターミナル）]
 雛形を生成:
 code:install.sh
- npm create cosense-site my-site -- \
-   --title "My Site" \
-   --url "https://example.com" \
-   --project "your-public-cosense-project" \
-   --yes
+ npx degit shinyaoguri/cosense-theme-default my-site
+ # 取得後 cosense.config.ts を編集（source.project / site.title / site.baseUrl）
 ローカルで起動:
 code:dev.sh
  cd my-site

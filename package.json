@@ -10,11 +10,11 @@
     "site"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present -w packages/core -w packages/astro -w packages/theme-utils -w packages/theme-default -w packages/cli -w packages/create",
-    "dev": "npm run dev --workspaces --if-present -w packages/core -w packages/astro -w packages/theme-utils -w packages/theme-default -w packages/cli -w packages/create",
+    "build": "npm run build --workspaces --if-present -w packages/core -w packages/astro -w packages/theme-utils -w packages/theme-default -w packages/cli",
+    "dev": "npm run dev --workspaces --if-present -w packages/core -w packages/astro -w packages/theme-utils -w packages/theme-default -w packages/cli",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "npm run typecheck --workspaces --if-present -w packages/core -w packages/astro -w packages/theme-utils -w packages/theme-default -w packages/cli -w packages/create",
+    "typecheck": "npm run typecheck --workspaces --if-present -w packages/core -w packages/astro -w packages/theme-utils -w packages/theme-default -w packages/cli",
     "lint": "biome check .",
     "format": "biome format --write .",
     "changeset": "changeset",

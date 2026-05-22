@@ -579,7 +579,7 @@ export default defineConfig({
 
 - [ ] `npm run build` で `dist/` が生成される (`index.js` + `index.d.ts` + sourcemap)
 - [ ] `npm pack --dry-run` で同梱される予定のファイルを確認 — `dist/`, `src/components/`, `src/templates/`, `src/styles/`, `src/virtual/` が入っていること
-- [ ] 別ディレクトリで `npm create cosense-site test --project some-public-proj` → `npm install <自テーマ tarball>` → `astro build` を一度通す
+- [ ] 別ディレクトリで `npx degit <自テーマ user/repo> test` → `cosense.config.ts` を編集 → `npm install` → `astro build` を一度通す
 - [ ] `peerDependencies` の Astro バージョン範囲が現実的か (狭すぎず広すぎず)
 - [ ] README にスクリーンショットと最小設定例 (`astro.config.ts` での書き方) を載せる
 - [ ] `.site` YAML で必要なフィールド (`templates:` mapping 等) があればドキュメント化
@@ -591,7 +591,7 @@ export default defineConfig({
 テーマは **「Use this template」リポジトリ**として配布します（npm パッケージにする必要はありません）。テーマのソースをリポジトリに同梱（vendored）し、フレームワーク（`@cosense-site-kit/*`）だけを npm 依存にします。命名は `cosense-theme-<name>` を推奨。利用者は GitHub の「Use this template」、または CLI で取得します:
 
 ```bash
-npm create cosense-site my-site --theme <user/repo>
+npx degit <user/repo> my-site
 ```
 
 テーマリポジトリの構成（[cosense-theme-lab](https://github.com/shinyaoguri/cosense-theme-lab) が参考実装）:
@@ -607,9 +607,9 @@ npm create cosense-site my-site --theme <user/repo>
 - 本文描画は `@cosense-site-kit/theme-utils`（`PageContent` / `Inline`）に委譲する（自前で複製しない）。プラミングは `optionsVirtualModule`（`/integration`）/ `pagePaths` を使う。
 - `@cosense-site-kit/core` / `theme-utils` は通常の dependencies、`astro` は peerDependency。
 
-**発見**はゆるく運用します。公式リポジトリの README にテーマへのリンクを並べる程度で十分です（GitHub で「Use this template」を有効化し、リポジトリトピックに `cosense-theme` を付けると見つけやすい）。
+**公式テーマは `default` の 1 つだけ**です（[cosense-theme-default](https://github.com/shinyaoguri/cosense-theme-default)）。「Use this template」または `npx degit shinyaoguri/cosense-theme-default my-site` で取得します。**それ以外のテーマはすべてサードパーティ** — 登録の仕組みはなく、`npx degit <user/repo> my-site` でそのまま取得できます。
 
-**Featured（おすすめ）テーマ**は [`packages/create/src/catalog.ts`](../packages/create/src/catalog.ts) に短縮 id（`default` → cosense-theme-default、`lab` → cosense-theme-lab）として登録され、`--theme default` のように選べます。キュレーションであってゲートキーパーではなく、任意の `user/repo` は常に `--theme user/repo` で使えます。
+**発見**はゆるく運用します。公式リポジトリの README にコミュニティ製テーマへのリンクを並べる程度で十分です（GitHub で「Use this template」を有効化し、リポジトリトピックに `cosense-theme` を付けると見つけやすい）。
 
 ## 参考実装
 
@@ -618,5 +618,5 @@ npm create cosense-site my-site --theme <user/repo>
 | | 役割 | ポイント |
 |---|---|---|
 | [`packages/theme-default/`](../packages/theme-default/) | `page` / `profile` の2テンプレ + `/posts` archive + `/tags/[tag]` + Notion 風ホバー TOC | テーマの最小実用形 |
-| [cosense-theme-lab](https://github.com/shinyaoguri/cosense-theme-lab)（vendored テーマ） | `/research`・`/news` を inject する**構造が違うテーマ**。`code:members.yaml` / `code:publications.yaml` を lib でパースし、タグ駆動ディスパッチ (`#research`→research-post) を使う。テーマソースを同梱した配布の参考 | 独立ルート・データ block・vendored 配布の参考 |
+| [cosense-theme-lab](https://github.com/shinyaoguri/cosense-theme-lab)（サードパーティ製テーマの参考例） | `/research`・`/news` を inject する**構造が違うテーマ**。`code:members.yaml` / `code:publications.yaml` を lib でパースし、タグ駆動ディスパッチ (`#research`→research-post) を使う。テーマソースを同梱した配布の参考 | 独立ルート・データ block・vendored 配布の参考 |
 | [`packages/theme-utils/`](../packages/theme-utils/) | 共有ヘルパ + 共有コンポーネント (`Inline.astro`, `PageContent.astro`, `Backlinks.astro`, `KaTeXLink.astro`) | 自前で同等の処理を書く前に参照 |
