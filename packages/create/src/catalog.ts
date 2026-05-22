@@ -1,38 +1,38 @@
-// Curated catalog of starter TEMPLATE REPOSITORIES that `create-cosense-site`
-// fetches. Each is a GitHub "Use this template" repo that vendors a theme + the
-// GitHub Pages workflow and depends on the framework from npm. `--template`
-// takes a featured id (below) or any "user/repo".
+// Curated catalog of THEMES that `create-cosense-site` can scaffold from. Each
+// theme is delivered as a GitHub "Use this template" repository that vendors
+// the theme + the GitHub Pages workflow and depends on the framework from npm.
+// `--theme` takes a featured id (below) or any "user/repo".
 //
-// Adding an official template = one entry here. Third-party templates work via
-// `--template user/repo` with no change.
+// Adding an official theme = one entry here. Third-party themes work via
+// `--theme user/repo` with no change.
 
-export interface Template {
-  /** Short id used on the CLI (`--template <id>`). */
+export interface Theme {
+  /** Short id used on the CLI (`--theme <id>`). */
   id: string;
   /** Human label shown in the picker. */
   name: string;
-  /** GitHub "user/repo" the template lives in. */
+  /** GitHub "user/repo" the theme's template repository lives in. */
   repo: string;
   /** One-line description for the picker. */
   description: string;
 }
 
-export const templates: Template[] = [
+export const themes: Theme[] = [
   {
     id: "default",
     name: "Default",
-    repo: "shinyaoguri/cosense-site-starter",
-    description: "Neutral, general-purpose site (theme-default): docs, wiki, notes, personal.",
+    repo: "shinyaoguri/cosense-theme-default",
+    description: "Neutral, general-purpose theme: docs, wiki, notes, personal.",
   },
   {
     id: "lab",
     name: "Lab",
-    repo: "shinyaoguri/cosense-site-lab",
+    repo: "shinyaoguri/cosense-theme-lab",
     description: "University research lab: members, research, publications, news.",
   },
 ];
 
-export interface ResolvedTemplate {
+export interface ResolvedTheme {
   /** GitHub "user/repo". */
   repo: string;
   /** Display label (the featured name, or the repo itself). */
@@ -41,17 +41,17 @@ export interface ResolvedTemplate {
 
 const USER_REPO = /^[\w.-]+\/[\w.-]+$/;
 
-// Resolve a `--template` spec to a GitHub repo: a featured id (e.g. "lab"), or
-// any "user/repo". Omitted → the first featured template.
-export function resolveTemplate(spec?: string): ResolvedTemplate {
+// Resolve a `--theme` spec to a GitHub repo: a featured id (e.g. "lab"), or any
+// "user/repo". Omitted → the first featured theme.
+export function resolveTheme(spec?: string): ResolvedTheme {
   if (!spec) {
-    const first = templates[0];
-    if (!first) throw new Error("No templates are configured.");
+    const first = themes[0];
+    if (!first) throw new Error("No themes are configured.");
     return { repo: first.repo, name: first.name };
   }
-  const featured = templates.find((t) => t.id === spec);
+  const featured = themes.find((t) => t.id === spec);
   if (featured) return { repo: featured.repo, name: featured.name };
   if (USER_REPO.test(spec)) return { repo: spec, name: spec };
-  const ids = templates.map((t) => t.id).join(", ");
-  throw new Error(`Unknown template "${spec}". Use one of: ${ids}, or a "user/repo".`);
+  const ids = themes.map((t) => t.id).join(", ");
+  throw new Error(`Unknown theme "${spec}". Use one of: ${ids}, or a "user/repo".`);
 }
