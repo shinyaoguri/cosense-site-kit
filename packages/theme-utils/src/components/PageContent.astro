@@ -1,6 +1,23 @@
 ---
+import { Code } from "astro:components";
 import type { CosenseBlock } from "@cosense-site-kit/core";
 import Inline from "./Inline.astro";
+
+// Languages Shiki can highlight at build time. `code:<file>` blocks whose
+// inferred language isn't here fall back to plaintext so the build never fails
+// on an exotic extension. Light/dark are emitted as one block; a theme picks
+// the active set via CSS keyed on its skin (see theme-default global.css).
+const SHIKI_LANGS = new Set([
+  "ts", "tsx", "js", "jsx", "json", "jsonc", "python", "ruby", "go", "rust",
+  "bash", "shell", "sh", "markdown", "md", "yaml", "yml", "html", "css", "scss",
+  "less", "sql", "toml", "ini", "diff", "xml", "c", "cpp", "csharp", "java",
+  "kotlin", "swift", "php", "vue", "svelte", "astro", "dockerfile", "graphql",
+  "plaintext", "text",
+]);
+function safeLang(lang: string | undefined): string {
+  const l = lang?.toLowerCase();
+  return l && SHIKI_LANGS.has(l) ? l : "plaintext";
+}
 
 interface Props {
   blocks: CosenseBlock[];
@@ -36,10 +53,20 @@ const visible = blocks.filter(
             <li><Inline nodes={block.children} /></li>
           </ul>
         );
-      case "code":
-        // <pre> on a single line: whitespace between <pre> and <code> would
-        // be preserved literally and shift the first code line.
-        return <pre data-language={block.lang ?? ""}><code class={block.lang ? `language-${block.lang}` : undefined}>{block.value}</code></pre>;
+      case "code": {
+        // Build-time syntax highlighting via Astro's bundled Shiki. Dual theme
+        // (light/dark) so a theme can switch by skin in CSS. <Code> sets
+        // `data-language` on the <pre> itself, which the theme's language label
+        // reads.
+        const lang = safeLang(block.lang);
+        return (
+          <Code
+            code={block.value}
+            lang={lang}
+            themes={{ light: "github-light", dark: "github-dark" }}
+          />
+        );
+      }
       case "image":
         return <img src={block.url} alt={block.alt ?? ""} loading="lazy" />;
       case "embed":

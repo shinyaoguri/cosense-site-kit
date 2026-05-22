@@ -299,6 +299,38 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 0;
 }
 
+/* Shiki dual-theme: the build emits light + dark palettes; under the dark
+   skin (Layout sets <html data-theme="dark">) switch tokens to the dark set. */
+html[data-theme="dark"] .page-content .astro-code {
+  background-color: var(--shiki-dark-bg) !important;
+  color: var(--shiki-dark) !important;
+}
+html[data-theme="dark"] .page-content .astro-code span {
+  color: var(--shiki-dark) !important;
+}
+
+/* Line numbers. Shiki wraps each source line in <span class="line">; a CSS
+   counter prepends the number without touching the highlighted tokens. */
+.page-content .astro-code code {
+  counter-reset: step;
+  counter-increment: step 0;
+}
+/* Line-numbered blocks hug the left tighter than the default <pre> padding. */
+.page-content pre.astro-code {
+  padding-left: 0.75rem;
+}
+.page-content .astro-code .line::before {
+  content: counter(step);
+  counter-increment: step;
+  display: inline-block;
+  width: 1.25rem;
+  margin-right: 0.75rem;
+  text-align: right;
+  color: var(--color-text-muted);
+  opacity: 0.55;
+  user-select: none;
+}
+
 .code-block-lang {
   display: inline-block;
   margin: 1rem 0 0;
