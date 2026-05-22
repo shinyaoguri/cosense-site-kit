@@ -1,0 +1,44 @@
+---
+import { getCollection } from "astro:content";
+import { type RelatedCandidate, relatedPages } from "../related";
+import { path } from "../structure";
+
+// Scrapbox-style "related pages": other published pages that share link
+// targets with this one (2-hop). Reads the whole pages collection and ranks
+// via the pure relatedPages() helper. Direct backlinks have their own panel,
+// so pass them in `exclude` to keep this list to genuine 2-hop discoveries.
+interface Props {
+  /** Title of the page being rendered (excluded from its own related list). */
+  title: string;
+  /** Outgoing link targets of the current page. */
+  links: string[];
+  /** Titles to omit, e.g. the page's direct backlinks. */
+  exclude?: string[];
+  /** Max related pages to show. Default 8. */
+  limit?: number;
+}
+
+const { title, links, exclude = [], limit } = Astro.props;
+
+const all = await getCollection("pages" as never);
+const candidates: RelatedCandidate[] = (
+  all as { data: { title: string; slug: string; links: string[] } }[]
+)
+  .filter((e) => e.data.title !== title)
+  .map((e) => ({ title: e.data.title, slug: e.data.slug, links: e.data.links }));
+
+const related = relatedPages(links, candidates, {
+  limit,
+  exclude: [title, ...exclude],
+});
+---
+{related.length > 0 && (
+  <aside class="related">
+    <h4>Related pages</h4>
+    <ul>
+      {related.map((r) => (
+        <li><a href={path(r.slug)}>{r.title}</a></li>
+      ))}
+    </ul>
+  </aside>
+)}

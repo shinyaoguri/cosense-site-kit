@@ -1,9 +1,10 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import Layout from "../components/Layout.astro";
-import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
-import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
 import { formatDate, isPublicTag, path } from "@cosense-site-kit/theme-utils";
+import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
+import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
+import Related from "@cosense-site-kit/theme-utils/components/Related.astro";
+import Layout from "../components/Layout.astro";
 
 interface Props {
   entry: CollectionEntry<"pages">;
@@ -46,6 +47,8 @@ const showUpdated = updatedDay && updatedDay !== publishedDay;
     <PageContent blocks={page.blocks} />
 
     <Backlinks backlinks={page.backlinks} />
+
+    <Related title={page.title} links={page.links} exclude={page.backlinks} />
 
     <footer class="source">
       <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>

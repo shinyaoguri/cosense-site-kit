@@ -574,14 +574,20 @@ html[data-theme="dark"] .page-content .astro-code span {
   font-variant-numeric: tabular-nums;
 }
 
-/* ===================== Backlinks ===================== */
+/* ===================== Backlinks / Related ===================== */
 
 .backlinks {
   margin-top: 4rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--color-divider);
 }
-.backlinks h4 {
+/* Related sits right after Backlinks, so it gets a lighter separation to
+   avoid two heavy 4rem top borders stacking. */
+.related {
+  margin-top: 2rem;
+}
+.backlinks h4,
+.related h4 {
   margin: 0 0 0.625rem;
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -589,7 +595,8 @@ html[data-theme="dark"] .page-content .astro-code span {
   color: var(--color-text-muted);
   font-weight: 600;
 }
-.backlinks ul {
+.backlinks ul,
+.related ul {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -597,10 +604,12 @@ html[data-theme="dark"] .page-content .astro-code span {
   flex-wrap: wrap;
   gap: 0.375rem;
 }
-.backlinks li {
+.backlinks li,
+.related li {
   display: inline;
 }
-.backlinks a {
+.backlinks a,
+.related a {
   display: inline-block;
   padding: 0.25rem 0.625rem;
   background: var(--color-bg-soft);
@@ -610,7 +619,8 @@ html[data-theme="dark"] .page-content .astro-code span {
   text-decoration: none;
   transition: background 0.15s var(--ease);
 }
-.backlinks a:hover {
+.backlinks a:hover,
+.related a:hover {
   background: var(--color-bg-hover);
   color: var(--color-text);
   text-decoration: none;
