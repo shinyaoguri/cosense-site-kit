@@ -2,7 +2,6 @@ import { Command } from "commander";
 import pc from "picocolors";
 import { runInit } from "./commands/init";
 import { runFetch } from "./commands/fetch";
-import { runBuild } from "./commands/build";
 import { runValidate } from "./commands/validate";
 import { runDeployInit } from "./commands/deploy";
 import { runDoctorCmd } from "./commands/doctor";
@@ -51,14 +50,6 @@ program
       });
     },
   );
-
-program
-  .command("build")
-  .description("Run the underlying Astro build")
-  .action(async () => {
-    const code = await runBuild({ cwd: process.cwd() });
-    if (code !== 0) process.exit(code);
-  });
 
 program
   .command("validate")
