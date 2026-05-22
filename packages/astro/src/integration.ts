@@ -16,6 +16,12 @@ export interface CosenseIntegrationOptions {
   configFile?: string;
   /** Pre-loaded config object. Takes priority over configFile. */
   config?: CosenseSiteConfig;
+  /**
+   * Surface excluded pages (drafts) for local preview. Defaults to on in
+   * `astro dev`, off in `astro build`. Set explicitly to override. Must match
+   * the loader's setting so both reuse the same shared pipeline result.
+   */
+  previewDrafts?: boolean;
 }
 
 // Astro Integration. Use in astro.config.ts:
@@ -81,9 +87,12 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
   return {
     name: "@cosense-site-kit/astro",
     hooks: {
-      "astro:config:setup": async ({ updateConfig, logger }) => {
+      "astro:config:setup": async ({ updateConfig, logger, command }) => {
         const config = opts.config ?? (await loadCosenseSiteConfig(opts.configFile));
         const normalized = normalizeBase(config.site.base);
+        // Match the loader's draft default (on in dev) so both share one
+        // pipeline run; structure itself doesn't depend on drafts.
+        const previewDrafts = opts.previewDrafts ?? command === "dev";
 
         // The virtual:cosense-site-kit/structure module needs a SiteStructure
         // at module-load time. We compute it eagerly here (memoed across the
@@ -95,6 +104,7 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           const data = await getSharedIntermediate({
             configFile: opts.configFile,
             config: opts.config,
+            previewDrafts,
           });
           structure = data.structure;
           icon = data.site.icon;

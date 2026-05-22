@@ -37,6 +37,12 @@ export interface CosenseSitePage {
   links: string[];
   backlinks: string[];
   authors?: string[];
+  /**
+   * True for pages that are NOT actually published but are surfaced anyway in a
+   * dev preview build (previewDrafts). Never set in a production build, so a
+   * theme can render a "draft" badge knowing it only appears locally.
+   */
+  draft?: boolean;
   blocks: CosenseBlock[];
 }
 
@@ -57,6 +63,7 @@ export const pageSchema = z.object({
   links: z.array(z.string()),
   backlinks: z.array(z.string()),
   authors: z.array(z.string()).optional(),
+  draft: z.boolean().optional(),
   blocks: z.array(blockSchema),
 });
 

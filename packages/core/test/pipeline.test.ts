@@ -302,6 +302,33 @@ describe("buildIntermediate", () => {
     }
   });
 
+  it("surfaces drafts (flagged) only when previewDrafts is set", async () => {
+    const raws = [
+      rawPage({ id: "a", title: "Live", text: "Live\n#publish" }),
+      rawPage({ id: "b", title: "WIP", text: "WIP\n#draft" }),
+      rawPage({ id: "c", title: "Untagged", text: "Untagged\nno tags" }),
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+
+    const normal = await buildIntermediate({ config, source: stubSource(raws) });
+    expect(normal.pages.map((p) => p.title)).toEqual(["Live"]);
+
+    const preview = await buildIntermediate({
+      config,
+      source: stubSource(raws),
+      previewDrafts: true,
+    });
+    expect(preview.pages.map((p) => p.title).sort()).toEqual(["Live", "Untagged", "WIP"]);
+    // Surfaced drafts are flagged; the published page is not.
+    expect(preview.pages.find((p) => p.title === "Live")?.draft).toBeUndefined();
+    expect(preview.pages.find((p) => p.title === "WIP")?.draft).toBe(true);
+    // They still appear in `excluded` for doctor.
+    expect(preview.excluded.map((e) => e.title).sort()).toEqual(["Untagged", "WIP"]);
+  });
+
   it("respects siteConfig.page set to null (feature disabled)", async () => {
     const raws = [rawPage({ id: "s", title: ".site", text: ".site\ncode:site.yaml\n nav: []" })];
     const config = defineCosenseSite({

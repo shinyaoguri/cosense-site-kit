@@ -16,6 +16,7 @@ export function getSharedIntermediate(opts: CosenseLoaderOptions): Promise<Inter
     config: opts.config,
     cacheDir: opts.cacheDir,
     force: opts.force,
+    previewDrafts: opts.previewDrafts,
   });
   if (memo && memo.key === key) return memo.data;
   const promise = (async () => {
@@ -26,6 +27,7 @@ export function getSharedIntermediate(opts: CosenseLoaderOptions): Promise<Inter
       force: opts.force,
       // Real build context: track slug history so renames auto-redirect.
       persistRedirects: true,
+      previewDrafts: opts.previewDrafts,
     });
   })();
   memo = { key, data: promise };

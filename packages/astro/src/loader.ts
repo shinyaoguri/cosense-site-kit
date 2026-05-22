@@ -1,10 +1,10 @@
 import { join } from "node:path";
 import {
+  type CosenseSiteConfig,
   loadCosenseSiteConfig,
   normalizeBase,
   pageSchema,
   vendorIcons,
-  type CosenseSiteConfig,
 } from "@cosense-site-kit/core";
 import type { Loader } from "astro/loaders";
 import { getSharedIntermediate } from "./intermediate-cache";
@@ -18,6 +18,12 @@ export interface CosenseLoaderOptions {
   cacheDir?: string;
   /** Force a full refetch ignoring the cache. */
   force?: boolean;
+  /**
+   * Surface excluded pages (drafts) for local preview, flagged `draft: true`.
+   * Defaults to on in `astro dev` and off in `astro build` (drafts never leak
+   * to a production build). Set explicitly to override the auto-detection.
+   */
+  previewDrafts?: boolean;
 }
 
 // Astro Content Loader for the published pages collection. Use it from
@@ -36,8 +42,11 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
   return {
     name: "cosense-site-kit/pages",
     schema: pageSchema,
-    async load({ store, logger, generateDigest, parseData }) {
-      const built = await getSharedIntermediate(opts);
+    async load({ store, logger, generateDigest, parseData, watcher }) {
+      // Astro only passes a `watcher` in dev, so it's a reliable dev signal:
+      // show drafts locally by default, never in a production build.
+      const previewDrafts = opts.previewDrafts ?? Boolean(watcher);
+      const built = await getSharedIntermediate({ ...opts, previewDrafts });
       logger.info(`Loaded ${built.pages.length} page(s); excluded ${built.excluded.length}`);
       for (const w of built.warnings) logger.warn(w);
 

@@ -34,6 +34,13 @@ export interface BuildIntermediateOptions {
    * `config.routing.redirectOnRename` is also true.
    */
   persistRedirects?: boolean;
+  /**
+   * Include pages that the publish rules would exclude (drafts, not-yet-
+   * published), marked `draft: true`, so they're viewable in a local preview.
+   * Set only by the dev server — never in a production build, so drafts can't
+   * leak. They still appear in `excluded` for doctor.
+   */
+  previewDrafts?: boolean;
 }
 
 export type ProgressEvent =
@@ -93,7 +100,14 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   }
   opts.onProgress?.({ kind: "publish", kept: kept.length, excluded: excluded.length });
 
-  const slugged = assignSlugs(kept, config.routing);
+  // Dev preview: also render the tag-excluded pages (drafts / not-yet-published),
+  // flagged so the theme can badge them. They stay listed in `excluded` too.
+  const draftPages = opts.previewDrafts
+    ? remainingPages.filter((p) => !kept.includes(p)).map((p) => ({ ...p, draft: true }))
+    : [];
+  const published = draftPages.length > 0 ? [...kept, ...draftPages] : kept;
+
+  const slugged = assignSlugs(published, config.routing);
 
   // Emit redirects for pages whose slug changed since the last build (rename),
   // merged into the structure so the Astro integration wires them. Only in real
