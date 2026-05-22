@@ -3,6 +3,7 @@ export { youtubeEmbedSrc } from "./embeds";
 export { buildRssFeed, type FeedItem, type FeedOptions } from "./feed";
 export { buildListTree, type FlatListItem, type ListTreeItem } from "./lists";
 export { renderInlineMath } from "./math";
+export { buildPreviewData, type PagePreview, type PreviewSource } from "./preview-data";
 export {
   isStructuralLink,
   type RelatedCandidate,

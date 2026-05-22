@@ -5,6 +5,7 @@ import Header from "./Header.astro";
 import Footer from "./Footer.astro";
 import TableOfContents from "./TableOfContents.astro";
 import CodeBlockEnhancer from "./CodeBlockEnhancer.astro";
+import LinkPreview from "./LinkPreview.astro";
 import KaTeXLink from "@cosense-site-kit/theme-utils/components/KaTeXLink.astro";
 import { loadStructure, path } from "@cosense-site-kit/theme-utils";
 import { resolveActiveSkin } from "../presets";
@@ -111,5 +112,6 @@ const htmlStyle = [
     <Footer />
     {!hideToc && <TableOfContents />}
     <CodeBlockEnhancer />
+    <LinkPreview />
   </body>
 </html>

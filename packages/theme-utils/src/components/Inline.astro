@@ -31,7 +31,9 @@ const { nodes } = Astro.props;
       return <a href={node.href} rel="noopener noreferrer"><Inline nodes={node.children} /></a>;
     case "pageLink":
       if (node.exists && node.slug) {
-        return <a class="page-link" href={path(node.slug)}>{node.title}</a>;
+        // data-preview-slug lets a theme attach a hover/focus link-preview
+        // card (see theme-default's LinkPreview). Inert without that script.
+        return <a class="page-link" href={path(node.slug)} data-preview-slug={node.slug}>{node.title}</a>;
       }
       return <span class="page-link missing">{node.title}</span>;
     case "tag":

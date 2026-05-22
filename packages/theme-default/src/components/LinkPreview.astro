@@ -1,0 +1,123 @@
+---
+// Hover/focus link previews for internal links (Quartz / Obsidian-Publish
+// feel). Internal links carry data-preview-slug (added by theme-utils' Inline
+// renderer); on first interaction we lazily fetch /link-previews.json and show
+// a small card with the target page's title, image and clipped summary.
+// Progressive enhancement: links work normally without JS, and the card never
+// appears on touch (no hover) — taps just navigate.
+const endpoint = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/link-previews.json`;
+---
+<script is:inline define:vars={{ endpoint }}>
+  (() => {
+    const ATTR = "data-preview-slug";
+    const OPEN_DELAY = 120;
+    const CLOSE_DELAY = 160;
+    let cache = null;
+    let loading = null;
+    let pop = null;
+    let openTimer = 0;
+    let closeTimer = 0;
+
+    const load = () => {
+      if (cache) return Promise.resolve(cache);
+      if (!loading) {
+        loading = fetch(endpoint)
+          .then((r) => (r.ok ? r.json() : {}))
+          .then((d) => (cache = d))
+          .catch(() => (cache = {}));
+      }
+      return loading;
+    };
+
+    const ensurePopover = () => {
+      if (pop) return pop;
+      pop = document.createElement("div");
+      pop.className = "link-preview";
+      pop.setAttribute("role", "tooltip");
+      pop.hidden = true;
+      pop.addEventListener("pointerenter", () => clearTimeout(closeTimer));
+      pop.addEventListener("pointerleave", scheduleHide);
+      document.body.appendChild(pop);
+      return pop;
+    };
+
+    const hide = () => {
+      if (pop) pop.hidden = true;
+    };
+    function scheduleHide() {
+      clearTimeout(closeTimer);
+      closeTimer = window.setTimeout(hide, CLOSE_DELAY);
+    }
+
+    const position = (el, link) => {
+      const r = link.getBoundingClientRect();
+      const pw = el.offsetWidth;
+      const ph = el.offsetHeight;
+      const vw = document.documentElement.clientWidth;
+      let left = Math.max(8, Math.min(window.scrollX + r.left, window.scrollX + vw - pw - 8));
+      const below = window.scrollY + r.bottom + 8;
+      const above = window.scrollY + r.top - ph - 8;
+      const flip = r.bottom + 8 + ph > window.innerHeight && r.top - 8 - ph > 0;
+      el.style.left = `${left}px`;
+      el.style.top = `${flip ? above : below}px`;
+    };
+
+    const show = async (link) => {
+      const slug = link.getAttribute(ATTR);
+      if (!slug) return;
+      const data = await load();
+      const entry = data[slug];
+      if (!entry) return;
+      const el = ensurePopover();
+      el.innerHTML = "";
+      const title = document.createElement("div");
+      title.className = "link-preview__title";
+      title.textContent = entry.title;
+      el.appendChild(title);
+      if (entry.image) {
+        const img = document.createElement("img");
+        img.className = "link-preview__image";
+        img.src = entry.image;
+        img.alt = "";
+        img.loading = "lazy";
+        el.appendChild(img);
+      }
+      if (entry.summary) {
+        const p = document.createElement("p");
+        p.className = "link-preview__summary";
+        p.textContent = entry.summary;
+        el.appendChild(p);
+      }
+      el.hidden = false; // make measurable before positioning
+      position(el, link);
+    };
+
+    const linkFrom = (e) =>
+      e.target && e.target.closest ? e.target.closest(`a[${ATTR}]`) : null;
+
+    document.addEventListener("pointerover", (e) => {
+      const link = linkFrom(e);
+      if (!link) return;
+      clearTimeout(closeTimer);
+      clearTimeout(openTimer);
+      openTimer = window.setTimeout(() => show(link), OPEN_DELAY);
+    });
+    document.addEventListener("pointerout", (e) => {
+      if (!linkFrom(e)) return;
+      clearTimeout(openTimer);
+      scheduleHide();
+    });
+    document.addEventListener("focusin", (e) => {
+      const link = linkFrom(e);
+      if (link) show(link);
+    });
+    document.addEventListener("focusout", (e) => {
+      if (linkFrom(e)) scheduleHide();
+    });
+    // Dismiss on scroll/escape so a stale card doesn't linger.
+    window.addEventListener("scroll", hide, { passive: true });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") hide();
+    });
+  })();
+</script>
