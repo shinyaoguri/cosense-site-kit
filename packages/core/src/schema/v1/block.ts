@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { inlineNodeSchema, type InlineNode } from "./inline";
+import { type InlineNode, inlineNodeSchema } from "./inline";
 
 export type CosenseBlock =
   | { type: "paragraph"; children: InlineNode[] }
   | { type: "heading"; depth: 1 | 2 | 3; children: InlineNode[] }
-  | { type: "list"; depth: number; children: InlineNode[] }
+  | { type: "quote"; children: InlineNode[] }
+  | { type: "list"; depth: number; ordered?: boolean; children: InlineNode[] }
   | { type: "code"; filename?: string; lang?: string; value: string }
   | { type: "image"; url: string; alt?: string }
   | { type: "embed"; kind: "gyazo" | "youtube" | "link" | "unknown"; url: string }
@@ -18,9 +19,11 @@ export const blockSchema: z.ZodType<CosenseBlock> = z.discriminatedUnion("type",
     depth: z.union([z.literal(1), z.literal(2), z.literal(3)]),
     children: z.array(inlineNodeSchema),
   }),
+  z.object({ type: z.literal("quote"), children: z.array(inlineNodeSchema) }),
   z.object({
     type: z.literal("list"),
     depth: z.number().int().min(0),
+    ordered: z.boolean().optional(),
     children: z.array(inlineNodeSchema),
   }),
   z.object({

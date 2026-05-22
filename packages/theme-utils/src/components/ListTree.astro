@@ -1,0 +1,34 @@
+---
+import type { ListTreeItem } from "../lists";
+import Inline from "./Inline.astro";
+import Self from "./ListTree.astro";
+
+interface Props {
+  items: ListTreeItem[];
+}
+
+const { items } = Astro.props;
+
+// Sibling items can mix ordered/unordered (rare, but possible). Split a level
+// into runs of the same kind so each run gets the correct <ul>/<ol> wrapper.
+type Run = { ordered: boolean; items: ListTreeItem[] };
+const runs: Run[] = [];
+for (const item of items) {
+  const last = runs[runs.length - 1];
+  if (last && last.ordered === item.ordered) last.items.push(item);
+  else runs.push({ ordered: item.ordered, items: [item] });
+}
+---
+{runs.map((run) => {
+  const Tag = run.ordered ? "ol" : "ul";
+  return (
+    <Tag>
+      {run.items.map((item) => (
+        <li>
+          <Inline nodes={item.children} />
+          {item.items.length > 0 && <Self items={item.items} />}
+        </li>
+      ))}
+    </Tag>
+  );
+})}

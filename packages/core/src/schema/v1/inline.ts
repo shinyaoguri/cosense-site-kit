@@ -10,7 +10,8 @@ export type InlineNode =
   | { type: "link"; href: string; children: InlineNode[] }
   | { type: "pageLink"; title: string; slug?: string; exists: boolean }
   | { type: "tag"; name: string }
-  | { type: "icon"; pageTitle: string; project: string; src: string };
+  | { type: "icon"; pageTitle: string; project: string; src: string }
+  | { type: "image"; src: string; href?: string; alt?: string };
 
 export const inlineNodeSchema: z.ZodType<InlineNode> = z.lazy(() =>
   z.discriminatedUnion("type", [
@@ -37,6 +38,12 @@ export const inlineNodeSchema: z.ZodType<InlineNode> = z.lazy(() =>
       pageTitle: z.string(),
       project: z.string(),
       src: z.string(),
+    }),
+    z.object({
+      type: z.literal("image"),
+      src: z.string(),
+      href: z.string().optional(),
+      alt: z.string().optional(),
     }),
   ]),
 );

@@ -105,6 +105,10 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
         injectRoute({ pattern: "/", entrypoint: here("templates/home.astro") });
         injectRoute({ pattern: "/posts", entrypoint: here("templates/archive.astro") });
         injectRoute({ pattern: "/tags/[tag]", entrypoint: here("templates/tag.astro") });
+        // SEO / discovery endpoints (XML/text, not pages).
+        injectRoute({ pattern: "/sitemap.xml", entrypoint: here("templates/sitemap.xml.ts") });
+        injectRoute({ pattern: "/robots.txt", entrypoint: here("templates/robots.txt.ts") });
+        injectRoute({ pattern: "/feed.xml", entrypoint: here("templates/feed.xml.ts") });
         // Dispatcher: serves /<slug> and picks the right per-page template
         // (templates/page.astro by default, others via #template/<name>).
         injectRoute({ pattern: "/[...slug]", entrypoint: here("templates/_dispatcher.astro") });

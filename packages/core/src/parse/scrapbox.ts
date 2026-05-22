@@ -110,6 +110,29 @@ function appendLineBlock(
     return;
   }
 
+  // A `>` quote line becomes a blockquote. The parser wraps the line in a
+  // single quote node; render its inner nodes as the quote body.
+  if (nodes.length === 1 && nodes[0]?.type === "quote") {
+    out.push({
+      type: "quote",
+      children: nodes[0].nodes.flatMap((n) => convertInline(n, ctx)),
+    });
+    return;
+  }
+
+  // A `N. ` numbered line becomes an ordered list item. The parser emits a
+  // single numberList node carrying the line's content. depth = indent + 1 so
+  // a top-level (indent 0) numbered line is still list level 1.
+  if (nodes.length === 1 && nodes[0]?.type === "numberList") {
+    out.push({
+      type: "list",
+      ordered: true,
+      depth: line.indent + 1,
+      children: nodes[0].nodes.flatMap((n) => convertInline(n, ctx)),
+    });
+    return;
+  }
+
   const children = nodes.flatMap((n) => convertInline(n, ctx));
   if (line.indent > 0) {
     out.push({ type: "list", depth: line.indent, children });
@@ -187,23 +210,19 @@ function convertInline(node: SbNode, ctx: Context): InlineNode[] {
 
     case "image":
       ctx.images.push(node.src);
+      // `link` mirrors `src` when the image isn't wrapped in a link; only keep
+      // a distinct href so the renderer wraps the <img> in an <a>.
       return [
         {
-          type: "link",
-          href: node.link || node.src,
-          children: [{ type: "text", value: `[image] ${node.src}` }],
+          type: "image",
+          src: node.src,
+          href: node.link && node.link !== node.src ? node.link : undefined,
         },
       ];
 
     case "strongImage":
       ctx.images.push(node.src);
-      return [
-        {
-          type: "link",
-          href: node.src,
-          children: [{ type: "text", value: `[image] ${node.src}` }],
-        },
-      ];
+      return [{ type: "image", src: node.src }];
 
     case "strong":
       return [

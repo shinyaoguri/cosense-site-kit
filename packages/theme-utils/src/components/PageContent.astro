@@ -1,7 +1,9 @@
 ---
 import { Code } from "astro:components";
-import type { CosenseBlock } from "@cosense-site-kit/core";
+import type { CosenseBlock, InlineNode } from "@cosense-site-kit/core";
+import { buildListTree } from "../lists";
 import Inline from "./Inline.astro";
+import ListTree from "./ListTree.astro";
 
 // Languages Shiki can highlight at build time. `code:<file>` blocks whose
 // inferred language isn't here fall back to plaintext so the build never fails
@@ -37,9 +39,42 @@ const hidden = new Set(["site.yaml", ...hideFilenames]);
 const visible = blocks.filter(
   (b) => !(b.type === "code" && b.filename && hidden.has(b.filename)),
 );
+
+// The parser emits one block per line, so consecutive list items / quote lines
+// arrive as separate blocks. Fold each run together: list runs become one
+// nested <ul>/<ol> (via buildListTree), quote runs become one <blockquote>.
+type ListBlock = Extract<CosenseBlock, { type: "list" }>;
+type Group =
+  | { kind: "list"; items: ListBlock[] }
+  | { kind: "quote"; rows: InlineNode[][] }
+  | { kind: "block"; block: CosenseBlock };
+const groups: Group[] = [];
+for (const block of visible) {
+  const last = groups[groups.length - 1];
+  if (block.type === "list") {
+    if (last?.kind === "list") last.items.push(block);
+    else groups.push({ kind: "list", items: [block] });
+  } else if (block.type === "quote") {
+    if (last?.kind === "quote") last.rows.push(block.children);
+    else groups.push({ kind: "quote", rows: [block.children] });
+  } else {
+    groups.push({ kind: "block", block });
+  }
+}
 ---
 <div class={wrapperClass}>
-  {visible.map((block) => {
+  {groups.map((group) => {
+    if (group.kind === "list") {
+      return <ListTree items={buildListTree(group.items)} />;
+    }
+    if (group.kind === "quote") {
+      return (
+        <blockquote>
+          {group.rows.map((row) => <p><Inline nodes={row} /></p>)}
+        </blockquote>
+      );
+    }
+    const block = group.block;
     switch (block.type) {
       case "paragraph":
         return <p><Inline nodes={block.children} /></p>;
@@ -47,12 +82,6 @@ const visible = blocks.filter(
         if (block.depth === 1) return <h2><Inline nodes={block.children} /></h2>;
         if (block.depth === 2) return <h3><Inline nodes={block.children} /></h3>;
         return <h4><Inline nodes={block.children} /></h4>;
-      case "list":
-        return (
-          <ul style={`margin-left: ${(block.depth - 1) * 1.5}em`}>
-            <li><Inline nodes={block.children} /></li>
-          </ul>
-        );
       case "code": {
         // Build-time syntax highlighting via Astro's bundled Shiki. Dual theme
         // (light/dark) so a theme can switch by skin in CSS. <Code> sets

@@ -27,6 +27,12 @@ export interface CosenseSitePage {
   publishedAt?: string;
   modifiedAt?: string;
   summary?: string;
+  /**
+   * Representative image URL for this page, used as the OpenGraph/Twitter card
+   * image. The first image encountered in the body (parser order). Absent when
+   * the page has no images. Themes emit it as `og:image`.
+   */
+  image?: string;
   tags: string[];
   links: string[];
   backlinks: string[];
@@ -46,6 +52,7 @@ export const pageSchema = z.object({
   publishedAt: z.string().optional(),
   modifiedAt: z.string().optional(),
   summary: z.string().optional(),
+  image: z.string().optional(),
   tags: z.array(z.string()),
   links: z.array(z.string()),
   backlinks: z.array(z.string()),

@@ -385,6 +385,17 @@ html[data-theme="dark"] .page-content .astro-code span {
   margin: 1rem 0;
 }
 
+/* Images mixed inline with text (vs. an image on its own line, which is a
+   block figure). Keep them in the text flow, sized to sit on the line. */
+.page-content img.inline-image {
+  display: inline-block;
+  vertical-align: middle;
+  max-height: 1.6em;
+  width: auto;
+  margin: 0 0.2em;
+  border-radius: 3px;
+}
+
 .page-content table {
   width: 100%;
   border-collapse: collapse;

@@ -25,6 +25,10 @@ export function normalizePage(raw: SourcePageRaw, project: string): CosenseSiteP
     createdAt: new Date(raw.created * 1000).toISOString(),
     updatedAt: new Date(raw.updated * 1000).toISOString(),
     summary: extractSummary(parsed.blocks) ?? cleanDescription(raw.descriptions[0]),
+    // First image in the body becomes the OG/Twitter card image. raw.image
+    // (the Cosense-provided thumbnail) is a fallback for pages whose images
+    // are all inline-linked rather than parsed as media.
+    image: parsed.images[0] ?? raw.image ?? undefined,
     tags: parsed.tags,
     links,
     backlinks: [],

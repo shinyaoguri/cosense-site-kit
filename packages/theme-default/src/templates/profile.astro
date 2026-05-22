@@ -21,7 +21,7 @@ interface Props {
 const { entry } = Astro.props;
 const page = entry.data;
 ---
-<Layout title={page.title} description={page.summary}>
+<Layout title={page.title} description={page.summary} image={page.image} ogType="article">
   <article class="profile">
     <header class="profile-hero">
       <h1>{page.title}</h1>

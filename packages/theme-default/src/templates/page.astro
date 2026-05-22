@@ -18,7 +18,7 @@ const updatedDay = formatDate(page.modifiedAt);
 // so a page edited the same day it was published shows a single date.
 const showUpdated = updatedDay && updatedDay !== publishedDay;
 ---
-<Layout title={page.title} description={page.summary}>
+<Layout title={page.title} description={page.summary} image={page.image} ogType="article">
   <article>
     <header class="page-header">
       <h1>{page.title}</h1>
