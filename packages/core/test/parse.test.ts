@@ -41,6 +41,20 @@ describe("parseScrapboxText", () => {
     }
   });
 
+  it("keeps inline markup inside table cells (links survive, not flattened to text)", () => {
+    const text = ["Title", "table:data", " name\t[Other Page]"].join("\n");
+    const { blocks, pageLinks } = parseScrapboxText(text, "demo");
+    const table = blocks.find((b) => b.type === "table");
+    if (!table || table.type !== "table") throw new Error("expected table");
+    // rows[r][c] is a cell = InlineNode[] (not a flattened string).
+    const plainCell = table.rows[0]?.[0];
+    expect(plainCell?.[0]).toEqual({ type: "text", value: "name" });
+    const linkCell = table.rows[0]?.[1];
+    expect(linkCell?.some((n) => n.type === "pageLink")).toBe(true);
+    // A pageLink inside a cell is also collected into the page's link graph.
+    expect(pageLinks).toContain("Other Page");
+  });
+
   it("treats indented lines as list items", () => {
     const { blocks } = parseScrapboxText("Title\n one\n two", "demo");
     expect(blocks.map((b) => b.type)).toEqual(["list", "list"]);

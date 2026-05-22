@@ -126,7 +126,7 @@ for (const block of visible) {
             {block.filename && <caption>{block.filename}</caption>}
             <tbody>
               {block.rows.map((row) => (
-                <tr>{row.map((cell) => <td>{cell}</td>)}</tr>
+                <tr>{row.map((cell) => <td><Inline nodes={cell} /></td>)}</tr>
               ))}
             </tbody>
           </table>

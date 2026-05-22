@@ -46,7 +46,9 @@ export function parseScrapboxText(text: string, project: string): ParsedPage {
         blocks.push({
           type: "table",
           filename: block.fileName || undefined,
-          rows: block.cells.map((row) => row.map((cell) => renderInlineToText(cell))),
+          rows: block.cells.map((row) =>
+            row.map((cell) => cell.flatMap((n) => convertInline(n, ctx))),
+          ),
         });
         break;
       case "line":
@@ -287,39 +289,6 @@ function convertInline(node: SbNode, ctx: Context): InlineNode[] {
     default:
       return [{ type: "text", value: "" }];
   }
-}
-
-function renderInlineToText(nodes: SbNode[]): string {
-  return nodes
-    .map((n) => {
-      switch (n.type) {
-        case "plain":
-        case "blank":
-        case "helpfeel":
-        case "code":
-          return n.text;
-        case "formula":
-          return n.formula;
-        case "hashTag":
-          return `#${n.href}`;
-        case "link":
-          return n.content || n.href;
-        case "strong":
-        case "decoration":
-        case "quote":
-        case "numberList":
-          return renderInlineToText(n.nodes);
-        case "icon":
-        case "strongIcon":
-          return n.path;
-        case "image":
-        case "strongImage":
-          return n.src;
-        default:
-          return "";
-      }
-    })
-    .join("");
 }
 
 // Classify a URL as a known embeddable provider, or undefined for an ordinary

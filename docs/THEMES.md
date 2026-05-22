@@ -213,8 +213,12 @@ import {
   loadTitleToSlug,    // () => Promise<Map<title, slug>>
   navHref,            // (item, titleToSlug) => string (BASE_URL 自動付与)
   path,               // (slug) => string (BASE_URL を前置)
+  formatDate,         // (iso) => "YYYY-MM-DD" | undefined
   isPublicTag,        // (name) => boolean — /tags/<name> に出すべきか
   isHiddenTag,        // (name) => boolean — publish/draft 等の制御タグ
+  buildSitemap,       // (urls) => sitemap.xml 本文
+  buildRssFeed,       // (opts) => RSS 2.0 本文
+  buildRobotsTxt,     // (opts) => robots.txt 本文
 } from "@cosense-site-kit/theme-utils";
 
 import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
@@ -226,9 +230,11 @@ import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro"
 | `loadTitleToSlug()` | `.site` の `nav: [{ label, page }]` 等で参照される Cosense title を、実際の URL slug に変換するための map |
 | `navHref(item, titleToSlug)` | `page` 形式と `href` 形式の両方を解決して URL を返す。`/blog` のようなサイト相対パスは `BASE_URL` を自動で前置 |
 | `path(slug)` | `pathFor(slug, BASE_URL)` の thin wrapper。GitHub Pages の subpath デプロイでも壊れない |
+| `formatDate(iso)` | ISO 文字列を `YYYY-MM-DD` (UTC) に整形。`undefined` はそのまま返すので `&&` でガードできる |
 | `isPublicTag` / `isHiddenTag` | inline rendering で `#publish` 等の制御タグを非表示にし、`template/<name>` 等の名前空間付きタグは tag chip だけ抑制する |
+| `buildSitemap` / `buildRssFeed` / `buildRobotsTxt`（＋ `escapeXml`） | 依存なしの XML/テキスト生成関数。`/sitemap.xml`・`/feed.xml`・`/robots.txt` のエンドポイントを自作テーマに足すのに使う（theme-default の `templates/*.ts` が実装例） |
 
-`Backlinks.astro` はそのまま使える共有コンポーネント (`<Backlinks backlinks={page.backlinks} />`)。
+`Backlinks.astro` はそのまま使える共有コンポーネント (`<Backlinks backlinks={page.backlinks} />`)。本文の YouTube 埋め込み・ネストリスト・リッチなテーブルセルは `PageContent` が内部で処理する（`youtubeEmbedSrc` / `buildListTree` も export されているが、通常は直接呼ぶ必要はない）。
 
 ---
 
@@ -361,7 +367,7 @@ import options from "virtual:my-theme/options";
 
 ## Inline / PageContent の実装
 
-`CosenseSitePage.blocks` は構造化されたパース済みデータ (`paragraph` / `heading` / `list` / `code` / `image` / `embed` / `table` / `raw`) です。**通常はテーマ作者がこれを HTML に変換するロジックを書く必要はありません**。`@cosense-site-kit/theme-utils/components/` の `PageContent.astro` と `Inline.astro` をそのまま import してください:
+`CosenseSitePage.blocks` は構造化されたパース済みデータ (`paragraph` / `heading` / `quote` / `list` / `code` / `image` / `embed` / `table` / `raw`) です。**通常はテーマ作者がこれを HTML に変換するロジックを書く必要はありません**。`@cosense-site-kit/theme-utils/components/` の `PageContent.astro` と `Inline.astro` をそのまま import してください:
 
 ```astro
 ---
@@ -525,10 +531,10 @@ declare module "virtual:my-theme/options" {
     "build": "tsup",
     "typecheck": "tsc --noEmit"
   },
-  "peerDependencies": { "astro": "^5.0.0" },
+  "peerDependencies": { "astro": "^5.0.0 || ^6.0.0" },
   "dependencies": {
-    "@cosense-site-kit/core": "^0.1.0",
-    "@cosense-site-kit/theme-utils": "^0.1.0"
+    "@cosense-site-kit/core": "^0.2.0",
+    "@cosense-site-kit/theme-utils": "^0.2.0"
   }
 }
 ```

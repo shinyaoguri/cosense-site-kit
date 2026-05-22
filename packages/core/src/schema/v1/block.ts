@@ -9,7 +9,7 @@ export type CosenseBlock =
   | { type: "code"; filename?: string; lang?: string; value: string }
   | { type: "image"; url: string; alt?: string }
   | { type: "embed"; kind: "gyazo" | "youtube" | "link" | "unknown"; url: string }
-  | { type: "table"; filename?: string; rows: string[][] }
+  | { type: "table"; filename?: string; rows: InlineNode[][][] }
   | { type: "raw"; value: string };
 
 export const blockSchema: z.ZodType<CosenseBlock> = z.discriminatedUnion("type", [
@@ -41,7 +41,8 @@ export const blockSchema: z.ZodType<CosenseBlock> = z.discriminatedUnion("type",
   z.object({
     type: z.literal("table"),
     filename: z.string().optional(),
-    rows: z.array(z.array(z.string())),
+    // rows[r][c] is a cell; a cell is an InlineNode[] (rich content).
+    rows: z.array(z.array(z.array(inlineNodeSchema))),
   }),
   z.object({ type: z.literal("raw"), value: z.string() }),
 ]);
