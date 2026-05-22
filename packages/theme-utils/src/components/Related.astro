@@ -33,7 +33,7 @@ const related = relatedPages(links, candidates, {
 });
 ---
 {related.length > 0 && (
-  <aside class="related">
+  <aside class="related" data-pagefind-ignore>
     <h4>Related pages</h4>
     <ul>
       {related.map((r) => (

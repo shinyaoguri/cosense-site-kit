@@ -12,7 +12,7 @@ const resolved = backlinks
   .filter((b): b is { title: string; slug: string } => Boolean(b.slug));
 ---
 {resolved.length > 0 && (
-  <aside class="backlinks">
+  <aside class="backlinks" data-pagefind-ignore>
     <h4>Backlinks</h4>
     <ul>
       {resolved.map((b) => (

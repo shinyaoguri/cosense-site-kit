@@ -157,10 +157,50 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text);
 }
 
+/* Full-text search (Pagefind classic UI). Theme it through Pagefind's own CSS
+   custom properties (those always win, since pagefind-ui.css reads them), and
+   anchor the results as an overlay so they don't expand the sticky header. */
+.site-search {
+  --pagefind-ui-scale: 0.8;
+  --pagefind-ui-primary: var(--color-text);
+  --pagefind-ui-text: var(--color-text);
+  --pagefind-ui-background: var(--color-bg);
+  --pagefind-ui-border: var(--color-border);
+  --pagefind-ui-tag: var(--color-bg-soft);
+  --pagefind-ui-border-width: 1px;
+  --pagefind-ui-border-radius: 6px;
+  --pagefind-ui-font: inherit;
+  position: relative;
+  flex: 1 1 12rem;
+  max-width: 20rem;
+  min-width: 0;
+  margin-left: auto;
+}
+.site-search-box {
+  display: block;
+  width: 100%;
+}
+/* #cosense-search beats pagefind-ui.css (id + class > class + class). */
+#cosense-search .pagefind-ui__drawer {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  width: min(92vw, 26rem);
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  z-index: 40;
+}
+
 @media (max-width: 540px) {
   .site-header-inner { padding: 0.625rem 1rem; }
   .site-brand { font-size: 0.875rem; }
   .site-nav a { padding: 0.3125rem 0.5rem; font-size: 0.8125rem; }
+  .site-search { flex-basis: 100%; max-width: none; margin-left: 0; order: 3; }
 }
 
 /* ===================== Main column ===================== */

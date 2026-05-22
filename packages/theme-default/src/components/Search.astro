@@ -1,0 +1,36 @@
+---
+// Full-text search box, backed by the Pagefind index the theme generates at
+// build time (see integration/pagefind.ts and the `search` theme option).
+// Uses Pagefind's classic UI, loaded from the index bundle. bundlePath is
+// resolved against Astro's BASE_URL so it also works under a GitHub Pages
+// sub-path. Results are available after `astro build` / `astro preview`; in
+// `astro dev` the index is served from the last build (stale until rebuilt).
+const bundlePath = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/pagefind/`;
+---
+<div class="site-search">
+  <div id="cosense-search" class="site-search-box"></div>
+</div>
+
+<link rel="stylesheet" href={`${bundlePath}pagefind-ui.css`} />
+<script is:inline define:vars={{ bundlePath }}>
+  (() => {
+    const el = document.getElementById("cosense-search");
+    if (!el) return;
+    const start = () => {
+      // PagefindUI is defined by the just-loaded bundle script. Guard so a
+      // missing index (e.g. dev before the first build) fails quietly.
+      if (typeof window.PagefindUI !== "function") return;
+      new window.PagefindUI({
+        element: "#cosense-search",
+        bundlePath,
+        showImages: false,
+        showSubResults: true,
+        translations: { placeholder: "Search" },
+      });
+    };
+    const s = document.createElement("script");
+    s.src = `${bundlePath}pagefind-ui.js`;
+    s.addEventListener("load", start);
+    document.head.appendChild(s);
+  })();
+</script>

@@ -30,7 +30,8 @@
   },
   "dependencies": {
     "@cosense-site-kit/core": "^0.2.1",
-    "@cosense-site-kit/theme-utils": "^0.2.1"
+    "@cosense-site-kit/theme-utils": "^0.2.1",
+    "pagefind": "^1.5.2"
   },
   "devDependencies": {
     "astro": "^6.0.0",

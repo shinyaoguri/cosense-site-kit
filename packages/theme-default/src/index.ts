@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { optionsVirtualModule } from "@cosense-site-kit/theme-utils/integration";
 import type { AstroIntegration } from "astro";
+import { pagefindIntegration } from "./integration/pagefind";
 
 export interface ThemeDefaultNavItem {
   label: string;
@@ -35,6 +36,14 @@ export interface ThemeDefaultOptions {
    * act as defaults; options passed directly here win. See `presetDark`.
    */
   preset?: ThemeDefaultPreset;
+  /**
+   * Full-text search. When true (default), the theme generates a Pagefind
+   * index at build time and shows a search box in the header. Set false to
+   * skip index generation and hide the box (e.g. tiny sites). The index is
+   * built from the static output, so search is available after `astro build`
+   * (and `astro preview`), not in `astro dev` until you've built once.
+   */
+  search?: boolean;
 }
 
 /**
@@ -64,6 +73,8 @@ export interface ThemeDefaultRuntimeOptions {
   tokens: Record<string, string>;
   colorScheme?: "light" | "dark";
   fontHref?: string;
+  /** Whether the header search box should render (mirrors index generation). */
+  search: boolean;
 }
 
 const VIRTUAL_ID = "virtual:cosense-theme-default/options";
@@ -82,6 +93,7 @@ export function resolveThemeOptions(opts: ThemeDefaultOptions = {}): ThemeDefaul
     tokens: opts.preset?.tokens ?? {},
     colorScheme: opts.preset?.colorScheme,
     fontHref: opts.preset?.fontHref,
+    search: opts.search ?? base.search ?? true,
   };
 }
 
@@ -91,12 +103,22 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
   return {
     name: "@cosense-site-kit/theme-default",
     hooks: {
-      "astro:config:setup": ({ injectRoute, updateConfig }) => {
+      "astro:config:setup": ({ injectRoute, updateConfig, config }) => {
         updateConfig({
           vite: {
             plugins: [optionsVirtualModule(VIRTUAL_ID, options)],
           },
         });
+
+        // Full-text search: add the Pagefind integration so it indexes the
+        // static output at build:done. Guard against double-adding (e.g. the
+        // theme included twice) to avoid indexing the site more than once.
+        if (
+          options.search &&
+          !config.integrations.some((i) => i.name === "cosense-theme-default/pagefind")
+        ) {
+          updateConfig({ integrations: [pagefindIntegration()] });
+        }
 
         // .astro/.css files ship as raw src/ (not bundled by tsup), so resolve
         // from the built index.js up one level into src/.

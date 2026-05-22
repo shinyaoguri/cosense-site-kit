@@ -22,7 +22,7 @@ const { entry } = Astro.props;
 const page = entry.data;
 ---
 <Layout title={page.title} description={page.summary} image={page.image} ogType="article">
-  <article class="profile">
+  <article class="profile" data-pagefind-body>
     <header class="profile-hero">
       <h1>{page.title}</h1>
       {page.summary && <p class="profile-summary">{page.summary}</p>}
@@ -30,7 +30,7 @@ const page = entry.data;
 
     <PageContent blocks={page.blocks} />
 
-    <footer class="profile-source">
+    <footer class="profile-source" data-pagefind-ignore>
       <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>
       {" · "}
       <a href={path("")}>← Back to home</a>

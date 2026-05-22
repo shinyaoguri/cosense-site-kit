@@ -2,6 +2,7 @@
 import options from "virtual:cosense-theme-default/options";
 import site from "virtual:cosense-site-kit/site";
 import { loadStructure, loadTitleToSlug, navHref } from "@cosense-site-kit/theme-utils";
+import Search from "./Search.astro";
 
 interface Props { currentPath?: string }
 const { currentPath = "/" } = Astro.props;
@@ -37,5 +38,6 @@ const isActive = (href: string): boolean => {
         })}
       </ul>
     )}
+    {options.search && <Search />}
   </div>
 </header>

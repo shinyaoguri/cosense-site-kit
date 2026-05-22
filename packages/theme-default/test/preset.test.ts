@@ -33,4 +33,15 @@ describe("resolveThemeOptions", () => {
     const o = resolveThemeOptions({ preset: { fontHref: "https://fonts.example/x.css" } });
     expect(o.fontHref).toBe("https://fonts.example/x.css");
   });
+
+  it("enables search by default and lets it be turned off explicitly or via preset", () => {
+    expect(resolveThemeOptions().search).toBe(true);
+    expect(resolveThemeOptions({ search: false }).search).toBe(false);
+    // preset's option fills the gap when not passed explicitly
+    expect(resolveThemeOptions({ preset: { options: { search: false } } }).search).toBe(false);
+    // explicit wins over the preset
+    expect(
+      resolveThemeOptions({ search: true, preset: { options: { search: false } } }).search,
+    ).toBe(true);
+  });
 });

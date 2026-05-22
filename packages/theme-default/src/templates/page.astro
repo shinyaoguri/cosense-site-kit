@@ -20,7 +20,7 @@ const updatedDay = formatDate(page.modifiedAt);
 const showUpdated = updatedDay && updatedDay !== publishedDay;
 ---
 <Layout title={page.title} description={page.summary} image={page.image} ogType="article">
-  <article>
+  <article data-pagefind-body>
     <header class="page-header">
       <h1>{page.title}</h1>
       <div style="display: flex; flex-wrap: wrap; gap: 0.625rem; align-items: center;">
@@ -50,7 +50,7 @@ const showUpdated = updatedDay && updatedDay !== publishedDay;
 
     <Related title={page.title} links={page.links} exclude={page.backlinks} />
 
-    <footer class="source">
+    <footer class="source" data-pagefind-ignore>
       <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>
     </footer>
   </article>
