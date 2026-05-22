@@ -9,7 +9,7 @@
 ```bash
 npm install                            # リポジトリのルートで一度だけ
 cd site
-npx cosense-site doctor                # Cosense プロジェクトの状態を診断
+npm run doctor                         # Cosense プロジェクトの状態を診断
 npm run fetch                          # ページ取得 → .cosense-cache/intermediate.json
 npm run dev                            # http://localhost:4321/cosense-site-kit/
 ```
@@ -86,7 +86,7 @@ code:site.yaml
 
 ```bash
 cd site
-npx cosense-site doctor
+npm run doctor
 ```
 
 doctor の出力で全部 `✓` になれば公開準備OK。`nav` の参照が `✗` で出ているうちは、その名前のページが Cosense に無いか `#publish` が付いていません。
