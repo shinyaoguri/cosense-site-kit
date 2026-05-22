@@ -204,6 +204,60 @@ theme-default は本体同梱（npm）の「ライブラリ型」テーマで、
 npx degit shinyaoguri/cosense-theme-default my-site
 ```
 
+### テーマの 2 つの使い方：vendored と npm import
+
+theme-default は **2 通りの使い方**ができます。`cosense.config.ts` はどちらでも共通です。
+
+1. **vendored（degit、上記）** — テーマのソースを同梱し、`.astro` を直接書き換えて見た目を作り込めます。テーマ本体の改善は手動マージで取り込みます。
+2. **npm import** — テンプレートを同梱せず `@cosense-site-kit/theme-default` を import するだけ。ルート・テンプレート・スタイルはパッケージ（`node_modules`）が提供し、改善は **`npm update` で追従**できます。このドキュメントサイト自身（[site/](site/)）がこのモードです。
+
+npm import の最小構成は 3 ファイルだけ:
+
+```ts
+// astro.config.ts
+import { defineConfig } from "astro/config";
+import cosense from "@cosense-site-kit/astro";
+import themeDefault from "@cosense-site-kit/theme-default";
+
+export default defineConfig({
+  integrations: [
+    cosense({ configFile: "./cosense.config.ts" }),
+    themeDefault({ copyright: "You" }), // 見た目は options / preset / .site の theme.skin で調整
+  ],
+});
+```
+
+```ts
+// src/content.config.ts
+import { defineCollection } from "astro:content";
+import { cosenseLoader, cosenseSchema } from "@cosense-site-kit/astro";
+
+export const collections = {
+  pages: defineCollection({
+    loader: cosenseLoader({ configFile: "./cosense.config.ts" }),
+    schema: cosenseSchema,
+  }),
+};
+```
+
+```jsonc
+// package.json（dependencies 抜粋）
+"@cosense-site-kit/astro": "^0.1",
+"@cosense-site-kit/cli": "^0.1",
+"@cosense-site-kit/core": "^0.2",
+"@cosense-site-kit/theme-default": "^0.2",
+"astro": "^6"
+```
+
+| | vendored（degit） | npm import |
+|---|---|---|
+| テンプレの所在 | リポジトリの `src/`（編集自由） | `node_modules`（読み取り専用） |
+| 見た目の作り込み | `.astro` を直接書き換え | options / `preset`（CSS 変数） / `.site` の `theme.skin` |
+| テーマ改善の取り込み | 手動マージ | `npm update` |
+| 向いている人 | デザインを本格的に作り込む | 早く立ち上げ、本体更新に追従したい |
+
+迷ったら **npm import** で始め、テンプレートを本格的に作り込みたくなったら vendored（degit 版スターター）へ移行できます。`cosense.config.ts` と `.site` はそのまま使えます。
+
 ### サードパーティ／自作テーマ
 
 `default` 以外のテーマはすべてサードパーティです。誰でも「フレームワーク（`@cosense-site-kit/*`）に依存し、`@cosense-site-kit/theme-utils` で本文を描画する Astro Integration」を作り、テーマソースを同梱した **Use this template リポジトリ**として配布できます。作り方は [docs/THEMES.md](./docs/THEMES.md)。

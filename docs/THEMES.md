@@ -615,6 +615,8 @@ npx degit <user/repo> my-site
 
 **公式テーマは `default` の 1 つだけ**です（[cosense-theme-default](https://github.com/shinyaoguri/cosense-theme-default)）。「Use this template」または `npx degit shinyaoguri/cosense-theme-default my-site` で取得します。**それ以外のテーマはすべてサードパーティ** — 登録の仕組みはなく、`npx degit <user/repo> my-site` でそのまま取得できます。
 
+theme-default は npm 公開された「ライブラリ型」テーマでもあるので、**テンプレを同梱せず `@cosense-site-kit/theme-default` を import するだけ**でも使えます（`npm update` で改善に追従）。vendored / npm import の選び方は [README の「テーマの 2 つの使い方」](../README.md#テーマの-2-つの使い方vendored-と-npm-import)を参照。自作テーマも、`package.json` の `files` に `src` を含めて npm 公開すれば同じく両モードに対応できます。
+
 **発見**はゆるく運用します。公式リポジトリの README にコミュニティ製テーマへのリンクを並べる程度で十分です（GitHub で「Use this template」を有効化し、リポジトリトピックに `cosense-theme` を付けると見つけやすい）。
 
 ## 参考実装
