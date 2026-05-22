@@ -125,8 +125,9 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
         const here = (p: string) => fileURLToPath(new URL(`../src/${p}`, import.meta.url));
         // Fixed-route templates: each owns a known URL.
         injectRoute({ pattern: "/", entrypoint: here("templates/home.astro") });
-        injectRoute({ pattern: "/posts", entrypoint: here("templates/archive.astro") });
-        injectRoute({ pattern: "/tags/[tag]", entrypoint: here("templates/tag.astro") });
+        // [...page]: page 1 at /posts and /tags/<tag>; later pages at /2, /3, …
+        injectRoute({ pattern: "/posts/[...page]", entrypoint: here("templates/archive.astro") });
+        injectRoute({ pattern: "/tags/[tag]/[...page]", entrypoint: here("templates/tag.astro") });
         // SEO / discovery endpoints (XML/text, not pages).
         injectRoute({ pattern: "/sitemap.xml", entrypoint: here("templates/sitemap.xml.ts") });
         injectRoute({ pattern: "/robots.txt", entrypoint: here("templates/robots.txt.ts") });

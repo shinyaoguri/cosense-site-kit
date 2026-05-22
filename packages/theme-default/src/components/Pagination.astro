@@ -1,0 +1,27 @@
+---
+// Prev/next pager for the paginated list routes (/posts, /tags/[tag]). URLs
+// come from Astro's paginate() (already base-aware). Renders nothing for a
+// single page.
+interface Props {
+  current: number;
+  last: number;
+  prevUrl?: string;
+  nextUrl?: string;
+}
+const { current, last, prevUrl, nextUrl } = Astro.props;
+---
+{last > 1 && (
+  <nav class="pagination" aria-label="Pagination">
+    {prevUrl ? (
+      <a class="pagination__link" href={prevUrl} rel="prev">← Prev</a>
+    ) : (
+      <span class="pagination__link is-disabled">← Prev</span>
+    )}
+    <span class="pagination__status">{current} / {last}</span>
+    {nextUrl ? (
+      <a class="pagination__link" href={nextUrl} rel="next">Next →</a>
+    ) : (
+      <span class="pagination__link is-disabled">Next →</span>
+    )}
+  </nav>
+)}

@@ -1,9 +1,14 @@
 ---
 import { getCollection } from "astro:content";
-import Layout from "../components/Layout.astro";
+import type { GetStaticPaths, PaginateFunction } from "astro";
 import { isPublicTag, path } from "@cosense-site-kit/theme-utils";
+import Layout from "../components/Layout.astro";
+import Pagination from "../components/Pagination.astro";
+import { POSTS_PER_PAGE } from "../constants";
 
-export async function getStaticPaths() {
+// /tags/[tag]/[...page] — paginated list of pages carrying a tag. Page 1 is
+// /tags/<tag>; later pages are /tags/<tag>/2, …
+export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
   const pages = await getCollection("pages");
   const tagMap = new Map<string, typeof pages>();
   for (const entry of pages) {
@@ -16,22 +21,40 @@ export async function getStaticPaths() {
       tagMap.set(tag, list);
     }
   }
-  return Array.from(tagMap.entries()).map(([tag, entries]) => ({
-    params: { tag },
-    props: { entries },
-  }));
-}
 
+  return Array.from(tagMap.entries()).flatMap(([tag, entries]) =>
+    (paginate as PaginateFunction)(entries, { pageSize: POSTS_PER_PAGE, params: { tag } }).map(
+      (route) => ({
+        params: route.params,
+        props: {
+          tag,
+          total: entries.length,
+          entries: route.props.page.data,
+          pageInfo: {
+            current: route.props.page.currentPage,
+            last: route.props.page.lastPage,
+            prevUrl: route.props.page.url.prev,
+            nextUrl: route.props.page.url.next,
+          },
+        },
+      }),
+    ),
+  );
+};
+
+type Entry = Awaited<ReturnType<typeof getCollection<"pages">>>[number];
 const { tag } = Astro.params;
-const { entries } = Astro.props as {
-  entries: Awaited<ReturnType<typeof getCollection<"pages">>>;
+const { entries, total, pageInfo } = Astro.props as {
+  entries: Entry[];
+  total: number;
+  pageInfo: { current: number; last: number; prevUrl?: string; nextUrl?: string };
 };
 ---
 <Layout title={`#${tag}`} hideToc>
   <header class="page-header">
     <h1>#{tag}</h1>
     <p class="summary" style="font-size: 0.875rem; color: var(--color-text-muted)">
-      {entries.length} page{entries.length === 1 ? "" : "s"}
+      {total} page{total === 1 ? "" : "s"}
     </p>
   </header>
   <ul class="tag-page-list">
@@ -42,4 +65,5 @@ const { entries } = Astro.props as {
       </li>
     ))}
   </ul>
+  <Pagination {...pageInfo} />
 </Layout>

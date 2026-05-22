@@ -1,29 +1,59 @@
 ---
 import { getCollection } from "astro:content";
-import Layout from "../components/Layout.astro";
+import type { GetStaticPaths, PaginateFunction } from "astro";
 import { formatDate, loadStructure, path } from "@cosense-site-kit/theme-utils";
+import Layout from "../components/Layout.astro";
+import Pagination from "../components/Pagination.astro";
+import { POSTS_PER_PAGE } from "../constants";
 
-const structure = await loadStructure();
+// /posts/[...page] — paginated list of pages tagged with the .site posts tag.
+// Page 1 is /posts; later pages are /posts/2, /posts/3, … The route always
+// emits at least page 1 (a stub when posts aren't configured) so /posts never
+// 404s.
+export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
+  const structure = await loadStructure();
+  const postTag = structure.posts?.tag;
+  const all = await getCollection("pages");
+  const posts = postTag
+    ? all
+        .filter((e) => e.data.tags.includes(postTag))
+        .sort((a, b) => (b.data.publishedAt ?? "").localeCompare(a.data.publishedAt ?? ""))
+    : [];
 
-// /posts is only meaningful when the .site page declares a posts tag.
-// If it isn't configured, return a stub page so the route doesn't crash.
-const postTag = structure.posts?.tag;
+  if (posts.length === 0) {
+    return [{ params: { page: undefined }, props: { entries: [], pageInfo: null, configured: Boolean(postTag) } }];
+  }
 
-const all = await getCollection("pages");
-const posts = postTag
-  ? all
-      .filter((e) => e.data.tags.includes(postTag))
-      .sort((a, b) => (b.data.publishedAt ?? "").localeCompare(a.data.publishedAt ?? ""))
-  : [];
+  return (paginate as PaginateFunction)(posts, { pageSize: POSTS_PER_PAGE }).map((route) => ({
+    params: route.params,
+    props: {
+      entries: route.props.page.data,
+      pageInfo: {
+        current: route.props.page.currentPage,
+        last: route.props.page.lastPage,
+        prevUrl: route.props.page.url.prev,
+        nextUrl: route.props.page.url.next,
+      },
+      configured: true,
+    },
+  }));
+};
+
+type Entry = Awaited<ReturnType<typeof getCollection<"pages">>>[number];
+const { entries, pageInfo, configured } = Astro.props as {
+  entries: Entry[];
+  pageInfo: { current: number; last: number; prevUrl?: string; nextUrl?: string } | null;
+  configured: boolean;
+};
 ---
 <Layout title="Posts" hideToc>
   <header class="page-header">
     <h1>Posts</h1>
   </header>
-  {postTag ? (
+  {configured ? (
     <section class="recent-pages">
       <ul>
-        {posts.map((entry) => (
+        {entries.map((entry) => (
           <li>
             <a href={path(entry.data.slug)}>{entry.data.title}</a>
             {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
@@ -35,6 +65,7 @@ const posts = postTag
           </li>
         ))}
       </ul>
+      {pageInfo && <Pagination {...pageInfo} />}
     </section>
   ) : (
     <p class="summary">Posts are not configured for this site.</p>
