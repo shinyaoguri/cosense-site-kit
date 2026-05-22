@@ -98,7 +98,12 @@ for (const block of visible) {
         );
       }
       case "image":
-        return <img src={block.url} alt={block.alt ?? ""} loading="lazy" />;
+        // Content images are arbitrary remote URLs (Gyazo, Scrapbox uploads),
+        // so we serve them directly with lazy loading + async decode rather than
+        // running them through astro:assets — a build-time fetch of every image
+        // would fail the (unattended, cron) build if one is unreachable. Themes
+        // that host images reliably can opt into <Image> (see docs/THEMES.md).
+        return <img src={block.url} alt={block.alt ?? ""} loading="lazy" decoding="async" />;
       case "embed": {
         if (block.kind === "youtube") {
           const src = youtubeEmbedSrc(block.url);

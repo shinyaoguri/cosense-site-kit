@@ -46,9 +46,9 @@ const { nodes } = Astro.props;
       }
       return <a class="tag" href={path(`tags/${node.name}`)}>#{node.name}</a>;
     case "icon":
-      return <img class="icon" src={node.src} alt={node.pageTitle} loading="lazy" />;
+      return <img class="icon" src={node.src} alt={node.pageTitle} loading="lazy" decoding="async" />;
     case "image": {
-      const img = <img class="inline-image" src={node.src} alt={node.alt ?? ""} loading="lazy" />;
+      const img = <img class="inline-image" src={node.src} alt={node.alt ?? ""} loading="lazy" decoding="async" />;
       return node.href
         ? <a href={node.href} rel="noopener noreferrer">{img}</a>
         : img;

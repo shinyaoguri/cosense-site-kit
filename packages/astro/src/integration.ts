@@ -122,6 +122,11 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           vite: {
             plugins: [virtualSitePlugin(() => ({ site, structure }))],
           },
+          // Permit astro:assets on remote images (content comes from arbitrary
+          // image hosts: Gyazo, Scrapbox uploads, etc.). Inert by default — the
+          // theme serves <img> directly; this only enables <Image> for themes
+          // that opt into build-time optimization. See docs/THEMES.md.
+          image: { remotePatterns: [{ protocol: "https" }] },
         });
         if (normalized !== "/") {
           updateConfig({ base: normalized.replace(/\/$/, "") });

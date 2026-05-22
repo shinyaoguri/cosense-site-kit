@@ -427,6 +427,24 @@ Cosense のグラマーは「装飾の中の装飾」をサポートしません
 
 ---
 
+## 画像
+
+`PageContent` / `Inline` は画像を `<img loading="lazy" decoding="async">` でそのまま出します。Cosense の画像は Gyazo・Scrapbox アップロードなど **任意のリモート URL** で、`cron` で無人ビルドするため、**ビルド時に全画像を取得して最適化する `astro:assets` は既定では使いません**（1 枚でも取得失敗するとビルドごと落ちるため）。
+
+画像ホストが安定している（または自前ホスト）サイトで最適化したい場合は、テーマ側で `astro:assets` の `<Image>` を使えます。`cosense()` 統合が `image.remotePatterns`（https 全許可）を設定済みなので追加設定は不要です:
+
+```astro
+---
+import { Image } from "astro:assets";
+// block.url は Cosense 由来のリモート URL。inferSize はビルド時に寸法を取りに行く。
+---
+<Image src={block.url} alt={block.alt ?? ""} inferSize loading="lazy" widths={[480, 960]} sizes="(max-width: 720px) 100vw, 720px" />
+```
+
+**注意**: `inferSize` と最適化はビルド時に各画像を取得します。削除済み・到達不能な画像があるとビルドが失敗します。無人 cron 運用では既定の `<img>`（安全）のままを推奨します。
+
+---
+
 ## スタイル
 
 `src/styles/global.css` を作って Layout から `import` するだけです。CSS フレームワークに依存せず素 CSS で書くのを推奨 (theme-default は素 CSS):
