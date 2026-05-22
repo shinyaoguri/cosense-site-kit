@@ -27,6 +27,10 @@ export const cosenseSiteConfigSchema = z.object({
       slug: z
         .enum(["title", "encoded-title", "metadata-or-encoded-title"])
         .default("metadata-or-encoded-title"),
+      // Auto-generate a redirect from a page's old slug to its new one when a
+      // Cosense rename changes the slug, so existing links/bookmarks don't 404.
+      // Tracked in the cache dir (persisted across CI runs). Set false to opt out.
+      redirectOnRename: z.boolean().default(true),
     })
     .prefault({}),
   siteConfig: z

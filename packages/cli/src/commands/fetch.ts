@@ -28,6 +28,7 @@ export async function runFetch(opts: FetchOptions): Promise<void> {
     cacheDir,
     force: opts.force,
     concurrency: opts.concurrency,
+    persistRedirects: true,
     onProgress: (e) => {
       switch (e.kind) {
         case "list":

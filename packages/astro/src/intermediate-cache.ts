@@ -24,6 +24,8 @@ export function getSharedIntermediate(opts: CosenseLoaderOptions): Promise<Inter
       config,
       cacheDir: opts.cacheDir,
       force: opts.force,
+      // Real build context: track slug history so renames auto-redirect.
+      persistRedirects: true,
     });
   })();
   memo = { key, data: promise };

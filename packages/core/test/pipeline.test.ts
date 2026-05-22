@@ -1,13 +1,18 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildIntermediate, defineCosenseSite } from "../src";
 import { applyPublishRules } from "../src/publish/filter";
-import { assignSlugs } from "../src/resolve/slug";
-import { resolveInternalLinks } from "../src/resolve/links";
 import { resolveLinkData } from "../src/resolve/backlinks";
+import { resolveInternalLinks } from "../src/resolve/links";
+import { assignSlugs } from "../src/resolve/slug";
 import { normalizePage } from "../src/source/cosense/normalize";
 import type { SiteSource, SourcePageRaw } from "../src/source/types";
 
-function rawPage(o: Partial<SourcePageRaw> & { id: string; title: string; text: string }): SourcePageRaw {
+function rawPage(
+  o: Partial<SourcePageRaw> & { id: string; title: string; text: string },
+): SourcePageRaw {
   return {
     id: o.id,
     title: o.title,
@@ -58,7 +63,9 @@ describe("applyPublishRules", () => {
   });
 
   it("excludeTags override includeTags", () => {
-    const pages = [normalizePage(rawPage({ id: "a", title: "A", text: "A\n#publish #draft" }), "p")];
+    const pages = [
+      normalizePage(rawPage({ id: "a", title: "A", text: "A\n#publish #draft" }), "p"),
+    ];
     const { kept, excluded } = applyPublishRules(pages, config.publish);
     expect(kept).toHaveLength(0);
     expect(excluded[0]?.reason).toMatch(/draft/);
@@ -68,7 +75,10 @@ describe("applyPublishRules", () => {
 describe("slug + link + backlink resolution", () => {
   it("assigns unique slugs and resolves internal pageLinks", () => {
     const pages = [
-      normalizePage(rawPage({ id: "1", title: "Welcome", text: "Welcome\n#publish\nsee [Other]" }), "p"),
+      normalizePage(
+        rawPage({ id: "1", title: "Welcome", text: "Welcome\n#publish\nsee [Other]" }),
+        "p",
+      ),
       normalizePage(rawPage({ id: "2", title: "Other", text: "Other\n#publish\nbody" }), "p"),
     ];
     const slugged = assignSlugs(pages, { slug: "metadata-or-encoded-title" });
@@ -78,7 +88,9 @@ describe("slug + link + backlink resolution", () => {
     const welcome = resolved.find((p) => p.title === "Welcome");
     if (!welcome) throw new Error("missing");
     const links = welcome.blocks
-      .flatMap((b) => (b.type === "paragraph" || b.type === "heading" || b.type === "list" ? b.children : []))
+      .flatMap((b) =>
+        b.type === "paragraph" || b.type === "heading" || b.type === "list" ? b.children : [],
+      )
       .filter((c) => c.type === "pageLink");
     expect(links).toHaveLength(1);
     const link = links[0];
@@ -180,7 +192,7 @@ describe("buildIntermediate", () => {
       ".site",
       "code:site.yaml",
       " home:",
-      "   page: \"Home\"",
+      '   page: "Home"',
       " nav:",
       "   - { label: 'About', page: 'About' }",
       " posts:",
@@ -224,12 +236,7 @@ describe("buildIntermediate", () => {
   });
 
   it("resolves page templates from tag and .site YAML mapping", async () => {
-    const siteYaml = [
-      ".site",
-      "code:site.yaml",
-      " templates:",
-      "   \"Welcome\": landing",
-    ].join("\n");
+    const siteYaml = [".site", "code:site.yaml", " templates:", '   "Welcome": landing'].join("\n");
     const raws = [
       rawPage({ id: "s", title: ".site", text: siteYaml }),
       rawPage({ id: "h", title: "Welcome", text: "Welcome\n#publish" }),
@@ -245,6 +252,54 @@ describe("buildIntermediate", () => {
     expect(by("Welcome")).toBe("landing"); // from YAML
     expect(by("About")).toBe("profile"); // from tag (beats YAML)
     expect(by("Notes")).toBe("page"); // default
+  });
+
+  it("auto-generates a redirect when a page's slug changes between builds", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "csk-redirect-"));
+    try {
+      const config = defineCosenseSite({
+        site: { title: "T", baseUrl: "https://e.com" },
+        source: { type: "cosense", project: "p" },
+      });
+      const build = (title: string) =>
+        buildIntermediate({
+          config,
+          source: stubSource([rawPage({ id: "1", title, text: `${title}\n#publish` })]),
+          cacheDir: dir,
+          persistRedirects: true,
+        });
+
+      const first = await build("Old Name");
+      expect(first.structure.redirects).toEqual({});
+
+      // Same page id, new title → new slug. Old slug should redirect.
+      const second = await build("New Name");
+      expect(second.structure.redirects).toEqual({ Old_Name: "New_Name" });
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("does not persist redirects without persistRedirects (doctor/test path)", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "csk-redirect-off-"));
+    try {
+      const config = defineCosenseSite({
+        site: { title: "T", baseUrl: "https://e.com" },
+        source: { type: "cosense", project: "p" },
+      });
+      const build = (title: string) =>
+        buildIntermediate({
+          config,
+          source: stubSource([rawPage({ id: "1", title, text: `${title}\n#publish` })]),
+          cacheDir: dir,
+        });
+      await build("Old Name");
+      const second = await build("New Name");
+      // No store written, so no rename is observed.
+      expect(second.structure.redirects).toEqual({});
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("respects siteConfig.page set to null (feature disabled)", async () => {
