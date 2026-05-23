@@ -33,7 +33,7 @@ npm run fetch         # Cosense からページを取得 → .cosense-cache/
 npm run dev           # http://localhost:4321
 ```
 
-テーマのコードは取得先のリポジトリに同梱（vendored）されているので、取得後はそのまま自分のものとして編集できます。サードパーティのテーマを使うときは `degit` の引数をそのテーマの `user/repo` に変えるだけです（例: `npx degit someone/their-theme my-site`）。
+テーマは npm パッケージ `@cosense-site-kit/theme-default` として読み込まれます（`astro.config.ts` の `themeDefault()`）。テーマ本体は取得先に同梱されないので、`npm update` でテーマとフレームワークの改善をそのまま取り込めます。見た目は `themeDefault({ ... })` のオプション（`nav` / `siteTitle` / `copyright` / `search` や、配色を差し替える `preset`）と CSS 変数で調整します。別のテーマに切り替えるときは `astro.config.ts` の import をそのテーマパッケージに差し替えます。
 
 ## ページの公開制御
 
@@ -202,7 +202,7 @@ theme-default は本体同梱（npm）の「ライブラリ型」テーマで、
 
 ### 公式テーマで始める（Use this template）
 
-ブラウザだけで新しいサイトを作れます。公式の出発点は `default` テーマの「動くサイト」リポジトリで、**テーマのソースは同梱（vendored）され、自分のものとして自由に編集できます**。npm 依存はフレームワーク（`@cosense-site-kit/*`）だけ。
+ブラウザだけで新しいサイトを作れます。公式の出発点は `default` テーマの「動くサイト」リポジトリです。テーマ本体は npm パッケージ `@cosense-site-kit/theme-default` から読み込むので（リポジトリには同梱しません）、`npm update` で改善にそのまま追従できます。リポジトリに置くのは設定（`cosense.config.ts` / `astro.config.ts` / `content.config.ts`）とデプロイ workflow だけ。
 
 | テーマ | id | リポジトリ | 用途 |
 |---|---|---|---|
@@ -212,12 +212,12 @@ theme-default は本体同梱（npm）の「ライブラリ型」テーマで、
 npx degit shinyaoguri/cosense-theme-default my-site
 ```
 
-### テーマの 2 つの使い方：vendored と npm import
+### テーマのカスタマイズ：npm import と vendored
 
-theme-default は **2 通りの使い方**ができます。`cosense.config.ts` はどちらでも共通です。
+theme-default は **2 通り**にカスタマイズできます。`cosense.config.ts` はどちらでも共通です。
 
-1. **vendored（degit、上記）** — テーマのソースを同梱し、`.astro` を直接書き換えて見た目を作り込めます。テーマ本体の改善は手動マージで取り込みます。
-2. **npm import** — テンプレートを同梱せず `@cosense-site-kit/theme-default` を import するだけ。ルート・テンプレート・スタイルはパッケージ（`node_modules`）が提供し、改善は **`npm update` で追従**できます。このドキュメントサイト自身（[site/](site/)）がこのモードです。
+1. **npm import（既定。上記スターターのモード）** — `@cosense-site-kit/theme-default` を import するだけ。ルート・テンプレート・スタイルはパッケージ（`node_modules`）が提供し、改善は **`npm update` で追従**できます。見た目は `themeDefault({ ... })` の options・`preset`（CSS 変数）・`.site` の `theme.skin` で調整します。このドキュメントサイト自身（[site/](site/)）もこのモードです。
+2. **vendored（手動）** — さらに作り込みたいときは、テーマパッケージが同梱する `src/`（生の `.astro` テンプレート）を自分のリポジトリにコピーし、`astro.config.ts` から参照します。`.astro` を直接書き換えられますが、`npm update` の自動追従からは外れ、テーマ本体の改善は手動マージになります。
 
 npm import の最小構成は 3 ファイルだけ:
 
@@ -257,14 +257,14 @@ export const collections = {
 "astro": "^6"
 ```
 
-| | vendored（degit） | npm import |
+| | npm import（既定） | vendored（手動コピー） |
 |---|---|---|
-| テンプレの所在 | リポジトリの `src/`（編集自由） | `node_modules`（読み取り専用） |
-| 見た目の作り込み | `.astro` を直接書き換え | options / `preset`（CSS 変数） / `.site` の `theme.skin` |
-| テーマ改善の取り込み | 手動マージ | `npm update` |
-| 向いている人 | デザインを本格的に作り込む | 早く立ち上げ、本体更新に追従したい |
+| テンプレの所在 | `node_modules`（読み取り専用） | リポジトリの `src/`（編集自由） |
+| 見た目の作り込み | options / `preset`（CSS 変数） / `.site` の `theme.skin` | `.astro` を直接書き換え |
+| テーマ改善の取り込み | `npm update` | 手動マージ |
+| 向いている人 | 早く立ち上げ、本体更新に追従したい | デザインを本格的に作り込む |
 
-迷ったら **npm import** で始め、テンプレートを本格的に作り込みたくなったら vendored（degit 版スターター）へ移行できます。`cosense.config.ts` と `.site` はそのまま使えます。
+迷ったら **npm import** のままで OK。テンプレートを本格的に作り込みたくなったら、テーマの `src/` を自分のリポジトリにコピーして vendored へ移行できます。`cosense.config.ts` と `.site` はそのまま使えます。
 
 ### サードパーティ／自作テーマ
 
