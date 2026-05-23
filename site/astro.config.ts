@@ -1,6 +1,6 @@
 import { defineConfig } from "astro/config";
 import cosense from "@cosense-site-kit/astro";
-import themeDefault, {presetDark} from "@cosense-site-kit/theme-default";
+import themeDefault from "@cosense-site-kit/theme-default";
 
 export default defineConfig({
   integrations: [
@@ -14,7 +14,7 @@ export default defineConfig({
       copyrightUrl: "https://github.com/shinyaoguri",
       search: true,
       homePage: "Home",
-      preset: presetDark,
+      // preset: presetDark,
     }),
   ],
 });
