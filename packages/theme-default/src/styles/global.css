@@ -319,6 +319,10 @@ h1, h2, h3, h4, h5, h6 {
   /* JS enhancement: reveal the hamburger and collapse the nav into a dropdown
      anchored below the header, toggled by `.is-open`. */
   .site-header.has-js .site-nav-toggle { display: inline-flex; }
+  /* Put the search icon to the LEFT of the hamburger by sending the hamburger
+     last in the flex order; the hamburger then sits at the far right. (Desktop
+     hides the hamburger and keeps search rightmost, so this is mobile-only.) */
+  .site-header.has-js .site-nav-toggle { order: 1; }
   .site-header.has-js .site-nav-wrap {
     position: absolute;
     top: 100%;
