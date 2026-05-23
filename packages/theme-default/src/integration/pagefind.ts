@@ -37,10 +37,14 @@ export function pagefindIntegration(): AstroIntegration {
       "astro:server:setup": ({ server }) => {
         server.middlewares.use((req, res, next) => {
           if (!req.url || !outDir) return next();
-          const url = req.url.split("?")[0] ?? "";
-          const prefix = `${base}pagefind/`;
-          if (!url.startsWith(prefix)) return next();
-          const file = path.join(outDir, decodeURIComponent(url.slice(base.length)));
+          const reqPath = req.url.split("?")[0] ?? "";
+          // Vite strips the configured base from req.url, but a request can also
+          // arrive base-prefixed depending on the setup — accept both forms.
+          let rel: string | null = null;
+          if (reqPath.startsWith(`${base}pagefind/`)) rel = reqPath.slice(base.length);
+          else if (reqPath.startsWith("/pagefind/")) rel = reqPath.slice(1);
+          if (rel === null) return next();
+          const file = path.join(outDir, decodeURIComponent(rel));
           // Contain path traversal to the output directory.
           if (!file.startsWith(outDir) || !existsSync(file) || !statSync(file).isFile()) {
             return next();
