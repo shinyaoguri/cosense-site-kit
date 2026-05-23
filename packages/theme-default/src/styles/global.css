@@ -162,7 +162,9 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text);
 }
 
-/* Hamburger — square icon button, shown on narrow screens once JS upgrades. */
+/* Search + hamburger toggles — compact icon buttons. They only appear once JS
+   can drive them. */
+.site-search-toggle,
 .site-nav-toggle {
   display: none;
   align-items: center;
@@ -177,93 +179,74 @@ h1, h2, h3, h4, h5, h6 {
   cursor: pointer;
   transition: background 0.15s var(--ease), color 0.15s var(--ease);
 }
+.site-search-toggle:hover,
 .site-nav-toggle:hover {
   background: var(--color-bg-hover);
   color: var(--color-text);
 }
-
-/* GitHub-style compact search box (shown once JS can drive it). It opens a
-   small results dropdown anchored to the box, so .site-search is positioned. */
+.site-header.has-js .site-search-toggle { display: inline-flex; }
 .site-search {
-  position: relative;
   display: inline-flex;
   align-items: center;
 }
-.site-search-toggle {
-  display: none;
-  align-items: center;
-  gap: 0.4rem;
-  height: 2rem;
-  padding: 0 0.4rem 0 0.625rem;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg-soft);
-  color: var(--color-text-muted);
-  font-family: inherit;
-  font-size: 0.8125rem;
-  cursor: pointer;
-  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
-}
-.site-header.has-js .site-search-toggle { display: inline-flex; }
-.site-search-toggle:hover {
-  background: var(--color-bg);
-  border-color: var(--color-text-faint);
-}
-.site-search-icon { flex-shrink: 0; }
-.site-search-label { margin-right: 1.5rem; }
-.site-search-kbd {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  line-height: 1;
-  padding: 0.15rem 0.35rem;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-bg);
-  color: var(--color-text-muted);
-}
 
-/* Results dropdown, anchored to the box (right-aligned) — GitHub-like. */
-.site-search-panel {
+/* Search overlay — opened from the header icon. A dim backdrop covers the page
+   while the search box expands horizontally from the icon's position (GitHub-
+   style). Lives at body level (not inside the backdrop-filtered header) so it
+   can layer above both the page and the header. */
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.18s var(--ease), visibility 0.18s var(--ease);
+}
+.search-overlay.is-open {
+  visibility: visible;
+  opacity: 1;
+}
+.search-overlay-backdrop {
   position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  width: min(26rem, calc(100vw - 1.5rem));
-  z-index: 30;
-  max-height: 75vh;
-  overflow-y: auto;
-  padding: 0.75rem;
+  inset: 0;
+  background: rgb(15 15 14 / 0.4);
+}
+/* The box is pinned to the header icon's position by the script (top/right),
+   then expands its width to the left — so it grows out of the button. */
+.search-box {
+  position: absolute;
+  top: 0.75rem;
+  right: 1.25rem;
+  width: 2.25rem;
+  max-width: calc(100vw - 1.5rem);
+  max-height: 80vh;
+  overflow: hidden auto;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: 10px;
-  box-shadow: 0 12px 28px rgb(0 0 0 / 0.12);
+  box-shadow: 0 16px 40px rgb(15 15 14 / 0.22);
+  padding: 0.75rem;
+  transition: width 0.22s var(--ease);
 }
-
-/* Below 860px the box collapses to a plain icon to save header space. */
-@media (max-width: 860px) {
-  .site-search-toggle {
-    gap: 0;
-    width: 2.25rem;
-    height: 2.25rem;
-    padding: 0;
-    justify-content: center;
-    background: transparent;
-    border-color: transparent;
-    color: var(--color-text-soft);
-  }
-  .site-search-toggle:hover {
-    background: var(--color-bg-hover);
-    border-color: transparent;
-  }
-  .site-search-label,
-  .site-search-kbd { display: none; }
+.search-overlay.is-open .search-box {
+  width: min(34rem, calc(100vw - 1.5rem));
 }
-.site-search-panel[hidden] { display: none; }
-.site-search-note {
+.search-box-note {
   margin: 0.25rem 0.25rem 0;
   font-size: 0.8125rem;
   color: var(--color-text-muted);
 }
-.site-search-note[hidden] { display: none; }
+.search-box-note[hidden] { display: none; }
+
+/* On narrow screens the box can't fit while pinned to the icon, so make it a
+   near-full-width sheet (overrides the JS-set right/width). */
+@media (max-width: 600px) {
+  .search-box {
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    width: auto !important;
+  }
+}
 
 /* Pagefind UI, restyled to match the theme. Most theming rides on Pagefind's
    own custom properties; the rest is overridden under #cosense-search, whose

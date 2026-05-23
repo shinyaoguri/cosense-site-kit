@@ -6,6 +6,7 @@ import Footer from "./Footer.astro";
 import TableOfContents from "./TableOfContents.astro";
 import CodeBlockEnhancer from "./CodeBlockEnhancer.astro";
 import LinkPreview from "./LinkPreview.astro";
+import SearchOverlay from "./SearchOverlay.astro";
 import KaTeXLink from "@cosense-site-kit/theme-utils/components/KaTeXLink.astro";
 import { loadStructure, path } from "@cosense-site-kit/theme-utils";
 import { resolveActiveSkin } from "../presets";
@@ -108,6 +109,7 @@ const htmlStyle = [
   </head>
   <body>
     <Header currentPath={Astro.url.pathname} />
+    {options.search && <SearchOverlay />}
     <main class="site-main"><slot /></main>
     <Footer />
     {!hideToc && <TableOfContents />}

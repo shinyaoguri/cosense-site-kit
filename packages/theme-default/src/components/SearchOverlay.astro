@@ -1,0 +1,18 @@
+---
+// Body-level search overlay. The header icon (#site-search-trigger) opens this:
+// a dim backdrop over the page plus a search box that expands horizontally from
+// the icon's position. Rendered outside the header so it can layer above the
+// header's backdrop-filter. The header script drives it (open/close + lazy-load
+// Pagefind into #cosense-search), reading data-bundle-path. bundlePath is
+// resolved against BASE_URL so it works under a GitHub Pages sub-path.
+const bundlePath = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/pagefind/`;
+---
+<div class="search-overlay" id="site-search-overlay" data-bundle-path={bundlePath}>
+  <div class="search-overlay-backdrop"></div>
+  <div class="search-box">
+    <div id="cosense-search"></div>
+    <p class="search-box-note" hidden>
+      Search is enabled after the site is built (<code>astro build</code>).
+    </p>
+  </div>
+</div>

@@ -73,33 +73,41 @@ const isActive = (href: string): boolean => {
 <script>
   // Header behaviour, progressively enhanced. `has-js` gates the collapsed
   // layouts so without JS the nav stays visible (wrapped) and the search icon
-  // is hidden (search needs JS + a built index anyway).
+  // is hidden (search needs JS + a built index anyway). The search UI itself is
+  // the body-level #site-search-overlay (rendered by Layout); the header icon
+  // just opens it.
   const header = document.querySelector<HTMLElement>(".site-header");
   if (header) {
     header.classList.add("has-js");
 
     const navToggle = header.querySelector<HTMLButtonElement>(".site-nav-toggle");
     const navWrap = header.querySelector<HTMLElement>(".site-nav-wrap");
-    const searchRoot = header.querySelector<HTMLElement>(".site-search");
-    const searchToggle = header.querySelector<HTMLButtonElement>(".site-search-toggle");
-    const searchPanel = header.querySelector<HTMLElement>("#site-search-panel");
-    const searchNote = searchPanel?.querySelector<HTMLElement>(".site-search-note") ?? null;
-    const bundlePath = searchRoot?.dataset.bundlePath ?? "/pagefind/";
-
-    const focusSearchInput = () =>
-      requestAnimationFrame(() => searchPanel?.querySelector("input")?.focus());
+    const searchTrigger = header.querySelector<HTMLButtonElement>("#site-search-trigger");
+    const overlay = document.getElementById("site-search-overlay");
+    const backdrop = overlay?.querySelector<HTMLElement>(".search-overlay-backdrop") ?? null;
+    const box = overlay?.querySelector<HTMLElement>(".search-box") ?? null;
+    const note = overlay?.querySelector<HTMLElement>(".search-box-note") ?? null;
+    const bundlePath = overlay?.dataset.bundlePath ?? "/pagefind/";
 
     const setNav = (open: boolean) => {
       navWrap?.classList.toggle("is-open", open);
       navToggle?.setAttribute("aria-expanded", String(open));
     };
+    const focusInput = () =>
+      requestAnimationFrame(() => overlay?.querySelector("input")?.focus());
     const setSearch = (open: boolean) => {
-      if (!searchPanel) return;
-      searchPanel.hidden = !open;
-      searchToggle?.setAttribute("aria-expanded", String(open));
+      if (!overlay) return;
+      if (open && box && searchTrigger) {
+        // Pin the box over the icon so it grows out of the button.
+        const r = searchTrigger.getBoundingClientRect();
+        box.style.top = `${r.top}px`;
+        box.style.right = `${window.innerWidth - r.right}px`;
+      }
+      overlay.classList.toggle("is-open", open);
+      searchTrigger?.setAttribute("aria-expanded", String(open));
       if (open) {
         loadSearch();
-        focusSearchInput();
+        focusInput();
       }
     };
 
@@ -125,53 +133,40 @@ const isActive = (href: string): boolean => {
             showSubResults: true,
             translations: { placeholder: "Search" },
           });
-          focusSearchInput();
-        } else if (searchNote) {
-          searchNote.hidden = false;
+          focusInput();
+        } else if (note) {
+          note.hidden = false;
         }
       });
       script.addEventListener("error", () => {
-        if (searchNote) searchNote.hidden = false;
+        if (note) note.hidden = false;
       });
       document.head.appendChild(script);
     };
 
     navToggle?.addEventListener("click", () => {
-      const open = !navWrap?.classList.contains("is-open");
-      setNav(open);
-      if (open) setSearch(false);
+      setNav(!navWrap?.classList.contains("is-open"));
     });
-    searchToggle?.addEventListener("click", () => {
-      const open = Boolean(searchPanel?.hidden);
+    searchTrigger?.addEventListener("click", () => {
+      const open = !overlay?.classList.contains("is-open");
+      setNav(false);
       setSearch(open);
-      if (open) setNav(false);
     });
+    backdrop?.addEventListener("click", () => setSearch(false));
     navWrap?.addEventListener("click", (e) => {
       if ((e.target as HTMLElement).closest("a")) setNav(false);
     });
-    const isTyping = (el: EventTarget | null) => {
-      const node = el as HTMLElement | null;
-      const tag = node?.tagName;
-      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || !!node?.isContentEditable;
-    };
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         setNav(false);
         setSearch(false);
-        return;
-      }
-      // GitHub-style "/" shortcut: focus search unless already typing in a field.
-      if (e.key === "/" && searchPanel && !isTyping(e.target)) {
-        e.preventDefault();
-        setNav(false);
-        setSearch(true);
       }
     });
     document.addEventListener("click", (e) => {
-      if (!header.contains(e.target as Node)) {
-        setNav(false);
-        setSearch(false);
-      }
+      // Close the nav menu on an outside click. The search overlay closes via
+      // its own backdrop, so leave it alone here.
+      const target = e.target as Node;
+      if (!header.contains(target) && !overlay?.contains(target)) setNav(false);
     });
   }
 </script>
