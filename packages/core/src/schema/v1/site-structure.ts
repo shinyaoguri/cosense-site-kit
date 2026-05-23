@@ -24,14 +24,10 @@ export const siteStructureSchema = z
       })
       .optional(),
     featured: z.array(z.string().min(1)).default([]),
-    // Explicit redirects, oldSlug → newSlug. Authored here and always win over
-    // auto-generated rename redirects.
+    // Explicit redirects the operator wants, oldSlug → newSlug. Forwarded to
+    // Astro's redirects. Authored in `.site`, so they can be managed from the
+    // browser without touching the repo.
     redirects: z.record(z.string(), z.string()).default({}),
-    // Old slugs whose redirect should NOT be emitted — the escape hatch for the
-    // auto rename-redirect (routing.redirectOnRename): list a slug here to make
-    // its old URL 404 instead of redirecting. Editable from the browser via
-    // `.site`, so an operator can delete a redirect without touching the repo.
-    dropRedirects: z.array(z.string()).default([]),
     // Map from Cosense page title to template name. Used as a fallback when
     // the page itself doesn't carry a `#template/<name>` tag. The tag wins.
     templates: z.record(z.string(), z.string().min(1)).default({}),

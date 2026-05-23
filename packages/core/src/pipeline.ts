@@ -6,7 +6,6 @@ import { applyPublishRules } from "./publish/filter";
 import { resolveLinkData } from "./resolve/backlinks";
 import { assignDates } from "./resolve/dates";
 import { buildTitleToSlug, resolveInternalLinks } from "./resolve/links";
-import { computeRenameRedirects, loadRedirectStore, saveRedirectStore } from "./resolve/redirects";
 import { assignSlugs } from "./resolve/slug";
 import { assignTemplates } from "./resolve/template";
 import { type IntermediateData, intermediateDataSchema } from "./schema/v1/page";
@@ -26,14 +25,6 @@ export interface BuildIntermediateOptions {
   onProgress?: (event: ProgressEvent) => void;
   /** Concurrency for fetching individual pages. Default 4. */
   concurrency?: number;
-  /**
-   * Persist the slug history (in cacheDir) and merge rename redirects into the
-   * structure. Real build contexts (CLI fetch, Astro build) set this true;
-   * read-only contexts (doctor, tests) leave it off so they don't consume a
-   * pending rename or write to disk. Honored only when
-   * `config.routing.redirectOnRename` is also true.
-   */
-  persistRedirects?: boolean;
   /**
    * Include pages that the publish rules would exclude (drafts, not-yet-
    * published), marked `draft: true`, so they're viewable in a local preview.
@@ -109,17 +100,6 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
 
   const slugged = assignSlugs(published, config.routing);
 
-  // Emit redirects for pages whose slug changed since the last build (rename),
-  // merged into the structure so the Astro integration wires them. Only in real
-  // build contexts (persistRedirects) so doctor/tests don't write or consume.
-  if (config.routing.redirectOnRename && opts.persistRedirects) {
-    await applyRenameRedirects(slugged, structure, opts.cacheDir, opts.onProgress);
-  }
-  // Operator escape hatch: `.site` dropRedirects suppresses specific redirects
-  // (auto or manual) so the old URL 404s. Applied unconditionally so doctor and
-  // the build agree on the final set.
-  for (const slug of structure.dropRedirects) delete structure.redirects[slug];
-
   const titleToSlug = buildTitleToSlug(slugged);
   const linked = resolveInternalLinks(slugged, titleToSlug);
   const { pages: withBacklinks, linkGraph } = resolveLinkData(linked, titleToSlug);
@@ -184,31 +164,6 @@ function extractStructure(
       };
     }
     throw err;
-  }
-}
-
-// Diff the current slugs against the persisted snapshot, save the new snapshot,
-// and merge any rename redirects into the structure. Manual .site redirects win
-// over auto-generated ones. IO failures are non-fatal (a build shouldn't break
-// because the redirect store couldn't be read/written).
-async function applyRenameRedirects(
-  pages: { id: string; slug: string }[],
-  structure: SiteStructure,
-  cacheDir: string | undefined,
-  onProgress: BuildIntermediateOptions["onProgress"],
-): Promise<void> {
-  const dir = cacheDir ?? ".cosense-cache";
-  try {
-    const prev = await loadRedirectStore(dir);
-    const next = computeRenameRedirects(
-      prev,
-      pages.map((p) => ({ id: p.id, slug: p.slug })),
-    );
-    await saveRedirectStore(dir, next);
-    structure.redirects = { ...next.redirects, ...structure.redirects };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    onProgress?.({ kind: "warn", message: `rename-redirect tracking skipped: ${msg}` });
   }
 }
 
