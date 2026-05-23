@@ -115,6 +115,10 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   if (config.routing.redirectOnRename && opts.persistRedirects) {
     await applyRenameRedirects(slugged, structure, opts.cacheDir, opts.onProgress);
   }
+  // Operator escape hatch: `.site` dropRedirects suppresses specific redirects
+  // (auto or manual) so the old URL 404s. Applied unconditionally so doctor and
+  // the build agree on the final set.
+  for (const slug of structure.dropRedirects) delete structure.redirects[slug];
 
   const titleToSlug = buildTitleToSlug(slugged);
   const linked = resolveInternalLinks(slugged, titleToSlug);

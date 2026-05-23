@@ -280,6 +280,34 @@ describe("buildIntermediate", () => {
     }
   });
 
+  it("lets .site dropRedirects suppress an auto rename redirect", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "csk-redirect-drop-"));
+    try {
+      const config = defineCosenseSite({
+        site: { title: "T", baseUrl: "https://e.com" },
+        source: { type: "cosense", project: "p" },
+      });
+      const siteYaml = [".site", "code:site.yaml", " dropRedirects:", "   - Old_Name"].join("\n");
+      const build = (title: string) =>
+        buildIntermediate({
+          config,
+          source: stubSource([
+            rawPage({ id: "s", title: ".site", text: siteYaml }),
+            rawPage({ id: "1", title, text: `${title}\n#publish` }),
+          ]),
+          cacheDir: dir,
+          persistRedirects: true,
+        });
+
+      await build("Old Name");
+      // Rename would auto-create Old_Name → New_Name, but .site drops it.
+      const second = await build("New Name");
+      expect(second.structure.redirects).toEqual({});
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it("does not persist redirects without persistRedirects (doctor/test path)", async () => {
     const dir = await mkdtemp(join(tmpdir(), "csk-redirect-off-"));
     try {

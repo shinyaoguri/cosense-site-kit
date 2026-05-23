@@ -78,6 +78,9 @@ code:site.yaml
  redirects:
    legacy-about: about
    old-slug:    new-slug
+
+ dropRedirects:
+   - unwanted-old-slug
 ```
 
 YAML スキーマ:
@@ -89,7 +92,20 @@ YAML スキーマ:
 | `posts.tag` | string | このタグが付いたページが `/posts` とホームに表示される |
 | `posts.limit` | number | ホームの「Recent posts」の表示件数上限 |
 | `featured[]` | Cosense ページタイトル | ホームの注目ページブロック |
-| `redirects` | `{oldSlug: newSlug}` | Astro の redirects 機構に流し込まれる |
+| `redirects` | `{oldSlug: newSlug}` | 明示的なリダイレクト。Astro の redirects 機構に流し込まれる（自動より優先） |
+| `dropRedirects` | `oldSlug[]` | リダイレクトを**出さない**旧 slug。下記の自動リダイレクトを個別に無効化する |
+
+### リネーム時の自動リダイレクト
+
+slug はタイトル由来なので、Cosense でページ名を変えると URL が変わります。`routing.redirectOnRename`（既定 **on**）が有効なら、安定した page ID をもとに **旧 slug → 新 slug のリダイレクトを自動生成**します（外部リンク・ブックマークが切れない）。履歴は `.cosense-cache/redirects.json` に持ち、CI のキャッシュ間で引き継がれます。
+
+自動リダイレクトは運用者がブラウザ（＝`.site`）から制御できます:
+
+- **行き先を変える / 上書きする**: `.site` の `redirects:` に `旧slug: 別の行き先` を書く（手動が自動より優先）。
+- **個別に消す（404 に戻す）**: `.site` の `dropRedirects:` に旧 slug を並べる。意図的に旧 URL を残したくないときに使う。
+- **機能ごと止める**: `cosense.config.ts` の `routing.redirectOnRename: false`。以後は `.site` の `redirects:` だけで手動管理。
+
+`npm run doctor` の「Redirect destinations exist」で、行き先が実在ページかも検査されます。
 
 未知のトップレベルキーは zod の `passthrough` で保持されるので、テーマやプラグインが独自セクション（例: `profile:`, `members:`）を YAML に足しても core の改修なしで読み取れます。
 
