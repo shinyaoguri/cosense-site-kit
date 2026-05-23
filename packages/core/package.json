@@ -3,6 +3,11 @@
   "version": "0.2.2",
   "description": "Core: Cosense source, schema, and pipeline for cosense-site-kit",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shinyaoguri/cosense-site-kit.git",
+    "directory": "packages/core"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

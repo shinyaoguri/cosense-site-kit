@@ -3,6 +3,11 @@
   "version": "0.2.2",
   "description": "Shared runtime helpers for cosense-site-kit themes",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shinyaoguri/cosense-site-kit.git",
+    "directory": "packages/theme-utils"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

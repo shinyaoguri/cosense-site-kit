@@ -3,6 +3,11 @@
   "version": "0.1.3",
   "description": "cosense-site CLI",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shinyaoguri/cosense-site-kit.git",
+    "directory": "packages/cli"
+  },
   "type": "module",
   "bin": {
     "cosense-site": "./dist/index.js"
