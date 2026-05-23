@@ -10,6 +10,7 @@ concurrency: release-${{ github.ref }}
 permissions:
   contents: write # push the "Version Packages" commit + tags
   pull-requests: write # open/update the Version Packages PR
+  id-token: write # mint the OIDC token for npm trusted publishing
 
 jobs:
   release:
@@ -22,6 +23,10 @@ jobs:
           node-version: 24
           cache: npm
           registry-url: "https://registry.npmjs.org"
+
+      # Trusted publishing (OIDC) needs npm >= 11.5.1; Node 24's bundled npm
+      # may be older, so upgrade explicitly.
+      - run: npm install -g npm@latest
 
       - run: npm ci
 
@@ -38,4 +43,4 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # No NODE_AUTH_TOKEN: auth comes from OIDC trusted publishing.
