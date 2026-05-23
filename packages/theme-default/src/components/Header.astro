@@ -15,7 +15,6 @@ const siteTitle =
 const structure = await loadStructure();
 const navItems = structure.nav.length > 0 ? structure.nav : options.nav;
 const titleToSlug = await loadTitleToSlug();
-const hasMenu = navItems.length > 0 || options.search;
 
 const isActive = (href: string): boolean => {
   if (href === "/") return currentPath === "/";
@@ -25,13 +24,16 @@ const isActive = (href: string): boolean => {
 <header class="site-header">
   <div class="site-header-inner">
     <a class="site-brand" href={import.meta.env.BASE_URL}>{siteTitle}</a>
-    {hasMenu && (
+
+    {options.search && <Search />}
+
+    {navItems.length > 0 && (
       <Fragment>
         <button
           type="button"
           class="site-nav-toggle"
-          aria-label="Toggle menu"
-          aria-controls="site-menu"
+          aria-label="Toggle navigation"
+          aria-controls="site-nav-wrap"
           aria-expanded="false"
         >
           <svg
@@ -49,51 +51,115 @@ const isActive = (href: string): boolean => {
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <div class="site-menu" id="site-menu">
-          {options.search && <Search />}
-          {navItems.length > 0 && (
-            <ul class="site-nav">
-              {navItems.map((item) => {
-                const href = navHref(item, titleToSlug);
-                return (
-                  <li>
-                    <a href={href} class:list={[{ "is-active": isActive(href) }]}>
-                      {item.label}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+        <nav class="site-nav-wrap" id="site-nav-wrap" aria-label="Primary">
+          <ul class="site-nav">
+            {navItems.map((item) => {
+              const href = navHref(item, titleToSlug);
+              return (
+                <li>
+                  <a href={href} class:list={[{ "is-active": isActive(href) }]}>
+                    {item.label}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </Fragment>
     )}
   </div>
 </header>
 
 <script>
-  // Progressive enhancement: without JS the menu wraps under the brand and
-  // stays visible (CSS). With JS we collapse it behind the hamburger on narrow
-  // screens. `has-js` gates the collapsed CSS so no-JS users keep a usable menu.
+  // Header behaviour, progressively enhanced. `has-js` gates the collapsed
+  // layouts so without JS the nav stays visible (wrapped) and the search icon
+  // is hidden (search needs JS + a built index anyway).
   const header = document.querySelector<HTMLElement>(".site-header");
-  const toggle = header?.querySelector<HTMLButtonElement>(".site-nav-toggle");
-  const menu = header?.querySelector<HTMLElement>(".site-menu");
-  if (header && toggle && menu) {
+  if (header) {
     header.classList.add("has-js");
-    const setOpen = (open: boolean) => {
-      menu.classList.toggle("is-open", open);
-      toggle.setAttribute("aria-expanded", String(open));
+
+    const navToggle = header.querySelector<HTMLButtonElement>(".site-nav-toggle");
+    const navWrap = header.querySelector<HTMLElement>(".site-nav-wrap");
+    const searchRoot = header.querySelector<HTMLElement>(".site-search");
+    const searchToggle = header.querySelector<HTMLButtonElement>(".site-search-toggle");
+    const searchPanel = header.querySelector<HTMLElement>("#site-search-panel");
+    const searchNote = searchPanel?.querySelector<HTMLElement>(".site-search-note") ?? null;
+    const bundlePath = searchRoot?.dataset.bundlePath ?? "/pagefind/";
+
+    const focusSearchInput = () =>
+      requestAnimationFrame(() => searchPanel?.querySelector("input")?.focus());
+
+    const setNav = (open: boolean) => {
+      navWrap?.classList.toggle("is-open", open);
+      navToggle?.setAttribute("aria-expanded", String(open));
     };
-    toggle.addEventListener("click", () => setOpen(!menu.classList.contains("is-open")));
-    // Close after following a link, on Escape, or when clicking outside.
-    menu.addEventListener("click", (e) => {
-      if ((e.target as HTMLElement).closest("a")) setOpen(false);
+    const setSearch = (open: boolean) => {
+      if (!searchPanel) return;
+      searchPanel.hidden = !open;
+      searchToggle?.setAttribute("aria-expanded", String(open));
+      if (open) {
+        loadSearch();
+        focusSearchInput();
+      }
+    };
+
+    // Lazy-load the Pagefind UI the first time search is opened. If the bundle
+    // isn't there (e.g. `astro dev` before a build), show the note instead.
+    let searchRequested = false;
+    const loadSearch = () => {
+      if (searchRequested) return;
+      searchRequested = true;
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = `${bundlePath}pagefind-ui.css`;
+      document.head.appendChild(link);
+      const script = document.createElement("script");
+      script.src = `${bundlePath}pagefind-ui.js`;
+      script.addEventListener("load", () => {
+        const Ctor = (window as unknown as { PagefindUI?: new (o: unknown) => unknown }).PagefindUI;
+        if (typeof Ctor === "function") {
+          new Ctor({
+            element: "#cosense-search",
+            bundlePath,
+            showImages: false,
+            showSubResults: true,
+            translations: { placeholder: "Search" },
+          });
+          focusSearchInput();
+        } else if (searchNote) {
+          searchNote.hidden = false;
+        }
+      });
+      script.addEventListener("error", () => {
+        if (searchNote) searchNote.hidden = false;
+      });
+      document.head.appendChild(script);
+    };
+
+    navToggle?.addEventListener("click", () => {
+      const open = !navWrap?.classList.contains("is-open");
+      setNav(open);
+      if (open) setSearch(false);
+    });
+    searchToggle?.addEventListener("click", () => {
+      const open = Boolean(searchPanel?.hidden);
+      setSearch(open);
+      if (open) setNav(false);
+    });
+    navWrap?.addEventListener("click", (e) => {
+      if ((e.target as HTMLElement).closest("a")) setNav(false);
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setNav(false);
+        setSearch(false);
+      }
     });
     document.addEventListener("click", (e) => {
-      if (!header.contains(e.target as Node)) setOpen(false);
+      if (!header.contains(e.target as Node)) {
+        setNav(false);
+        setSearch(false);
+      }
     });
   }
 </script>

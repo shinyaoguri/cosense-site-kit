@@ -1,36 +1,39 @@
 ---
-// Full-text search box, backed by the Pagefind index the theme generates at
-// build time (see integration/pagefind.ts and the `search` theme option).
-// Uses Pagefind's classic UI, loaded from the index bundle. bundlePath is
-// resolved against Astro's BASE_URL so it also works under a GitHub Pages
-// sub-path. Results are available after `astro build` / `astro preview`; in
-// `astro dev` the index is served from the last build (stale until rebuilt).
+// Full-text search, backed by the Pagefind index the theme builds at build
+// time. Rendered as a compact icon in the header that opens a drop-down panel;
+// the Pagefind UI is lazy-loaded the first time the panel opens (see the
+// header script, which reads data-bundle-path). bundlePath is resolved against
+// BASE_URL so it works under a GitHub Pages sub-path. The index only exists
+// after `astro build` — in `astro dev` the panel shows a short note instead.
 const bundlePath = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/pagefind/`;
 ---
-<div class="site-search">
-  <div id="cosense-search" class="site-search-box"></div>
+<div class="site-search" data-bundle-path={bundlePath}>
+  <button
+    type="button"
+    class="site-search-toggle"
+    aria-label="Search"
+    aria-controls="site-search-panel"
+    aria-expanded="false"
+  >
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="20" y1="20" x2="16.65" y2="16.65" />
+    </svg>
+  </button>
+  <div class="site-search-panel" id="site-search-panel" hidden>
+    <div id="cosense-search"></div>
+    <p class="site-search-note" hidden>
+      Search is enabled after the site is built (<code>astro build</code>).
+    </p>
+  </div>
 </div>
-
-<link rel="stylesheet" href={`${bundlePath}pagefind-ui.css`} />
-<script is:inline define:vars={{ bundlePath }}>
-  (() => {
-    const el = document.getElementById("cosense-search");
-    if (!el) return;
-    const start = () => {
-      // PagefindUI is defined by the just-loaded bundle script. Guard so a
-      // missing index (e.g. dev before the first build) fails quietly.
-      if (typeof window.PagefindUI !== "function") return;
-      new window.PagefindUI({
-        element: "#cosense-search",
-        bundlePath,
-        showImages: false,
-        showSubResults: true,
-        translations: { placeholder: "Search" },
-      });
-    };
-    const s = document.createElement("script");
-    s.src = `${bundlePath}pagefind-ui.js`;
-    s.addEventListener("load", start);
-    document.head.appendChild(s);
-  })();
-</script>
