@@ -16,12 +16,13 @@ const bundlePath = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/pagefind/`;
     aria-expanded="false"
   >
     <svg
-      width="20"
-      height="20"
+      class="site-search-icon"
+      width="15"
+      height="15"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      stroke-width="2"
+      stroke-width="2.2"
       stroke-linecap="round"
       stroke-linejoin="round"
       aria-hidden="true"
@@ -29,6 +30,8 @@ const bundlePath = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/pagefind/`;
       <circle cx="11" cy="11" r="7" />
       <line x1="20" y1="20" x2="16.65" y2="16.65" />
     </svg>
+    <span class="site-search-label">Search</span>
+    <kbd class="site-search-kbd">/</kbd>
   </button>
   <div class="site-search-panel" id="site-search-panel" hidden>
     <div id="cosense-search"></div>

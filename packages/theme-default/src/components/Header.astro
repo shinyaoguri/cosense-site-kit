@@ -149,10 +149,22 @@ const isActive = (href: string): boolean => {
     navWrap?.addEventListener("click", (e) => {
       if ((e.target as HTMLElement).closest("a")) setNav(false);
     });
+    const isTyping = (el: EventTarget | null) => {
+      const node = el as HTMLElement | null;
+      const tag = node?.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || !!node?.isContentEditable;
+    };
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         setNav(false);
         setSearch(false);
+        return;
+      }
+      // GitHub-style "/" shortcut: focus search unless already typing in a field.
+      if (e.key === "/" && searchPanel && !isTyping(e.target)) {
+        e.preventDefault();
+        setNav(false);
+        setSearch(true);
       }
     });
     document.addEventListener("click", (e) => {

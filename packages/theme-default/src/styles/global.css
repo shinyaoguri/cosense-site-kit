@@ -162,9 +162,7 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text);
 }
 
-/* Icon buttons: search toggle + hamburger. Compact, so they never push the
-   nav onto a second row. They only appear once JS can drive them. */
-.site-search-toggle,
+/* Hamburger — square icon button, shown on narrow screens once JS upgrades. */
 .site-nav-toggle {
   display: none;
   align-items: center;
@@ -179,37 +177,90 @@ h1, h2, h3, h4, h5, h6 {
   cursor: pointer;
   transition: background 0.15s var(--ease), color 0.15s var(--ease);
 }
-.site-search-toggle:hover,
 .site-nav-toggle:hover {
   background: var(--color-bg-hover);
   color: var(--color-text);
 }
-.site-header.has-js .site-search-toggle { display: inline-flex; }
 
-/* Search lives in a drop-down panel below the (sticky) header, full width.
-   .site-search stays unpositioned so the panel anchors to .site-header. */
+/* GitHub-style compact search box (shown once JS can drive it). It opens a
+   small results dropdown anchored to the box, so .site-search is positioned. */
 .site-search {
+  position: relative;
   display: inline-flex;
   align-items: center;
 }
+.site-search-toggle {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2rem;
+  padding: 0 0.4rem 0 0.625rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-soft);
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.site-header.has-js .site-search-toggle { display: inline-flex; }
+.site-search-toggle:hover {
+  background: var(--color-bg);
+  border-color: var(--color-text-faint);
+}
+.site-search-icon { flex-shrink: 0; }
+.site-search-label { margin-right: 1.5rem; }
+.site-search-kbd {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+/* Results dropdown, anchored to the box (right-aligned) — GitHub-like. */
 .site-search-panel {
   position: absolute;
-  top: 100%;
-  left: 0;
+  top: calc(100% + 0.5rem);
   right: 0;
+  width: min(26rem, calc(100vw - 1.5rem));
   z-index: 30;
-  max-height: 80vh;
+  max-height: 75vh;
   overflow-y: auto;
-  padding: 1.25rem 1.25rem 1.5rem;
+  padding: 0.75rem;
   background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.1);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.12);
+}
+
+/* Below 860px the box collapses to a plain icon to save header space. */
+@media (max-width: 860px) {
+  .site-search-toggle {
+    gap: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    justify-content: center;
+    background: transparent;
+    border-color: transparent;
+    color: var(--color-text-soft);
+  }
+  .site-search-toggle:hover {
+    background: var(--color-bg-hover);
+    border-color: transparent;
+  }
+  .site-search-label,
+  .site-search-kbd { display: none; }
 }
 .site-search-panel[hidden] { display: none; }
 .site-search-note {
-  max-width: var(--width-content);
-  margin: 0.5rem auto 0;
-  font-size: 0.85rem;
+  margin: 0.25rem 0.25rem 0;
+  font-size: 0.8125rem;
   color: var(--color-text-muted);
 }
 .site-search-note[hidden] { display: none; }
@@ -218,7 +269,7 @@ h1, h2, h3, h4, h5, h6 {
    own custom properties; the rest is overridden under #cosense-search, whose
    id beats pagefind-ui.css's class selectors (loaded later). */
 #cosense-search {
-  --pagefind-ui-scale: 0.85;
+  --pagefind-ui-scale: 0.8;
   --pagefind-ui-primary: var(--color-accent);
   --pagefind-ui-text: var(--color-text);
   --pagefind-ui-background: var(--color-bg);
@@ -227,8 +278,6 @@ h1, h2, h3, h4, h5, h6 {
   --pagefind-ui-border-width: 1px;
   --pagefind-ui-border-radius: 8px;
   --pagefind-ui-font: var(--font-sans);
-  max-width: var(--width-content);
-  margin: 0 auto;
 }
 #cosense-search .pagefind-ui__search-input {
   background: var(--color-bg-soft);
