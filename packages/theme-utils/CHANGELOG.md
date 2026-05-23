@@ -1,5 +1,33 @@
 # @cosense-site-kit/theme-utils
 
+## 0.2.2
+
+### Patch Changes
+
+- c8274b5: `PageContent` highlights code blocks at build time with Astro's bundled Shiki (dual light/dark theme) instead of emitting a plain `<pre><code>`. Unknown languages fall back to `plaintext` so the build never fails on an exotic extension, and the inferred language is kept on the `<pre>` as `data-language`. Every theme now gets syntax-highlighted code; per-skin colors and line numbers stay the theme's CSS to style.
+- 9c703fb: Add shared SEO builders and fix list/quote/image rendering:
+
+  - New dependency-free builders any theme can use to serve discovery endpoints: `buildSitemap`, `buildRssFeed`, `buildRobotsTxt`, and the `escapeXml` helper they share.
+  - New `buildListTree` plus a recursive `ListTree.astro` component: consecutive list blocks are folded into one properly nested `<ul>`/`<ol>` (with `<ol>` for ordered lists) instead of a separate single-item `<ul>` per line.
+  - `PageContent` now groups consecutive quote lines into one `<blockquote>` and renders inline images as `<img>` (via `Inline`), matching core's richer parser output.
+
+- 3a255f8: Table cells now keep their inline markup. The intermediate `table` block's `rows` changed from `string[][]` (each cell a flattened string) to `InlineNode[][][]` (each cell an `InlineNode[]`), so links, decorations, code and icons inside a `table:` cell survive instead of being collapsed to text — and a page link inside a cell now counts in the link graph. `PageContent` renders each cell through `Inline`.
+
+  Note: this is a breaking change to the v1 intermediate schema's `table.rows` shape. It is intentional pre-1.0 (no external consumers); a theme that read `table.rows` as strings must read cells as `InlineNode[]`.
+
+- 3669423: Embed YouTube videos. A bare (unlabeled) YouTube URL on its own line — `watch?v=`, `youtu.be/`, `/shorts/`, `/embed/` — now becomes an `embed` block (mirroring Cosense's auto-embed), instead of a plain link. Labeled links (`[url text]`) and inline URLs stay links.
+
+  - core's parser classifies the embed kind (`embedKind`); the `embed` block was already in the schema, so no schema change.
+  - theme-utils gains `youtubeEmbedSrc(url)` (extracts the video id, returns a `youtube-nocookie.com` embed URL) and `PageContent` renders a lazy-loaded, privacy-friendly responsive `<iframe>`; URLs it can't parse fall back to a link.
+  - theme-default styles the player as a responsive 16:9 box.
+
+  The classifier is structured to extend to more providers (Vimeo, Spotify, …) by adding a host check.
+
+- Updated dependencies [9c703fb]
+- Updated dependencies [3a255f8]
+- Updated dependencies [3669423]
+  - @cosense-site-kit/core@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

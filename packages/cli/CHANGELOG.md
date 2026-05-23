@@ -1,5 +1,15 @@
 # @cosense-site-kit/cli
 
+## 0.1.3
+
+### Patch Changes
+
+- d946c43: Remove the `cosense-site build` command. It was a thin wrapper around `astro build` that nothing used — the generated workflow and the starter scripts call `astro build` directly. Use `astro build` (or `npm run build`) instead. The data-fetch step (`cosense-site fetch`), `doctor`, `validate`, `init`, and `deploy init` are unchanged.
+- Updated dependencies [9c703fb]
+- Updated dependencies [3a255f8]
+- Updated dependencies [3669423]
+  - @cosense-site-kit/core@0.2.2
+
 ## 0.1.2
 
 ### Patch Changes

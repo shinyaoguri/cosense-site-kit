@@ -1,6 +1,6 @@
 {
   "name": "@cosense-site-kit/theme-default",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Default theme for cosense-site-kit",
   "license": "MIT",
   "type": "module",
@@ -29,8 +29,8 @@
     "astro": "^5.0.0 || ^6.0.0"
   },
   "dependencies": {
-    "@cosense-site-kit/core": "^0.2.1",
-    "@cosense-site-kit/theme-utils": "^0.2.1",
+    "@cosense-site-kit/core": "^0.2.2",
+    "@cosense-site-kit/theme-utils": "^0.2.2",
     "pagefind": "^1.5.2"
   },
   "devDependencies": {

@@ -1,5 +1,32 @@
 # @cosense-site-kit/theme-default
 
+## 0.2.3
+
+### Patch Changes
+
+- c8274b5: Code blocks now show syntax highlighting (via theme-utils' build-time Shiki) and line numbers. Adds CSS that switches the Shiki palette to the dark set under the dark skin and numbers each line via a CSS counter. The existing language label and copy button still work.
+- 9c703fb: Add SEO / social output and discovery endpoints:
+
+  - New routes: `/sitemap.xml` (all pages + home + tag indexes, with `lastmod`), `/robots.txt` (points at the sitemap), and `/feed.xml` (RSS 2.0 of the posts).
+  - `Layout` now emits OpenGraph and Twitter Card meta, a canonical link, JSON-LD, and an RSS `<link rel="alternate">` when the site declares a posts tag. Content pages use `og:type=article` and their page image (falling back to the favicon).
+  - Inline images get a style so they flow within the text line rather than inheriting the block-image margins.
+
+- 3669423: Embed YouTube videos. A bare (unlabeled) YouTube URL on its own line — `watch?v=`, `youtu.be/`, `/shorts/`, `/embed/` — now becomes an `embed` block (mirroring Cosense's auto-embed), instead of a plain link. Labeled links (`[url text]`) and inline URLs stay links.
+
+  - core's parser classifies the embed kind (`embedKind`); the `embed` block was already in the schema, so no schema change.
+  - theme-utils gains `youtubeEmbedSrc(url)` (extracts the video id, returns a `youtube-nocookie.com` embed URL) and `PageContent` renders a lazy-loaded, privacy-friendly responsive `<iframe>`; URLs it can't parse fall back to a link.
+  - theme-default styles the player as a responsive 16:9 box.
+
+  The classifier is structured to extend to more providers (Vimeo, Spotify, …) by adding a host check.
+
+- Updated dependencies [c8274b5]
+- Updated dependencies [9c703fb]
+- Updated dependencies [9c703fb]
+- Updated dependencies [3a255f8]
+- Updated dependencies [3669423]
+  - @cosense-site-kit/theme-utils@0.2.2
+  - @cosense-site-kit/core@0.2.2
+
 ## 0.2.2
 
 ### Patch Changes

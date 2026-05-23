@@ -1,5 +1,28 @@
 # @cosense-site-kit/core
 
+## 0.2.2
+
+### Patch Changes
+
+- 9c703fb: Richer parsing and a per-page OG image, all additive to the v1 schema:
+
+  - Pages now carry an optional `image` (first body image, falling back to the Cosense thumbnail) for use as the OpenGraph/Twitter card image.
+  - Inline images mixed with text now parse to a real `image` inline node instead of a literal `[image] <url>` text link.
+  - `>` quote lines now parse to a `quote` block (rendered as `<blockquote>`).
+  - `N.` numbered lines now parse to an ordered `list` block (`ordered: true`), so themes can emit `<ol>`.
+
+- 3a255f8: Table cells now keep their inline markup. The intermediate `table` block's `rows` changed from `string[][]` (each cell a flattened string) to `InlineNode[][][]` (each cell an `InlineNode[]`), so links, decorations, code and icons inside a `table:` cell survive instead of being collapsed to text — and a page link inside a cell now counts in the link graph. `PageContent` renders each cell through `Inline`.
+
+  Note: this is a breaking change to the v1 intermediate schema's `table.rows` shape. It is intentional pre-1.0 (no external consumers); a theme that read `table.rows` as strings must read cells as `InlineNode[]`.
+
+- 3669423: Embed YouTube videos. A bare (unlabeled) YouTube URL on its own line — `watch?v=`, `youtu.be/`, `/shorts/`, `/embed/` — now becomes an `embed` block (mirroring Cosense's auto-embed), instead of a plain link. Labeled links (`[url text]`) and inline URLs stay links.
+
+  - core's parser classifies the embed kind (`embedKind`); the `embed` block was already in the schema, so no schema change.
+  - theme-utils gains `youtubeEmbedSrc(url)` (extracts the video id, returns a `youtube-nocookie.com` embed URL) and `PageContent` renders a lazy-loaded, privacy-friendly responsive `<iframe>`; URLs it can't parse fall back to a link.
+  - theme-default styles the player as a responsive 16:9 box.
+
+  The classifier is structured to extend to more providers (Vimeo, Spotify, …) by adding a host check.
+
 ## 0.2.1
 
 ### Patch Changes
