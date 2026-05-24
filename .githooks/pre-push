@@ -1,0 +1,54 @@
+#!/bin/sh
+# Block a push that changes a published package without adding a changeset.
+#
+#   packages/*/src/** or packages/*/package.json changed, but no new
+#   .changeset/*.md  →  you almost certainly forgot `npx changeset`.
+#
+# Escape hatch (docs / tests / CI / internal-only changes that don't publish):
+#   git push --no-verify
+#
+# Activated by `core.hooksPath=.githooks` (set by the root package.json
+# `prepare` script on `npm install`).
+
+# Never gate CI pushes — e.g. the changesets release action pushes the
+# "Version Packages" commit, which bumps packages/*/package.json and *deletes*
+# changesets; gating that would break releases.
+[ -n "$CI" ] && exit 0
+
+has_pkg=""
+has_changeset=""
+
+# pre-push feeds "<local_ref> <local_oid> <remote_ref> <remote_oid>" per ref.
+while read -r _local_ref local_oid _remote_ref remote_oid; do
+  # Skip branch deletions (local_oid is all zeros).
+  case "$local_oid" in
+    *[!0]*) : ;;
+    *) continue ;;
+  esac
+
+  case "$remote_oid" in
+    *[!0]*) range="$remote_oid..$local_oid" ;;          # updating an existing remote ref
+    *)                                                  # new remote ref
+      if git rev-parse -q --verify origin/main >/dev/null 2>&1; then
+        range="origin/main..$local_oid"
+      else
+        continue                                        # can't tell what's new; don't block
+      fi
+      ;;
+  esac
+
+  files=$(git diff --name-only "$range" 2>/dev/null) || continue
+  printf '%s\n' "$files" | grep -Eq '^packages/[^/]+/(src/|package\.json)' && has_pkg=1
+  printf '%s\n' "$files" | grep -E '^\.changeset/.+\.md$' | grep -qv 'README\.md$' && has_changeset=1
+done
+
+if [ -n "$has_pkg" ] && [ -z "$has_changeset" ]; then
+  echo "" >&2
+  echo "✖ pre-push: packages/* を変更していますが changeset がありません。" >&2
+  echo "  リリースする変更なら:  npx changeset   (pre-1.0 は patch 推奨) → commit → push" >&2
+  echo "  公開不要（docs / テスト / 内部のみ）なら:  git push --no-verify" >&2
+  echo "" >&2
+  exit 1
+fi
+
+exit 0

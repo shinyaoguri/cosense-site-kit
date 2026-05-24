@@ -10,6 +10,7 @@
     "site"
   ],
   "scripts": {
+    "prepare": "[ -n \"$CI\" ] || git config core.hooksPath .githooks || true",
     "build": "npm run build --workspaces --if-present -w packages/core -w packages/astro -w packages/theme-utils -w packages/theme-default -w packages/cli",
     "dev": "npm run dev --workspaces --if-present -w packages/core -w packages/astro -w packages/theme-utils -w packages/theme-default -w packages/cli",
     "test": "vitest run",
