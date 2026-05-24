@@ -24,7 +24,7 @@ export function normalizePage(raw: SourcePageRaw, project: string): CosenseSiteP
     template: DEFAULT_TEMPLATE,
     createdAt: new Date(raw.created * 1000).toISOString(),
     updatedAt: new Date(raw.updated * 1000).toISOString(),
-    summary: extractSummary(parsed.blocks) ?? cleanDescription(raw.descriptions[0]),
+    summary: extractSummary(parsed.blocks) ?? cleanDescription(raw.descriptions),
     // First image in the body becomes the OG/Twitter card image. raw.image
     // (the Cosense-provided thumbnail) is a fallback for pages whose images
     // are all inline-linked rather than parsed as media.
@@ -80,11 +80,22 @@ function inlineToText(nodes: InlineNode[]): string {
   return out;
 }
 
-// Cosense API's `descriptions[0]` may carry raw "[link]" markers and lone
-// hashtag lines. Best-effort cleanup as a last-resort fallback.
-function cleanDescription(raw: string | undefined): string | undefined {
-  if (!raw) return undefined;
-  const trimmed = raw.trim();
-  if (/^(#\S+\s*)+$/.test(trimmed)) return undefined;
-  return trimmed.length > 0 ? trimmed : undefined;
+// Cosense API's `descriptions` are the page's body lines (after the title):
+// prose, but also tag-only lines and code lines (Cosense wraps every code-block
+// / inline-code line in backticks). As a last-resort summary fallback, return
+// the first line that is actual prose — skipping tag-only lines and whole-line
+// code spans, so a data-only page (e.g. a `#template/collection` page whose body
+// is just a YAML block) doesn't surface `` `education:` `` as its summary.
+// Returns undefined when no line qualifies.
+function cleanDescription(descriptions: string[] | undefined): string | undefined {
+  for (const raw of descriptions ?? []) {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) continue;
+    // Tag-only line (e.g. "#publish #post") — metadata, not prose.
+    if (/^(#\S+\s*)+$/.test(trimmed)) continue;
+    // A whole-line code span — Cosense backtick-wraps code-block body lines.
+    if (/^`[^`]+`$/.test(trimmed)) continue;
+    return trimmed;
+  }
+  return undefined;
 }

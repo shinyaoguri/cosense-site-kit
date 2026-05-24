@@ -74,4 +74,30 @@ describe("normalizePage", () => {
     );
     expect(page.summary).toBeUndefined();
   });
+
+  it("skips code-line descriptions (a data-only collection page) in the fallback", () => {
+    // A `#template/collection` page whose body is just a YAML block: Cosense
+    // returns each code line backtick-wrapped, and there is no prose paragraph.
+    const page = normalizePage(
+      {
+        ...sample,
+        text: ["CV", "code:cv.yaml", " education:", "   - period: x"].join("\n"),
+        descriptions: ["`education:`", "`- period: x`"],
+      },
+      "my-proj",
+    );
+    expect(page.summary).toBeUndefined();
+  });
+
+  it("returns the first prose line, skipping leading tag/code lines", () => {
+    const page = normalizePage(
+      {
+        ...sample,
+        text: "Welcome",
+        descriptions: ["#publish", "`code()`", "real summary"],
+      },
+      "my-proj",
+    );
+    expect(page.summary).toBe("real summary");
+  });
 });
