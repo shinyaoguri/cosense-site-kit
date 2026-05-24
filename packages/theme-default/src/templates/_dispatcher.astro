@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import { pagePaths } from "@cosense-site-kit/theme-utils";
+import Collection from "./collection.astro";
 import Page from "./page.astro";
 import Profile from "./profile.astro";
 
@@ -11,6 +12,7 @@ import Profile from "./profile.astro";
 const TEMPLATES: Record<string, typeof Page> = {
   page: Page,
   profile: Profile,
+  collection: Collection,
 };
 
 export async function getStaticPaths() {

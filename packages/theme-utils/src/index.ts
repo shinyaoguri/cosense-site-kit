@@ -1,3 +1,13 @@
+export {
+  type CollectionCitationItem,
+  type CollectionData,
+  type CollectionEntryItem,
+  type CollectionItem,
+  type CollectionSection,
+  type ParseCollectionOptions,
+  parseCollection,
+  renderInlineLinks,
+} from "./collection";
 export { formatDate } from "./dates";
 export {
   DEFAULT_EMBED_PROVIDERS,

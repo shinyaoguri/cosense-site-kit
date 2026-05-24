@@ -1,0 +1,273 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { parseCollection, path, renderInlineLinks } from "@cosense-site-kit/theme-utils";
+import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
+import Layout from "../components/Layout.astro";
+
+// Collection template: renders the first YAML code block on a page as a set of
+// data-driven list sections — a generic "list page" (CV, publication list,
+// works index, link list, …). Opt in by tagging the Cosense page
+// `#template/collection`, or mapping its title in `.site` site.yaml
+// `templates:`.
+//
+// Each section is a list of items. Items with `authors`/`source` render as
+// citations (authors · "title" · source · year); others as label + title.
+// A section gains filter chips automatically when its items carry tags
+// (`tags: [..]` or any boolean-true field). The page's other blocks render
+// above; if no YAML block parses we fall back to a plain page render.
+
+interface Props {
+  entry: CollectionEntry<"pages">;
+}
+
+const { entry } = Astro.props;
+const page = entry.data;
+
+// Render the first YAML code block as the collection. Blocks BEFORE it (intro
+// prose) render above it; blocks AFTER it (e.g. a trailing tag line) render
+// below — so the collection takes the data block's place in document order and
+// page-final tags stay at the end.
+const dataIndex = page.blocks.findIndex(
+  (b) => b.type === "code" && /\.ya?ml$/i.test(b.filename ?? ""),
+);
+const dataBlock = dataIndex === -1 ? undefined : page.blocks[dataIndex];
+const data =
+  dataBlock && dataBlock.type === "code" ? parseCollection(dataBlock.value) : null;
+const beforeBlocks = page.blocks.slice(0, dataIndex === -1 ? page.blocks.length : dataIndex);
+const afterBlocks = dataIndex === -1 ? [] : page.blocks.slice(dataIndex + 1);
+---
+<Layout title={page.title} description={page.summary} image={page.image} ogType="article">
+  <article class="collection" data-pagefind-body>
+    <header class="collection-header">
+      <h1>{page.title}</h1>
+      {page.summary && <p class="collection-summary">{page.summary}</p>}
+    </header>
+
+    {data ? (
+      <Fragment>
+        {beforeBlocks.length > 0 && <PageContent blocks={beforeBlocks} />}
+        {data.sections.map((section) => (
+        <section class:list={["c-section", { filterable: section.filters.length > 0 }]}>
+          <div class="c-head">
+            <h2>{section.title}</h2>
+            {section.filters.length > 0 && (
+              <div class="c-filters" role="group" aria-label={`Filter ${section.title}`}>
+                {section.filters.map((f, i) => (
+                  <button
+                    type="button"
+                    class:list={["c-filter", { "is-active": i === 0 }]}
+                    data-filter={f}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div
+            class:list={[
+              "c-items",
+              section.hasLabels ? `with-labels label-${section.labelStyle}` : "no-labels",
+            ]}
+          >
+            {section.items.map((item) => (
+              <div class="c-item" data-tags={`|${item.tags.join("|")}|`}>
+                {section.hasLabels && <span class="c-label">{item.label}</span>}
+                <span class="c-text">
+                  {item.kind === "citation" ? (
+                    <>
+                      {item.authors && <span class="c-meta">{item.authors}, </span>}
+                      {item.url ? (
+                        <a class="c-title" href={item.url} target="_blank" rel="noopener noreferrer">
+                          “{item.title}”
+                        </a>
+                      ) : (
+                        <span class="c-title">“{item.title}”</span>
+                      )}
+                      {item.source && <span class="c-meta">, {item.source}</span>}
+                      {item.year && <span class="c-meta"> ({item.year})</span>}
+                    </>
+                  ) : (
+                    <span
+                      set:html={
+                        renderInlineLinks(item.title) +
+                        (item.description ? `, ${renderInlineLinks(item.description)}` : "")
+                      }
+                    />
+                  )}
+                  {item.tags.map((t) => (
+                    <span class="c-badge">{t}</span>
+                  ))}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+        ))}
+        {afterBlocks.length > 0 && <PageContent blocks={afterBlocks} />}
+      </Fragment>
+    ) : (
+      <PageContent blocks={page.blocks} />
+    )}
+
+    <footer class="source" data-pagefind-ignore>
+      <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>
+      {" · "}
+      <a href={path("")}>← Back to home</a>
+    </footer>
+  </article>
+</Layout>
+
+<script>
+  // Per-section tag filter. "All" shows everything; any other chip shows only
+  // items whose data-tags contains that tag. Scoped to each filterable section
+  // so multiple lists on one page don't cross-filter. No-JS users see all rows.
+  document.querySelectorAll<HTMLElement>(".c-section.filterable").forEach((root) => {
+    const buttons = root.querySelectorAll<HTMLButtonElement>(".c-filter");
+    const items = root.querySelectorAll<HTMLElement>(".c-item");
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const filter = btn.dataset.filter ?? "All";
+        buttons.forEach((b) => b.classList.toggle("is-active", b === btn));
+        items.forEach((item) => {
+          const tags = item.dataset.tags ?? "";
+          const show = filter === "All" || tags.includes(`|${filter}|`);
+          item.style.display = show ? "" : "none";
+        });
+      });
+    });
+  });
+</script>
+
+<style>
+  .collection-header {
+    margin-bottom: 2.25rem;
+  }
+  .collection-header h1 {
+    font-size: 2.25rem;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.02em;
+  }
+  .collection-summary {
+    color: var(--color-text-muted);
+    font-size: 1.0625rem;
+    margin: 0;
+  }
+
+  .c-section {
+    margin-bottom: 2.5rem;
+  }
+  .c-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--color-divider);
+  }
+  .c-head h2 {
+    font-size: 1.05rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  /* Filter chips, modeled on the theme's tag pills. */
+  .c-filters {
+    display: flex;
+    gap: 0.375rem;
+    flex-wrap: wrap;
+  }
+  .c-filter {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    line-height: 1.6;
+    padding: 0.1rem 0.6rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-tag-bg);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition:
+      background 0.15s var(--ease),
+      color 0.15s var(--ease);
+  }
+  .c-filter:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-soft);
+  }
+  .c-filter.is-active {
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+  }
+
+  .c-items {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Label-column layout (timeline: education, career, works, …). */
+  .c-items.with-labels {
+    gap: 0.5rem;
+  }
+  .with-labels .c-item {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+  .c-label {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+    /* Keep a label like "2021.04 - 2023.03" on a single line. */
+    white-space: nowrap;
+  }
+  /* Wide enough for a full period range; min-width keeps rows aligned while
+     letting an unusually long range grow instead of wrapping. */
+  .label-period .c-label {
+    min-width: 8.5rem;
+  }
+  .label-year .c-label {
+    width: 2.5rem;
+  }
+
+  /* Bullet-list layout (citations: publications, …). */
+  .c-items.no-labels {
+    gap: 0.6rem;
+  }
+  .no-labels .c-item {
+    position: relative;
+    padding-left: 1rem;
+  }
+  .no-labels .c-item::before {
+    content: "–";
+    position: absolute;
+    left: 0;
+    color: var(--color-text-muted);
+  }
+
+  .c-text {
+    color: var(--color-text-soft);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+  .c-title {
+    color: var(--color-text);
+  }
+  .c-badge {
+    display: inline-block;
+    margin-left: 0.4rem;
+    font-size: 0.65rem;
+    line-height: 1.5;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: var(--color-tag-bg);
+    color: var(--color-tag-text);
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+</style>
