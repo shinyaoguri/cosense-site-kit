@@ -86,6 +86,7 @@ describe("generateWranglerJsonc", () => {
     const parsed = JSON.parse(out);
     expect(parsed.name).toBe("my-site");
     expect(parsed.assets.directory).toBe("./dist");
+    expect(parsed.assets.not_found_handling).toBe("404-page");
     expect(parsed.compatibility_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

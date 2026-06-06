@@ -1,0 +1,51 @@
+---
+import { path } from "@cosense-site-kit/theme-utils";
+import Layout from "../components/Layout.astro";
+
+// Custom 404. Injected at the `/404` route (see index.ts), so Astro emits a
+// top-level `dist/404.html` that GitHub Pages and Cloudflare Workers Static
+// Assets serve for unknown paths. Notes:
+//  - No `data-pagefind-body`, so this page stays out of the search index (the
+//    index only covers pages that carry that attribute).
+//  - The home link uses the base-aware `path()` helper: a 404 can be served at
+//    any deep URL, so links must be base-prefixed absolute, not relative.
+//  - `hideToc` since there are no headings to outline.
+---
+<Layout title="Page not found" hideToc>
+  <section class="notfound">
+    <p class="notfound-code">404</p>
+    <h1 class="notfound-title">Page not found</h1>
+    <p class="notfound-lead">The page you're looking for doesn't exist or may have moved.</p>
+    <a class="notfound-home" href={path("")}>← Back home</a>
+  </section>
+</Layout>
+
+<style>
+  .notfound {
+    text-align: center;
+    padding: 4rem 1rem 5rem;
+  }
+  .notfound-code {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: var(--color-text-faint);
+  }
+  .notfound-title {
+    margin: 1rem 0 0.5rem;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+  }
+  .notfound-lead {
+    margin: 0 0 1.75rem;
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+  }
+  .notfound-home {
+    font-weight: 500;
+    font-size: 0.9375rem;
+  }
+</style>
