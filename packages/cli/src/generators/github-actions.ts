@@ -104,7 +104,10 @@ jobs:
           restore-keys: |
             cosense-cache-
 
+      # Install at the repo root (not the job's working-directory) so the whole
+      # npm workspace is installed in a monorepo — matches the Pages workflow.
       - run: npm install
+        working-directory: \${{ github.workspace }}
 ${buildStep(a)}
 ${a.buildWorkspaces ? renderMonorepoRunSteps() : renderRunSteps()}
 

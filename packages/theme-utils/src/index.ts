@@ -7,6 +7,7 @@ export {
   type ParseCollectionOptions,
   parseCollection,
   renderInlineLinks,
+  safeHref,
 } from "./collection";
 export { formatDate } from "./dates";
 export {

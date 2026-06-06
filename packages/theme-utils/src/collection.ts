@@ -1,5 +1,16 @@
 import { parse as parseYaml } from "yaml";
 
+// Allow only schemes that can't execute script (http/https/mailto/relative/
+// fragment); anything else (javascript:, data:, …) is dropped. Defense in
+// depth — Cosense authors are trusted, but a citation `url:` flows straight
+// into an <a href>, so sanitize it the same way inline markdown links are.
+const SAFE_HREF = /^(https?:\/\/|mailto:|\/|#)/i;
+
+/** Return `href` when it uses a safe scheme, otherwise `undefined`. */
+export function safeHref(href: string | undefined): string | undefined {
+  return href && SAFE_HREF.test(href) ? href : undefined;
+}
+
 // A data-driven "collection" page: the `collection` theme template reads the
 // first YAML code block off a Cosense page and renders it as a set of list
 // sections (see `parseCollection`). Nothing here is domain-specific — section
@@ -123,7 +134,7 @@ function normalizeItem(x: unknown): CollectionItem | null {
       title,
       source,
       year,
-      url: str(o.url) || undefined,
+      url: safeHref(str(o.url) || undefined),
       tags,
     };
   }
@@ -191,8 +202,6 @@ export function parseCollection(
 
   return sections.length ? { sections } : null;
 }
-
-const SAFE_HREF = /^(https?:\/\/|mailto:|\/|#)/i;
 
 /**
  * Render a trusted-author string to HTML, converting `[text](url)` markdown

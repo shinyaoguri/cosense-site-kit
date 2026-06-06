@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { defineCosenseSite, runDoctor } from "../src";
 import type { CosenseSiteConfig } from "../src";
+import { defineCosenseSite, runDoctor } from "../src";
 import type { SiteSource, SourcePageRaw } from "../src/source/types";
 
 function rawPage(o: { id: string; title: string; text: string; links?: string[] }): SourcePageRaw {
@@ -36,7 +36,9 @@ function stubSource(raws: SourcePageRaw[]): SiteSource {
   };
 }
 
-const baseConfig = (over: Partial<Parameters<typeof defineCosenseSite>[0]> = {}): CosenseSiteConfig =>
+const baseConfig = (
+  over: Partial<Parameters<typeof defineCosenseSite>[0]> = {},
+): CosenseSiteConfig =>
   defineCosenseSite({
     site: { title: "T", baseUrl: "https://e.com" },
     source: { type: "cosense", project: "p" },
@@ -63,9 +65,7 @@ describe("runDoctor", () => {
 
   it("fails when publish rules produce zero pages", async () => {
     const config = baseConfig();
-    const source = stubSource([
-      rawPage({ id: "a", title: "A", text: "A\nno tags" }),
-    ]);
+    const source = stubSource([rawPage({ id: "a", title: "A", text: "A\nno tags" })]);
     const report = await runDoctor({ config, source });
     expect(report.ok).toBe(false);
     expect(find(report, "Publish rules produce pages").status).toBe("fail");
@@ -149,6 +149,18 @@ describe("runDoctor", () => {
     expect(check.message).toMatch(/1 broken/);
   });
 
+  it("warns about broken links inside quote blocks", async () => {
+    const config = baseConfig();
+    const source = stubSource([
+      rawPage({ id: "a", title: "Home", text: "Home\n#publish\n> see [Ghost]" }),
+      rawPage({ id: "b", title: "Visible", text: "Visible\n#publish" }),
+    ]);
+    const report = await runDoctor({ config, source });
+    const check = find(report, "Internal page links resolve");
+    expect(check.status).toBe("warn");
+    expect(check.details?.join(" ")).toContain("Ghost");
+  });
+
   it("warns when a redirect destination is missing", async () => {
     const siteYaml = [
       ".site",
@@ -176,12 +188,7 @@ describe("runDoctor", () => {
   });
 
   it("summarizes template usage when multiple templates are in play", async () => {
-    const siteYaml = [
-      ".site",
-      "code:site.yaml",
-      " templates:",
-      "   \"Welcome\": landing",
-    ].join("\n");
+    const siteYaml = [".site", "code:site.yaml", " templates:", '   "Welcome": landing'].join("\n");
     const config = baseConfig();
     const source = stubSource([
       rawPage({ id: "s", title: ".site", text: siteYaml }),
@@ -198,12 +205,9 @@ describe("runDoctor", () => {
   });
 
   it("warns when .site templates mapping references missing titles", async () => {
-    const siteYaml = [
-      ".site",
-      "code:site.yaml",
-      " templates:",
-      "   \"Typoed Title\": profile",
-    ].join("\n");
+    const siteYaml = [".site", "code:site.yaml", " templates:", '   "Typoed Title": profile'].join(
+      "\n",
+    );
     const config = baseConfig();
     const source = stubSource([
       rawPage({ id: "s", title: ".site", text: siteYaml }),

@@ -6,37 +6,38 @@ If you believe you have found a security issue in cosense-site-kit, please repor
 
 ## Known advisories in dependencies
 
-`npm audit` will surface some moderate-severity advisories in transitive
-dependencies. We don't ignore them, but the practical exposure for a
-cosense-site-kit site is near-zero. Here's the triage:
+The default dependency set — Astro 6, which this repo pins — has a clean
+`npm audit` (0 known advisories). The notes below cover advisories you may
+still hit if you pin an **older, peer-allowed** Astro (the framework's peer
+range is `astro@^5 || ^6`), and how cosense-site-kit is exposed in each case.
 
-### Astro 5 advisories (moderate)
+### Astro 5 advisories (moderate; fixed in Astro 6)
+
+Both are resolved by Astro 6 — staying on 6.x is the fix. The exposure if you
+pin Astro 5:
 
 - **GHSA-j687-52p2-xcff** — XSS in `define:vars` via incomplete `</script>`
   sanitization.
-  cosense-site-kit does not use `define:vars` anywhere. The shipped
-  theme-default uses inline `<script>` blocks bundled by Astro, not
-  `define:vars` injection.
+  theme-default uses `define:vars` in exactly one place — `LinkPreview.astro`,
+  which injects `endpoint`, a build-time constant derived from the site's own
+  `BASE_URL`. It never carries Cosense-author or visitor input, so there is no
+  attacker-controlled value through which a `</script>` could be smuggled.
+  Exposure is near-zero even on Astro 5; Astro 6 closes the bug entirely.
 
 - **GHSA-xr5h-phrj-8vxv** — Server-island encrypted-parameter replay.
   cosense-site-kit produces fully static output (`output: "static"` by
   default). Server islands are not used.
 
-A major upgrade to Astro 6 will resolve both. Targeted for a future
-breaking release; track [#TODO](https://github.com/shinyaoguri/cosense-site-kit/issues).
-
-### esbuild / vite dev-server advisory (moderate)
+### esbuild / vite dev-server advisory (moderate; fixed)
 
 - **GHSA-67mh-4wv8-2f99** — any origin can send requests to the dev server
   and read responses.
-
-This affects `astro dev` only. Production builds (`astro build`) are
-unaffected because the dev server isn't running. CI builds, GitHub
-Pages output, and Cloudflare Workers deploys are not exposed.
-
-When running `astro dev` locally, avoid visiting untrusted sites that
-might probe `localhost:4321`. The fix requires bumping to esbuild
-0.25.x, which is gated on a major Vite upgrade.
+  This affected `astro dev` only — never production builds (`astro build`),
+  GitHub Pages output, or Cloudflare Workers deploys, since the dev server
+  isn't running there. It is fixed in esbuild 0.25.x, which the current Vite
+  pulls in. If you pin an older toolchain that resolves esbuild < 0.25, avoid
+  visiting untrusted sites that might probe `localhost:4321` while `astro dev`
+  is running.
 
 ## Default security posture
 

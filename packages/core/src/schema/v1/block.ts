@@ -46,3 +46,45 @@ export const blockSchema: z.ZodType<CosenseBlock> = z.discriminatedUnion("type",
   }),
   z.object({ type: z.literal("raw"), value: z.string() }),
 ]);
+
+// Apply `fn` to every top-level inline node a block contains, returning a new
+// block of the same shape. Blocks with inline children (paragraph, heading,
+// quote, list) map their `children`; table maps every cell in `rows`. Blocks
+// with no inline content (code, image, embed, raw) are returned unchanged.
+// `fn` only sees the top-level nodes — callers that must recurse into nested
+// inline children (strong/link/…) do so inside `fn`. Centralizing the block
+// shapes here keeps link resolution, icon vendoring and doctor in lockstep:
+// none of them can silently forget a container (quote and table cells were
+// previously missed).
+export function mapBlockInlines(
+  block: CosenseBlock,
+  fn: (node: InlineNode) => InlineNode,
+): CosenseBlock {
+  switch (block.type) {
+    case "paragraph":
+    case "heading":
+    case "quote":
+    case "list":
+      return { ...block, children: block.children.map(fn) };
+    case "table":
+      return { ...block, rows: block.rows.map((row) => row.map((cell) => cell.map(fn))) };
+    default:
+      return block;
+  }
+}
+
+// Read-only counterpart of mapBlockInlines: visit every top-level inline node a
+// block contains. Same block coverage; `fn` recurses into nested children.
+export function forEachBlockInline(block: CosenseBlock, fn: (node: InlineNode) => void): void {
+  switch (block.type) {
+    case "paragraph":
+    case "heading":
+    case "quote":
+    case "list":
+      for (const node of block.children) fn(node);
+      return;
+    case "table":
+      for (const row of block.rows) for (const cell of row) for (const node of cell) fn(node);
+      return;
+  }
+}

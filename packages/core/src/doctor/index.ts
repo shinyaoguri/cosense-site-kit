@@ -1,5 +1,6 @@
 import type { CosenseSiteConfig } from "../config";
 import { buildIntermediate, type ProgressEvent } from "../pipeline";
+import { forEachBlockInline } from "../schema/v1/block";
 import type { IntermediateData } from "../schema/v1/page";
 import type { SiteSource } from "../source/types";
 
@@ -102,10 +103,7 @@ function checkPublishOutcome(data: IntermediateData): DoctorCheck {
   };
 }
 
-function checkSiteConfigPage(
-  config: CosenseSiteConfig,
-  data: IntermediateData,
-): DoctorCheck {
+function checkSiteConfigPage(config: CosenseSiteConfig, data: IntermediateData): DoctorCheck {
   if (config.siteConfig.page === null) {
     return {
       name: "Site-config page",
@@ -228,9 +226,7 @@ function checkPostsTagHasContent(data: IntermediateData): DoctorCheck {
 function checkOrphanPosts(data: IntermediateData): DoctorCheck {
   const tag = data.structure.posts?.tag;
   if (!tag) return { name: "No orphan posts", status: "pass", message: "posts not configured" };
-  const orphans = data.excluded
-    .filter((e) => e.tags?.includes(tag))
-    .map((e) => e.title);
+  const orphans = data.excluded.filter((e) => e.tags?.includes(tag)).map((e) => e.title);
   if (orphans.length === 0) {
     return { name: "No orphan posts", status: "pass", message: `every #${tag} page is published` };
   }
@@ -365,10 +361,7 @@ function checkSlugCollisions(data: IntermediateData): DoctorCheck {
   };
 }
 
-function checkDraftLeak(
-  config: CosenseSiteConfig,
-  data: IntermediateData,
-): DoctorCheck {
+function checkDraftLeak(config: CosenseSiteConfig, data: IntermediateData): DoctorCheck {
   const excludeTags = new Set(config.publish.excludeTags);
   const leaked: string[] = [];
   for (const p of data.pages) {
@@ -385,15 +378,16 @@ function checkDraftLeak(
   };
 }
 
-// Walk inline nodes (paragraph/heading/list children) and invoke `fn` for each.
+// Walk inline nodes in every inline container (paragraph/heading/list children
+// plus quote and table cells) and invoke `fn` for each, recursing into nested
+// children. Sharing forEachBlockInline keeps this in step with link resolution,
+// so a broken [Page] link inside a quote or table cell is still reported.
 function walkInlines(
   blocks: IntermediateData["pages"][number]["blocks"],
   fn: (node: InlineLike) => void,
 ): void {
   for (const block of blocks) {
-    if (block.type === "paragraph" || block.type === "heading" || block.type === "list") {
-      for (const node of block.children) visit(node as InlineLike, fn);
-    }
+    forEachBlockInline(block, (node) => visit(node as InlineLike, fn));
   }
 }
 

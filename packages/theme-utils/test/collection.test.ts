@@ -93,6 +93,38 @@ describe("parseCollection", () => {
   });
 });
 
+describe("parseCollection citation url safety", () => {
+  it("drops a citation url with an unsafe scheme", () => {
+    const data = parseCollection(
+      [
+        "refs:",
+        '  - authors: "A"',
+        '    title: "Evil"',
+        '    source: "J"',
+        '    url: "javascript:alert(1)"',
+      ].join("\n"),
+    );
+    const item = data?.sections[0]?.items[0];
+    if (item?.kind !== "citation") throw new Error("expected citation");
+    expect(item.url).toBeUndefined();
+  });
+
+  it("keeps a citation url with a safe scheme", () => {
+    const data = parseCollection(
+      [
+        "refs:",
+        '  - authors: "A"',
+        '    title: "Ok"',
+        '    source: "J"',
+        '    url: "https://e.com"',
+      ].join("\n"),
+    );
+    const item = data?.sections[0]?.items[0];
+    if (item?.kind !== "citation") throw new Error("expected citation");
+    expect(item.url).toBe("https://e.com");
+  });
+});
+
 describe("renderInlineLinks", () => {
   it("converts markdown links and escapes the rest", () => {
     expect(renderInlineLinks("[Expo](https://e.com) & <b>")).toBe(

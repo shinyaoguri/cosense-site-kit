@@ -13,6 +13,7 @@ import { emptySiteStructure, type SiteStructure } from "./schema/v1/site-structu
 import { type CosenseSourceOptions, createCosenseSource } from "./source/cosense";
 import { normalizePage } from "./source/cosense/normalize";
 import type { SiteSource, SourcePageRaw } from "./source/types";
+import { sanitizeConcurrency } from "./util/concurrency";
 
 export interface BuildIntermediateOptions {
   config: CosenseSiteConfig;
@@ -45,7 +46,10 @@ export type ProgressEvent =
 export async function buildIntermediate(opts: BuildIntermediateOptions): Promise<IntermediateData> {
   const { config, signal } = opts;
   const source = opts.source ?? defaultSource(config, opts);
-  const concurrency = Math.max(1, opts.concurrency ?? 4);
+  // A non-positive or non-finite concurrency (e.g. a bad flag that parsed to
+  // NaN) would make `i += concurrency` below never advance, silently yielding
+  // zero pages. Fall back to the default rather than hang/empty.
+  const concurrency = sanitizeConcurrency(opts.concurrency, 4);
 
   const refs = await source.list({ signal });
   opts.onProgress?.({ kind: "list", total: refs.length });

@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/dist", "!**/.astro", "!**/node_modules", "!**/.cosense-cache"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/.astro",
+      "!**/node_modules",
+      "!**/.cosense-cache",
+      "!**/.claude"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -34,5 +41,18 @@
       "semicolons": "always",
       "trailingCommas": "all"
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.astro"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedImports": "off",
+            "noUnusedVariables": "off"
+          }
+        }
+      }
+    }
+  ]
 }
