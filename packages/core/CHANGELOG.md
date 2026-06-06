@@ -1,5 +1,26 @@
 # @cosense-site-kit/core
 
+## 0.2.4
+
+### Patch Changes
+
+- 3522a79: fix: reject invalid --concurrency instead of silently fetching zero pages
+
+  A non-numeric `--concurrency` parsed to `NaN`, and `Math.max(1, NaN)` is `NaN`,
+  so the fetch loop never advanced and the build silently produced zero pages.
+  The CLI now rejects a non-positive-integer `--concurrency` up front, and
+  `buildIntermediate` / icon vendoring normalize the value defensively so a bad
+  concurrency can never stall the batch loop.
+
+- 3522a79: fix(core): resolve links and vendor icons inside quotes and table cells
+
+  Inline traversal only covered paragraph/heading/list, so a `[Page]` link in a
+  blockquote or table cell was left with no slug (rendered broken even when the
+  target exists) and a missing target there was invisible to `doctor`; icons in
+  table cells were likewise never vendored. A shared block-inline walker
+  (`mapBlockInlines` / `forEachBlockInline`) now drives link resolution, icon
+  vendoring and the doctor link check uniformly across quote and table blocks.
+
 ## 0.2.3
 
 ### Patch Changes
