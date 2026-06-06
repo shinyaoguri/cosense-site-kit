@@ -729,11 +729,55 @@ html[data-theme="dark"] .page-content .astro-code span {
   padding: 0.625rem 0;
   border-bottom: 1px solid var(--color-border-soft);
   display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.875rem;
 }
 .recent-pages li:last-child,
 .tag-page-list li:last-child { border-bottom: 0; }
+
+/* Left thumbnail + right text column for list entries. */
+.recent-pages .entry-body,
+.tag-page-list .entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.recent-pages .thumb,
+.tag-page-list .thumb {
+  --thumb-size: clamp(48px, 14vw, 64px);
+  flex: 0 0 auto;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-callout-bg);
+  display: block;
+}
+.recent-pages .thumb img,
+.tag-page-list .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.recent-pages .thumb-placeholder,
+.tag-page-list .thumb-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--color-callout-bg) 0%, var(--color-border-soft) 100%);
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+  user-select: none;
+}
 .recent-pages a,
 .tag-page-list a {
   font-weight: 500;

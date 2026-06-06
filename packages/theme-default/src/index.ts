@@ -137,6 +137,10 @@ export default function themeDefault(opts: ThemeDefaultOptions = {}): AstroInteg
           pattern: "/link-previews.json",
           entrypoint: here("templates/link-previews.json.ts"),
         });
+        // Custom 404. Astro special-cases the `/404` route and emits a top-level
+        // dist/404.html (not dist/404/index.html), which GitHub Pages and the
+        // Cloudflare Workers asset server use for unknown paths.
+        injectRoute({ pattern: "/404", entrypoint: here("templates/404.astro") });
         // Dispatcher: serves /<slug> and picks the right per-page template
         // (templates/page.astro by default, others via #template/<name>).
         injectRoute({ pattern: "/[...slug]", entrypoint: here("templates/_dispatcher.astro") });
