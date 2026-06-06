@@ -1,5 +1,29 @@
 # @cosense-site-kit/cli
 
+## 0.1.4
+
+### Patch Changes
+
+- 3522a79: fix(cli): install at the workspace root in the generated Cloudflare workflow
+
+  In a monorepo the Cloudflare Workers workflow set the job's working-directory to
+  the site subdirectory but ran `npm install` there with no override, unlike the
+  Pages workflow which pins the install to `github.workspace`. The generated
+  Cloudflare workflow now pins `npm install` to the workspace root too, so the
+  whole npm workspace is installed regardless of subdirectory lockfile state.
+
+- 3522a79: fix: reject invalid --concurrency instead of silently fetching zero pages
+
+  A non-numeric `--concurrency` parsed to `NaN`, and `Math.max(1, NaN)` is `NaN`,
+  so the fetch loop never advanced and the build silently produced zero pages.
+  The CLI now rejects a non-positive-integer `--concurrency` up front, and
+  `buildIntermediate` / icon vendoring normalize the value defensively so a bad
+  concurrency can never stall the batch loop.
+
+- Updated dependencies [3522a79]
+- Updated dependencies [3522a79]
+  - @cosense-site-kit/core@0.2.4
+
 ## 0.1.3
 
 ### Patch Changes

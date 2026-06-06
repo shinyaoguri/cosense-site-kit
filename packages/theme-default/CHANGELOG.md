@@ -1,5 +1,23 @@
 # @cosense-site-kit/theme-default
 
+## 0.2.5
+
+### Patch Changes
+
+- 3522a79: fix(theme-default): tighten pagefind dev-server path containment
+
+  The dev middleware that serves `pagefind/*` checked `file.startsWith(outDir)`,
+  which also admits a sibling directory like `<outDir>2`, and let a malformed
+  percent-encoding throw out of `decodeURIComponent`. It now decodes defensively
+  and requires the resolved path to be the output directory or a separator-bounded
+  descendant. Dev-server only; production output is unaffected.
+
+- Updated dependencies [3522a79]
+- Updated dependencies [3522a79]
+- Updated dependencies [3522a79]
+  - @cosense-site-kit/theme-utils@0.2.4
+  - @cosense-site-kit/core@0.2.4
+
 ## 0.2.4
 
 ### Patch Changes
