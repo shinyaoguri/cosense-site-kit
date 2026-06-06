@@ -1,4 +1,4 @@
-import type { CosenseBlock } from "../schema/v1/block";
+import { type CosenseBlock, mapBlockInlines } from "../schema/v1/block";
 import type { InlineNode } from "../schema/v1/inline";
 import type { CosenseSitePage } from "../schema/v1/page";
 
@@ -25,15 +25,10 @@ export function buildTitleToSlug(
   return map;
 }
 
+// Resolve pageLinks in every inline container — paragraph/heading/list plus
+// quote and table cells — so a [Page] link works regardless of where it appears.
 function resolveBlock(block: CosenseBlock, m: Map<string, string>): CosenseBlock {
-  switch (block.type) {
-    case "paragraph":
-    case "heading":
-    case "list":
-      return { ...block, children: block.children.map((c) => resolveInline(c, m)) };
-    default:
-      return block;
-  }
+  return mapBlockInlines(block, (c) => resolveInline(c, m));
 }
 
 function resolveInline(node: InlineNode, m: Map<string, string>): InlineNode {

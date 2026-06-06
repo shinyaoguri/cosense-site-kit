@@ -19,11 +19,24 @@ describe("generateGithubActionsWorkflow", () => {
       target: "github-pages",
       workingDirectory: "site",
     });
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions ${{ }} expression, not a JS template string
     expect(yml).toContain("node ${{ github.workspace }}/packages/cli/dist/index.js fetch");
     expect(yml).toContain("npx astro build");
     expect(yml).not.toContain("npx cosense-site");
     // The astro bin entry moved between Astro 5 and 6, so we must not hardcode it.
     expect(yml).not.toContain("node_modules/astro/astro.js");
+  });
+
+  it("installs at the workspace root in a monorepo so all packages install", () => {
+    // The job's working-directory points at the subdir; npm install must opt
+    // back out to github.workspace so the whole workspace installs (matches the
+    // Pages workflow).
+    for (const target of ["cloudflare-workers", "github-pages"] as const) {
+      const yml = generateGithubActionsWorkflow({ target, workingDirectory: "site" });
+      expect(yml).toMatch(
+        /- run: npm install\n\s+working-directory: \$\{\{ github\.workspace \}\}/,
+      );
+    }
   });
 
   it("emits a github-pages workflow with build/deploy jobs and env binding", () => {

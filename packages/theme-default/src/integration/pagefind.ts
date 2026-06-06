@@ -44,9 +44,24 @@ export function pagefindIntegration(): AstroIntegration {
           if (reqPath.startsWith(`${base}pagefind/`)) rel = reqPath.slice(base.length);
           else if (reqPath.startsWith("/pagefind/")) rel = reqPath.slice(1);
           if (rel === null) return next();
-          const file = path.join(outDir, decodeURIComponent(rel));
-          // Contain path traversal to the output directory.
-          if (!file.startsWith(outDir) || !existsSync(file) || !statSync(file).isFile()) {
+          let decoded: string;
+          try {
+            decoded = decodeURIComponent(rel);
+          } catch {
+            // Malformed percent-encoding (e.g. "%ZZ") — not a path we serve.
+            return next();
+          }
+          // Contain path traversal to the output directory. A bare prefix check
+          // (file.startsWith(outDir)) would also admit a sibling directory like
+          // "<outDir>2", so normalize and require an exact match or a
+          // separator-bounded descendant.
+          const root = outDir.replace(/[/\\]+$/, "");
+          const file = path.resolve(root, decoded);
+          if (
+            (file !== root && !file.startsWith(root + path.sep)) ||
+            !existsSync(file) ||
+            !statSync(file).isFile()
+          ) {
             return next();
           }
           res.setHeader("content-type", MIME[path.extname(file)] ?? "application/octet-stream");

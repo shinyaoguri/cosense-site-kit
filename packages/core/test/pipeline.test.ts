@@ -170,6 +170,25 @@ describe("buildIntermediate", () => {
     }
   });
 
+  it("still fetches every page when concurrency is NaN", async () => {
+    // A bad --concurrency parsed to NaN once made the fetch loop never advance,
+    // silently returning zero pages. Guard against that regression.
+    const raws = [
+      rawPage({ id: "a", title: "A", text: "A\n#publish" }),
+      rawPage({ id: "b", title: "B", text: "B\n#publish" }),
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({
+      config,
+      source: stubSource(raws),
+      concurrency: Number.NaN,
+    });
+    expect(data.pages.map((p) => p.title).sort()).toEqual(["A", "B"]);
+  });
+
   it("falls back to an empty SiteStructure when no site-config page exists", async () => {
     const config = defineCosenseSite({
       site: { title: "T", baseUrl: "https://e.com" },

@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
 import { access, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { CosenseBlock } from "../schema/v1/block";
+import { type CosenseBlock, forEachBlockInline, mapBlockInlines } from "../schema/v1/block";
 import type { InlineNode } from "../schema/v1/inline";
 import type { IntermediateData } from "../schema/v1/page";
+import { sanitizeConcurrency } from "../util/concurrency";
 
 // Cosense's `[name.icon]` resolves through scrapbox.io's icon endpoint, which
 // responds with `Cross-Origin-Resource-Policy: same-origin`. That header makes
@@ -53,7 +54,9 @@ export async function vendorIcons(
   if (sources.size === 0) return data;
 
   const fetchImpl = opts.fetchImpl ?? fetch;
-  const concurrency = Math.max(1, opts.concurrency ?? 8);
+  // Same NaN/zero guard as the fetch loop: a bad value would stall the batch
+  // loop and silently leave icons un-vendored. See sanitizeConcurrency.
+  const concurrency = sanitizeConcurrency(opts.concurrency, 8);
   const baseUrl = opts.baseUrl.replace(/\/$/, "");
 
   await mkdir(opts.dir, { recursive: true });
@@ -142,25 +145,18 @@ async function exists(path: string): Promise<boolean> {
 
 function collectIconSrcs(data: IntermediateData): Set<string> {
   const out = new Set<string>();
-  const visitNodes = (nodes: InlineNode[]): void => {
-    for (const node of nodes) {
-      if (node.type === "icon") out.add(node.src);
-      else if ("children" in node) visitNodes(node.children);
-    }
+  const visit = (node: InlineNode): void => {
+    if (node.type === "icon") out.add(node.src);
+    else if ("children" in node) for (const child of node.children) visit(child);
   };
   for (const page of data.pages) {
-    for (const block of page.blocks) {
-      if ("children" in block) visitNodes(block.children);
-    }
+    for (const block of page.blocks) forEachBlockInline(block, visit);
   }
   return out;
 }
 
 function rewriteBlock(block: CosenseBlock, rewrites: Map<string, string>): CosenseBlock {
-  if ("children" in block) {
-    return { ...block, children: block.children.map((n) => rewriteNode(n, rewrites)) };
-  }
-  return block;
+  return mapBlockInlines(block, (n) => rewriteNode(n, rewrites));
 }
 
 function rewriteNode(node: InlineNode, rewrites: Map<string, string>): InlineNode {

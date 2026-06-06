@@ -1,12 +1,23 @@
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import pc from "picocolors";
-import { runInit } from "./commands/init";
-import { runFetch } from "./commands/fetch";
-import { runValidate } from "./commands/validate";
 import { runDeployInit } from "./commands/deploy";
 import { runDoctorCmd } from "./commands/doctor";
+import { runFetch } from "./commands/fetch";
+import { runInit } from "./commands/init";
+import { runValidate } from "./commands/validate";
 
 export const VERSION = "0.0.0";
+
+// Reject a --concurrency that isn't a positive integer. parseInt would have
+// silently turned "abc" into NaN, which downstream makes the fetch loop never
+// advance and report zero pages — so fail loudly at the CLI boundary instead.
+function parseConcurrency(value: string): number {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1) {
+    throw new InvalidArgumentError("expected a positive integer");
+  }
+  return n;
+}
 
 const program = new Command("cosense-site")
   .description("SSG framework for public Cosense projects")
@@ -26,12 +37,9 @@ program
   .description("Fetch pages from Cosense into the local cache")
   .option("--config <file>", "Path to cosense.config.{ts,js,mjs}")
   .option("--cache-dir <dir>", "Cache directory (default .cosense-cache)")
-  .option(
-    "--export <file>",
-    "Also write the full intermediate model (pages + structure) to <file>",
-  )
+  .option("--export <file>", "Also write the full intermediate model (pages + structure) to <file>")
   .option("--force", "Ignore cache and refetch everything")
-  .option("--concurrency <n>", "Parallel fetch concurrency", (v) => Number.parseInt(v, 10))
+  .option("--concurrency <n>", "Parallel fetch concurrency", parseConcurrency)
   .action(
     async (opts: {
       config?: string;
@@ -65,17 +73,15 @@ program
   .option("--config <file>", "Path to cosense.config.{ts,js,mjs}")
   .option("--cache-dir <dir>", "Cache directory (default .cosense-cache)")
   .option("--force", "Ignore cache and refetch everything")
-  .action(
-    async (opts: { config?: string; cacheDir?: string; force?: boolean }) => {
-      const code = await runDoctorCmd({
-        cwd: process.cwd(),
-        configFile: opts.config,
-        cacheDir: opts.cacheDir,
-        force: opts.force,
-      });
-      if (code !== 0) process.exit(code);
-    },
-  );
+  .action(async (opts: { config?: string; cacheDir?: string; force?: boolean }) => {
+    const code = await runDoctorCmd({
+      cwd: process.cwd(),
+      configFile: opts.config,
+      cacheDir: opts.cacheDir,
+      force: opts.force,
+    });
+    if (code !== 0) process.exit(code);
+  });
 
 const deploy = program.command("deploy").description("Deploy configuration helpers");
 deploy
@@ -87,14 +93,8 @@ deploy
     "cloudflare-workers (Workers Static Assets) | github-pages — overrides config",
   )
   .option("--schedule <cron>", "Cron schedule for the build job")
-  .option(
-    "--working-directory <dir>",
-    "Subdirectory of repoRoot where the site lives (monorepo)",
-  )
-  .option(
-    "--repo-root <dir>",
-    "Root of the repo to write .github/workflows into (default: cwd)",
-  )
+  .option("--working-directory <dir>", "Subdirectory of repoRoot where the site lives (monorepo)")
+  .option("--repo-root <dir>", "Root of the repo to write .github/workflows into (default: cwd)")
   .option("--force", "Overwrite existing files")
   .action(
     async (opts: {

@@ -132,13 +132,57 @@ describe("vendorIcons", () => {
     const second = await vendorIcons(dataWithIcons([ICON_URL]), opts);
 
     expect(fetchImpl).toHaveBeenCalledTimes(1);
-    const firstIcon = ((first.pages[0]!.blocks[0] as { children: unknown[] }).children[1] as {
-      children: { src: string }[];
-    }).children[0];
-    const secondIcon = ((second.pages[0]!.blocks[0] as { children: unknown[] }).children[1] as {
-      children: { src: string }[];
-    }).children[0];
+    const firstIcon = (
+      (first.pages[0]!.blocks[0] as { children: unknown[] }).children[1] as {
+        children: { src: string }[];
+      }
+    ).children[0];
+    const secondIcon = (
+      (second.pages[0]!.blocks[0] as { children: unknown[] }).children[1] as {
+        children: { src: string }[];
+      }
+    ).children[0];
     expect(secondIcon.src).toBe(firstIcon.src);
+  });
+
+  it("vendors icons inside table cells", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "icons-"));
+    const fetchImpl = vi.fn(async () => pngResponse());
+    const data = {
+      ...dataWithIcons([]),
+      pages: [
+        {
+          schemaVersion: "1",
+          id: "1",
+          title: "A",
+          slug: "a",
+          sourceUrl: "https://scrapbox.io/p/A",
+          template: "page",
+          tags: [],
+          links: [],
+          backlinks: [],
+          blocks: [
+            {
+              type: "table",
+              rows: [[[{ type: "icon", pageTitle: "u", project: "p", src: ICON_URL }]]],
+            },
+          ],
+        },
+      ],
+    } as unknown as IntermediateData;
+
+    const out = await vendorIcons(data, {
+      dir,
+      baseUrl: "/cosense-icons",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    const table = out.pages[0]?.blocks[0];
+    if (table?.type !== "table") throw new Error("expected table");
+    const cell = table.rows[0]?.[0]?.[0];
+    if (cell?.type !== "icon") throw new Error("expected icon");
+    expect(cell.src).toMatch(/^\/cosense-icons\/[a-f0-9]{16}\.png$/);
+    expect(fetchImpl).toHaveBeenCalledOnce();
   });
 
   it("returns data unchanged when there are no icons", async () => {
