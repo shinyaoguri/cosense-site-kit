@@ -8,6 +8,7 @@ import {
   path,
 } from "@cosense-site-kit/theme-utils";
 import Layout from "../components/Layout.astro";
+import EntryTags from "../components/EntryTags.astro";
 import Pagination from "../components/Pagination.astro";
 import { POSTS_PER_PAGE } from "../constants";
 
@@ -75,13 +76,7 @@ const { entries, pageInfo, configured } = Astro.props as {
                       {formatDate(entry.data.publishedAt)}
                     </time>
                   )}
-                  {entry.data.tags.some(isPublicTag) && (
-                    <span class="entry-tags">
-                      {entry.data.tags.filter(isPublicTag).map((tag) => (
-                        <a class="tag" href={path(`tags/${tag}`)}>#{tag}</a>
-                      ))}
-                    </span>
-                  )}
+                  <EntryTags tags={entry.data.tags} />
                 </div>
               )}
             </div>

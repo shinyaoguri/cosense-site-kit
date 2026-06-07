@@ -1,0 +1,30 @@
+---
+import { isPublicTag, path } from "@cosense-site-kit/theme-utils";
+
+// Public tags for a list card, capped so a tag-heavy page never grows or wraps
+// its card. Extra tags collapse into a "+N" badge instead of spilling to a
+// second row. Renders nothing when the page has no public tags.
+interface Props {
+  /** The page's full tag list; control/metadata tags are filtered out. */
+  tags: string[];
+  /** How many chips to show before collapsing the rest into "+N". */
+  max?: number;
+}
+
+const { tags, max = 3 } = Astro.props;
+const publicTags = tags.filter(isPublicTag);
+const shown = publicTags.slice(0, max);
+const extra = publicTags.length - shown.length;
+---
+{publicTags.length > 0 && (
+  <span class="entry-tags">
+    {shown.map((tag) => (
+      <a class="tag" href={path(`tags/${tag}`)}>#{tag}</a>
+    ))}
+    {extra > 0 && (
+      <span class="tag more-tags" aria-label={`and ${extra} more tag${extra === 1 ? "" : "s"}`}>
+        +{extra}
+      </span>
+    )}
+  </span>
+)}

@@ -802,19 +802,24 @@ html[data-theme="dark"] .page-content .astro-code span {
   color: var(--color-text-faint);
   font-variant-numeric: tabular-nums;
 }
-/* Uniform row height: clamp the title and the first-line summary to a single
-   line with an ellipsis, no matter how long the source line is. `.entry-body`
-   carries `min-width: 0` so these flex children can shrink enough to truncate.
-   Only the in-list copies truncate — the global `.summary` (site description in
-   headers, profile hero, etc.) is intentionally left untouched. */
+/* Bound each card element so overflow never changes a card's height: the title
+   clips to one line, the summary to two. `.entry-body` carries `min-width: 0` so
+   these flex children can shrink enough to truncate. Only the in-list copies are
+   clamped — the global `.summary` (headers, profile hero) is left untouched. */
 .recent-pages .entry-body > a,
-.tag-page-list .entry-body > a,
-.recent-pages .entry-body > .summary,
-.tag-page-list .entry-body > .summary {
+.tag-page-list .entry-body > a {
   display: block;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.recent-pages .entry-body > .summary,
+.tag-page-list .entry-body > .summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 /* Meta row: date + the page's public tags. Kept to a single clipped line so a
    page with many tags never makes its row taller than its neighbours. */
@@ -841,6 +846,12 @@ html[data-theme="dark"] .page-content .astro-code span {
   font-size: 0.6875rem;
   padding: 0.0625rem 0.4rem;
   white-space: nowrap;
+}
+/* "+N" overflow badge: same chip shape, muted and non-interactive. */
+.recent-pages .entry-tags .more-tags,
+.tag-page-list .entry-tags .more-tags {
+  color: var(--color-text-faint);
+  cursor: default;
 }
 
 /* ===================== Backlinks / Related ===================== */
