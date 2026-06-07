@@ -7,6 +7,7 @@ import EntryTags from "../components/EntryTags.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import {
   formatDate,
+  hidesDates,
   isPublicTag,
   loadStructure,
   loadTitleToSlug,
@@ -78,9 +79,9 @@ const siteDescription = site?.description;
           <div class="entry-body">
             <a href={path(entry.data.slug)}>{entry.data.title}</a>
             {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
-            {(entry.data.publishedAt || entry.data.tags.some(isPublicTag)) && (
+            {((!hidesDates(entry.data.tags) && entry.data.publishedAt) || entry.data.tags.some(isPublicTag)) && (
               <div class="entry-meta">
-                {entry.data.publishedAt && (
+                {!hidesDates(entry.data.tags) && entry.data.publishedAt && (
                   <time class="updated" datetime={entry.data.publishedAt}>
                     {formatDate(entry.data.publishedAt)}
                   </time>
