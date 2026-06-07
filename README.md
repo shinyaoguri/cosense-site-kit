@@ -61,6 +61,8 @@ npm run dev           # http://localhost:4321
 | 公開日を指定 | `#published/YYYY-MM-DD` | `#published/2024-04-01` |
 | 更新日を指定 | `#updated/YYYY-MM-DD` | `#updated/2026-06-06` |
 
+> **`#publish` と `#published/…` は別物です**: `#publish`（スラッシュ無し）はページを公開する**フラグ**、`#published/YYYY-MM-DD`（`ed` 付き）は**公開日**の指定です。日付には必ず `published`（`ed` 付き）を使ってください。
+
 書く位置はページ内のどこでも構いません（他のタグと同じ行に並べて OK）:
 
 ```
