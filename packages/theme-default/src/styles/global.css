@@ -839,6 +839,12 @@ html[data-theme="dark"] .page-content .astro-code span {
   min-width: 0;
   overflow: hidden;
 }
+/* In the date row, the tag strip takes the width left over after the date so the
+   overflow script measures against the real available space. */
+.recent-pages .entry-meta .entry-tags,
+.tag-page-list .entry-meta .entry-tags {
+  flex: 1 1 0;
+}
 .recent-pages .entry-tags .tag,
 .tag-page-list .entry-tags .tag {
   flex: 0 0 auto;
