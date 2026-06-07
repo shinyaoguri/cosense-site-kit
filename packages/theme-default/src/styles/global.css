@@ -802,6 +802,46 @@ html[data-theme="dark"] .page-content .astro-code span {
   color: var(--color-text-faint);
   font-variant-numeric: tabular-nums;
 }
+/* Uniform row height: clamp the title and the first-line summary to a single
+   line with an ellipsis, no matter how long the source line is. `.entry-body`
+   carries `min-width: 0` so these flex children can shrink enough to truncate.
+   Only the in-list copies truncate — the global `.summary` (site description in
+   headers, profile hero, etc.) is intentionally left untouched. */
+.recent-pages .entry-body > a,
+.tag-page-list .entry-body > a,
+.recent-pages .entry-body > .summary,
+.tag-page-list .entry-body > .summary {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* Meta row: date + the page's public tags. Kept to a single clipped line so a
+   page with many tags never makes its row taller than its neighbours. */
+.recent-pages .entry-meta,
+.tag-page-list .entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow: hidden;
+}
+.recent-pages .entry-tags,
+.tag-page-list .entry-tags {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.375rem;
+  min-width: 0;
+  overflow: hidden;
+}
+.recent-pages .entry-tags .tag,
+.tag-page-list .entry-tags .tag {
+  flex: 0 0 auto;
+  margin-right: 0;
+  font-size: 0.6875rem;
+  padding: 0.0625rem 0.4rem;
+  white-space: nowrap;
+}
 
 /* ===================== Backlinks / Related ===================== */
 
