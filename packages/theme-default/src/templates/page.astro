@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { formatDate, isPublicTag, path } from "@cosense-site-kit/theme-utils";
+import { formatDate, hidesDates, isPublicTag, path } from "@cosense-site-kit/theme-utils";
 import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import Related from "@cosense-site-kit/theme-utils/components/Related.astro";
@@ -18,31 +18,39 @@ const updatedDay = formatDate(page.modifiedAt);
 // Only show the updated date when it actually differs from the publish date,
 // so a page edited the same day it was published shows a single date.
 const showUpdated = updatedDay && updatedDay !== publishedDay;
+// A page tagged `#no-date` opts out of showing its dates (e.g. an About page).
+// The dates still exist in the data (ordering, feed, sitemap); only the header
+// display is suppressed.
+const showDates = !hidesDates(page.tags);
+const hasPublicTags = page.tags.some(isPublicTag);
+const hasMeta = (showDates && (publishedDay || showUpdated)) || hasPublicTags;
 ---
 <Layout title={page.title} description={page.summary} image={page.image} ogType="article">
   <article data-pagefind-body>
     <header class="page-header">
       {page.draft && <span class="draft-badge">Draft · preview only</span>}
       <h1>{page.title}</h1>
-      <div style="display: flex; flex-wrap: wrap; gap: 0.625rem; align-items: center;">
-        {publishedDay && (
-          <time class="updated" datetime={page.publishedAt}>
-            {publishedDay}
-          </time>
-        )}
-        {showUpdated && (
-          <time class="updated" datetime={page.modifiedAt}>
-            Updated {updatedDay}
-          </time>
-        )}
-        {page.tags.some(isPublicTag) && (
-          <div class="tags">
-            {page.tags.filter(isPublicTag).map((tag) => (
-              <a class="tag" href={path(`tags/${tag}`)}>#{tag}</a>
-            ))}
-          </div>
-        )}
-      </div>
+      {hasMeta && (
+        <div style="display: flex; flex-wrap: wrap; gap: 0.625rem; align-items: center;">
+          {showDates && publishedDay && (
+            <time class="updated" datetime={page.publishedAt}>
+              {publishedDay}
+            </time>
+          )}
+          {showDates && showUpdated && (
+            <time class="updated" datetime={page.modifiedAt}>
+              Updated {updatedDay}
+            </time>
+          )}
+          {hasPublicTags && (
+            <div class="tags">
+              {page.tags.filter(isPublicTag).map((tag) => (
+                <a class="tag" href={path(`tags/${tag}`)}>#{tag}</a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </header>
 
     <PageContent blocks={page.blocks} />

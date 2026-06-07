@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isHiddenTag, isPublicTag } from "../src/tags";
+import { hidesDates, isHiddenTag, isPublicTag, NO_DATE_TAG } from "../src/tags";
 
 describe("isHiddenTag", () => {
   it("hides control tags", () => {
@@ -27,5 +27,19 @@ describe("isPublicTag", () => {
     expect(isPublicTag("publish")).toBe(false);
     expect(isPublicTag("published/2026-05-20")).toBe(false);
     expect(isPublicTag("template/profile")).toBe(false);
+  });
+});
+
+describe("hidesDates / #no-date", () => {
+  it("is a hidden, non-public control tag (no chip, not a category)", () => {
+    expect(isHiddenTag(NO_DATE_TAG)).toBe(true);
+    expect(isPublicTag(NO_DATE_TAG)).toBe(false);
+  });
+
+  it("reports whether a page opts out of showing its dates", () => {
+    expect(hidesDates([NO_DATE_TAG])).toBe(true);
+    expect(hidesDates(["publish", "diary", NO_DATE_TAG])).toBe(true);
+    expect(hidesDates(["publish", "diary"])).toBe(false);
+    expect(hidesDates([])).toBe(false);
   });
 });

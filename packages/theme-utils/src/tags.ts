@@ -8,11 +8,15 @@
 // categories (#diary). Themes want to keep the latter visible and clickable
 // while hiding the former.
 
+/** A page tagged `#no-date` renders without its publish/update dates. */
+export const NO_DATE_TAG = "no-date";
+
 const HIDDEN_CONTROL_TAGS = new Set([
   "publish",
   "draft",
   "private",
   "internal",
+  NO_DATE_TAG,
 ]);
 
 // Namespaced framework-metadata tags carry a value, not a category, so they
@@ -29,4 +33,9 @@ export function isHiddenTag(name: string): boolean {
 
 export function isPublicTag(name: string): boolean {
   return !name.includes("/") && !HIDDEN_CONTROL_TAGS.has(name);
+}
+
+/** Whether a page (by its tag list) opts out of showing publish/update dates. */
+export function hidesDates(tags: string[]): boolean {
+  return tags.includes(NO_DATE_TAG);
 }

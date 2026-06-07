@@ -30,5 +30,5 @@ export {
 export { buildRobotsTxt } from "./robots";
 export { buildSitemap, type SitemapUrl } from "./sitemap";
 export { loadStructure, loadTitleToSlug, navHref, pagePaths, path } from "./structure";
-export { isHiddenTag, isPublicTag } from "./tags";
+export { hidesDates, isHiddenTag, isPublicTag, NO_DATE_TAG } from "./tags";
 export { escapeXml } from "./xml";
