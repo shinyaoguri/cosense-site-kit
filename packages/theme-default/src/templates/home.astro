@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import options from "virtual:cosense-theme-default/options";
 import site from "virtual:cosense-site-kit/site";
 import Layout from "../components/Layout.astro";
+import EntryTags from "../components/EntryTags.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import {
   formatDate,
@@ -84,13 +85,7 @@ const siteDescription = site?.description;
                     {formatDate(entry.data.publishedAt)}
                   </time>
                 )}
-                {entry.data.tags.some(isPublicTag) && (
-                  <span class="entry-tags">
-                    {entry.data.tags.filter(isPublicTag).map((tag) => (
-                      <a class="tag" href={path(`tags/${tag}`)}>#{tag}</a>
-                    ))}
-                  </span>
-                )}
+                <EntryTags tags={entry.data.tags} />
               </div>
             )}
           </div>
