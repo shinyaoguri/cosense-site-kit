@@ -1,5 +1,12 @@
 # @cosense-site-kit/astro
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [67e3916]
+  - @cosense-site-kit/core@0.3.0
+
 ## 0.1.2
 
 ### Patch Changes
