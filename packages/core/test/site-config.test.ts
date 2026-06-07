@@ -82,6 +82,70 @@ redirects:
     });
   });
 
+  it("warns when nav is indented under home (the reported silent failure)", () => {
+    const yaml = `
+home:
+  page: Welcome
+  nav:
+    - { label: "About", page: "About" }
+    - { label: "News", href: "/news" }
+posts:
+  tag: news
+`;
+    const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+    expect(result).not.toBeNull();
+    if (!result) return;
+    // Non-fatal: the config still applies, nav is just (silently) empty.
+    expect(result.structure.home?.page).toBe("Welcome");
+    expect(result.structure.nav).toEqual([]);
+    // ...but now there is a warning pointing at the mistake.
+    expect(result.warnings.length).toBeGreaterThanOrEqual(1);
+    expect(result.warnings.join("\n")).toMatch(/"home:".*"nav"/);
+    expect(result.warnings.join("\n")).toMatch(/top level/i);
+  });
+
+  it("warns on a misspelled/misplaced top-level key", () => {
+    const yaml = `
+navigation:
+  - { label: "About", page: "About" }
+`;
+    const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+    expect(result?.warnings.join("\n")).toMatch(/unknown top-level key "navigation"/);
+    expect(result?.warnings.join("\n")).toMatch(/did you mean "nav"/);
+    // The nav itself stays empty since `navigation` isn't a real key.
+    expect(result?.structure.nav).toEqual([]);
+  });
+
+  it("warns on unknown keys inside home", () => {
+    const result = parseSitePage(
+      pageWith([codeBlock("site.yaml", "home:\n  page: Home\n  foo: bar\n")]),
+    );
+    expect(result?.structure.home?.page).toBe("Home");
+    expect(result?.warnings.join("\n")).toMatch(/"home:".*"foo"/);
+  });
+
+  it("does not warn on genuinely custom top-level sections (passthrough)", () => {
+    const yaml = "profile:\n  name: Shinya\nmembers:\n  - Alice\n";
+    const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+    expect(result?.warnings).toEqual([]);
+    expect((result?.structure as Record<string, unknown>).profile).toEqual({ name: "Shinya" });
+  });
+
+  it("does not warn on a correct config (no false positives)", () => {
+    const yaml = `
+home:
+  page: Welcome
+nav:
+  - { label: "About", page: "About" }
+  - { label: "News", href: "/news" }
+posts:
+  tag: news
+`;
+    const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+    expect(result?.warnings).toEqual([]);
+    expect(result?.structure.nav).toHaveLength(2);
+  });
+
   it("warns when multiple site.yaml blocks exist and uses the first", () => {
     const result = parseSitePage(
       pageWith([
