@@ -68,6 +68,13 @@ const { entries, total, pageInfo } = Astro.props as {
         <div class="entry-body">
           <a href={path(entry.data.slug)}>{entry.data.title}</a>
           {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
+          {entry.data.tags.some(isPublicTag) && (
+            <div class="entry-tags">
+              {entry.data.tags.filter(isPublicTag).map((tag) => (
+                <a class="tag" href={path(`tags/${tag}`)}>#{tag}</a>
+              ))}
+            </div>
+          )}
         </div>
       </li>
     ))}

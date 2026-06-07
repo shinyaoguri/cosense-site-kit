@@ -4,7 +4,13 @@ import options from "virtual:cosense-theme-default/options";
 import site from "virtual:cosense-site-kit/site";
 import Layout from "../components/Layout.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
-import { formatDate, loadStructure, loadTitleToSlug, path } from "@cosense-site-kit/theme-utils";
+import {
+  formatDate,
+  isPublicTag,
+  loadStructure,
+  loadTitleToSlug,
+  path,
+} from "@cosense-site-kit/theme-utils";
 
 const structure = await loadStructure();
 const titleToSlug = await loadTitleToSlug();
@@ -71,10 +77,21 @@ const siteDescription = site?.description;
           <div class="entry-body">
             <a href={path(entry.data.slug)}>{entry.data.title}</a>
             {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
-            {entry.data.publishedAt && (
-              <time class="updated" datetime={entry.data.publishedAt}>
-                {formatDate(entry.data.publishedAt)}
-              </time>
+            {(entry.data.publishedAt || entry.data.tags.some(isPublicTag)) && (
+              <div class="entry-meta">
+                {entry.data.publishedAt && (
+                  <time class="updated" datetime={entry.data.publishedAt}>
+                    {formatDate(entry.data.publishedAt)}
+                  </time>
+                )}
+                {entry.data.tags.some(isPublicTag) && (
+                  <span class="entry-tags">
+                    {entry.data.tags.filter(isPublicTag).map((tag) => (
+                      <a class="tag" href={path(`tags/${tag}`)}>#{tag}</a>
+                    ))}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </li>
