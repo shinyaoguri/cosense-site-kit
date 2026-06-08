@@ -52,6 +52,34 @@
 
 * { box-sizing: border-box; }
 
+/* ===================== View Transitions ===================== */
+/* Native cross-document (MPA) transitions — no client JS. Chromium animates a
+   soft cross-fade between pages; non-supporting browsers fall back to the
+   normal instant navigation, so nothing breaks. The sticky header and the page
+   title get their own names below so they morph in place instead of fading with
+   the rest of the document. */
+@view-transition { navigation: auto; }
+
+::view-transition-group(root) {
+  animation-duration: 0.28s;
+  animation-timing-function: var(--ease);
+}
+
+/* The header is fixed at the top on every page; giving it a stable name keeps
+   it visually pinned through the swap rather than cross-fading. */
+.site-header { view-transition-name: site-header; }
+/* The page-title morph (detail → detail) and the thumbnail → first-image morph
+   (list → detail) are named inline on the relevant elements (page.astro h1 /
+   PageContent image), not here, so list headers don't pair into a flickery
+   text cross-fade. */
+
+/* Respect the OS "reduce motion" setting: navigation:none disables the whole
+   cross-document transition, so the inline element morphs don't run either. */
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  .site-header { view-transition-name: none; }
+}
+
 html {
   font-family: var(--font-sans);
   color: var(--color-text);
@@ -555,11 +583,20 @@ html[data-theme="dark"] .page-content .astro-code span {
 /* ===================== Images / tables ===================== */
 
 .page-content img {
+  display: block;
+  /* Full content width for normal/landscape images; cap the height so a tall
+     portrait image doesn't dominate the page. width/height auto keeps the
+     aspect ratio and never upscales a small image. */
   max-width: 100%;
+  max-height: min(53vh, 400px);
+  width: auto;
   height: auto;
+  margin: 1rem auto;
   border-radius: 6px;
-  margin: 1rem 0;
+  cursor: zoom-in;
 }
+/* A linked image follows its link on click, so keep the normal pointer. */
+.page-content a img { cursor: pointer; }
 
 /* Images mixed inline with text (vs. an image on its own line, which is a
    block figure). Keep them in the text flow, sized to sit on the line. */
@@ -570,6 +607,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   width: auto;
   margin: 0 0.2em;
   border-radius: 3px;
+  cursor: auto; /* not zoomable (excluded from the lightbox) */
 }
 
 /* Embedded players (YouTube, Vimeo, …): responsive box from --embed-ratio. */
@@ -1026,4 +1064,42 @@ html[data-theme="dark"] .page-content .astro-code span {
 ::selection {
   background: var(--color-accent-soft);
   color: var(--color-text);
+}
+
+/* ===================== Lightbox ===================== */
+/* Full-screen image viewer opened by Lightbox.astro. Hidden until JS shows it;
+   fades + scales in via .is-open. */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.75rem, 4vw, 2.5rem);
+  background: rgb(0 0 0 / 0.82);
+  cursor: zoom-out;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+/* `display: grid` above beats the UA `[hidden] { display: none }` rule, which
+   would leave the (invisible, opacity:0) overlay on top swallowing every click
+   after close — so hide it explicitly when the hidden attribute is set. */
+.lightbox[hidden] { display: none; }
+.lightbox.is-open { opacity: 1; }
+.lightbox__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 12px 48px rgb(0 0 0 / 0.45);
+  transform: scale(0.96);
+  transition: transform 0.2s var(--ease);
+}
+.lightbox.is-open .lightbox__img { transform: scale(1); }
+/* Stop the page behind the overlay from scrolling while it's open. */
+html.lightbox-open { overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox,
+  .lightbox__img { transition: none; }
 }

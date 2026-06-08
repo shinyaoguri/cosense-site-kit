@@ -1,0 +1,73 @@
+---
+// Click-to-zoom lightbox for content images. Clicking a (non-inline, non-linked)
+// image inside .page-content opens a full-screen overlay with the image at full
+// size; click anywhere or press Escape to close. Progressive enhancement: with
+// no JS the images render normally and this does nothing. Styles live in
+// global.css (.lightbox).
+---
+<script is:inline>
+  (() => {
+    // Block content images only — skip tiny inline icons (.inline-image) and
+    // images the author wrapped in a link (let the link navigate instead).
+    const SELECTOR = ".page-content img:not(.inline-image)";
+    let overlay = null;
+    let lastFocused = null;
+
+    const build = () => {
+      if (overlay) return overlay;
+      overlay = document.createElement("div");
+      overlay.className = "lightbox";
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", "Image viewer");
+      overlay.hidden = true;
+      const img = document.createElement("img");
+      img.className = "lightbox__img";
+      img.alt = "";
+      overlay.appendChild(img);
+      overlay.addEventListener("click", close);
+      document.body.appendChild(overlay);
+      return overlay;
+    };
+
+    const open = (src, alt) => {
+      const el = build();
+      const img = el.querySelector(".lightbox__img");
+      img.src = src;
+      img.alt = alt || "";
+      lastFocused = document.activeElement;
+      el.hidden = false;
+      // Force a reflow so the .is-open transition runs from the hidden state.
+      void el.offsetWidth;
+      el.classList.add("is-open");
+      document.documentElement.classList.add("lightbox-open");
+    };
+
+    function close() {
+      if (!overlay || overlay.hidden) return;
+      overlay.classList.remove("is-open");
+      document.documentElement.classList.remove("lightbox-open");
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        overlay.hidden = true;
+        overlay.removeEventListener("transitionend", finish);
+      };
+      overlay.addEventListener("transitionend", finish);
+      window.setTimeout(finish, 300); // fallback if no transition fires
+      if (lastFocused && lastFocused.focus) lastFocused.focus();
+    }
+
+    document.addEventListener("click", (e) => {
+      const t = e.target;
+      const img = t && t.closest ? t.closest(SELECTOR) : null;
+      if (!img || img.closest("a")) return;
+      e.preventDefault();
+      open(img.currentSrc || img.src, img.alt);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") close();
+    });
+  })();
+</script>

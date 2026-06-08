@@ -12,6 +12,7 @@ import {
   loadStructure,
   loadTitleToSlug,
   path,
+  vtName,
 } from "@cosense-site-kit/theme-utils";
 
 const structure = await loadStructure();
@@ -71,7 +72,13 @@ const siteDescription = site?.description;
     <ul>
       {recent.map((entry) => (
         <li>
-          <a class="thumb" href={path(entry.data.slug)} aria-hidden="true" tabindex="-1">
+          <a
+            class="thumb"
+            href={path(entry.data.slug)}
+            aria-hidden="true"
+            tabindex="-1"
+            style={entry.data.image ? `view-transition-name:${vtName(entry.data.slug)}` : undefined}
+          >
             {entry.data.image
               ? <img src={entry.data.image} alt="" loading="lazy" decoding="async" />
               : <span class="thumb-placeholder">{Array.from(entry.data.title.trim())[0] ?? "·"}</span>}

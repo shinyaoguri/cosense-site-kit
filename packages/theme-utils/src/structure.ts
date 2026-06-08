@@ -59,6 +59,16 @@ export function path(slug: string): string {
   return pathFor(slug, import.meta.env.BASE_URL);
 }
 
+// Stable `view-transition-name` for a page, derived from its (page-unique) slug.
+// Used to pair a list card's thumbnail with the same page's hero image so they
+// morph into each other during a cross-document View Transition. Non-ident
+// characters (".", "/", spaces, …) are collapsed to "-"; CSS custom-idents allow
+// non-ASCII, so Japanese slugs pass through. The "vt-" prefix guards against a
+// slug that starts with a digit (invalid as a bare ident).
+export function vtName(slug: string): string {
+  return `vt-${slug.replace(/[^\w\u00A0-\uFFFF-]/g, "-")}`;
+}
+
 // getStaticPaths for a per-page route (the `/[...slug]` dispatcher): one path
 // per published page, keyed by slug, with the entry passed as a prop. Themes
 // do `export async function getStaticPaths() { return pagePaths(); }` instead

@@ -29,6 +29,6 @@ export {
 } from "./related";
 export { buildRobotsTxt } from "./robots";
 export { buildSitemap, type SitemapUrl } from "./sitemap";
-export { loadStructure, loadTitleToSlug, navHref, pagePaths, path } from "./structure";
+export { loadStructure, loadTitleToSlug, navHref, pagePaths, path, vtName } from "./structure";
 export { hidesDates, isHiddenTag, isPublicTag, NO_DATE_TAG } from "./tags";
 export { escapeXml } from "./xml";

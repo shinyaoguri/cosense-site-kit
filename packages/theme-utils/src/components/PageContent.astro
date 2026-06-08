@@ -39,10 +39,26 @@ interface Props {
    * change — a standalone URL with no matching provider renders as a link.
    */
   embedProviders?: EmbedProvider[];
+  /**
+   * Apply this `view-transition-name` to the first image block whose URL equals
+   * `morphImageUrl`, pairing it with a list card's thumbnail for a cross-document
+   * morph. Both must be set for the name to be applied.
+   */
+  morphName?: string;
+  morphImageUrl?: string;
 }
 
-const { blocks, hideFilenames = [], class: wrapperClass = "page-content", embedProviders } =
-  Astro.props;
+const {
+  blocks,
+  hideFilenames = [],
+  class: wrapperClass = "page-content",
+  embedProviders,
+  morphName,
+  morphImageUrl,
+} = Astro.props;
+// Tracks whether the morph name has been placed yet, so only the first matching
+// image block claims it (a name must be unique within the document).
+let morphPlaced = false;
 const hidden = new Set(["site.yaml", ...hideFilenames]);
 const visible = blocks.filter(
   (b) => !(b.type === "code" && b.filename && hidden.has(b.filename)),
@@ -111,13 +127,24 @@ for (const block of visible) {
           />
         );
       }
-      case "image":
+      case "image": {
         // Content images are arbitrary remote URLs (Gyazo, Scrapbox uploads),
         // so we serve them directly with lazy loading + async decode rather than
         // running them through astro:assets — a build-time fetch of every image
         // would fail the (unattended, cron) build if one is unreachable. Themes
         // that host images reliably can opt into <Image> (see docs/THEMES.md).
-        return <img src={block.url} alt={block.alt ?? ""} loading="lazy" decoding="async" />;
+        const morph = !morphPlaced && morphName && block.url === morphImageUrl;
+        if (morph) morphPlaced = true;
+        return (
+          <img
+            src={block.url}
+            alt={block.alt ?? ""}
+            loading="lazy"
+            decoding="async"
+            style={morph ? `view-transition-name:${morphName}` : undefined}
+          />
+        );
+      }
       case "embed": {
         const embed = resolveEmbed(block.url, embedProviders);
         if (embed) {

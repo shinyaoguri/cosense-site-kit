@@ -7,6 +7,7 @@ import {
   isPublicTag,
   loadStructure,
   path,
+  vtName,
 } from "@cosense-site-kit/theme-utils";
 import Layout from "../components/Layout.astro";
 import EntryTags from "../components/EntryTags.astro";
@@ -62,7 +63,13 @@ const { entries, pageInfo, configured } = Astro.props as {
       <ul>
         {entries.map((entry) => (
           <li>
-            <a class="thumb" href={path(entry.data.slug)} aria-hidden="true" tabindex="-1">
+            <a
+              class="thumb"
+              href={path(entry.data.slug)}
+              aria-hidden="true"
+              tabindex="-1"
+              style={entry.data.image ? `view-transition-name:${vtName(entry.data.slug)}` : undefined}
+            >
               {entry.data.image
                 ? <img src={entry.data.image} alt="" loading="lazy" decoding="async" />
                 : <span class="thumb-placeholder">{Array.from(entry.data.title.trim())[0] ?? "·"}</span>}
