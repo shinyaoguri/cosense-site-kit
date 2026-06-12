@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { CosenseSitePage, SiteStructure } from "../src";
 import { assignTemplates, DEFAULT_TEMPLATE, resolveTemplate } from "../src/resolve/template";
 import { emptySiteStructure } from "../src/schema/v1/site-structure";
-import type { CosenseSitePage, SiteStructure } from "../src";
 
 function page(o: { title?: string; tags?: string[] } = {}): CosenseSitePage {
   return {

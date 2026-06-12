@@ -7,8 +7,7 @@ export interface WranglerOptions {
 }
 
 export function generateWranglerJsonc(opts: WranglerOptions): string {
-  const date =
-    opts.compatibilityDate ?? new Date().toISOString().slice(0, 10);
+  const date = opts.compatibilityDate ?? new Date().toISOString().slice(0, 10);
   const config = {
     $schema: "https://raw.githubusercontent.com/cloudflare/workerd/main/json-schema/wrangler.json",
     name: opts.name,

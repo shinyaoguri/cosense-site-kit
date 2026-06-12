@@ -31,8 +31,7 @@ const dataIndex = page.blocks.findIndex(
   (b) => b.type === "code" && /\.ya?ml$/i.test(b.filename ?? ""),
 );
 const dataBlock = dataIndex === -1 ? undefined : page.blocks[dataIndex];
-const data =
-  dataBlock && dataBlock.type === "code" ? parseCollection(dataBlock.value) : null;
+const data = dataBlock && dataBlock.type === "code" ? parseCollection(dataBlock.value) : null;
 const beforeBlocks = page.blocks.slice(0, dataIndex === -1 ? page.blocks.length : dataIndex);
 const afterBlocks = dataIndex === -1 ? [] : page.blocks.slice(dataIndex + 1);
 ---

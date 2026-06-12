@@ -8,10 +8,7 @@ const TEMPLATE_TAG_PREFIX = "template/";
 //   1. `#template/<name>` tag on the page
 //   2. structure.templates[page.title] (sitewide mapping in .site YAML)
 //   3. DEFAULT_TEMPLATE
-export function resolveTemplate(
-  page: CosenseSitePage,
-  structure: SiteStructure,
-): string {
+export function resolveTemplate(page: CosenseSitePage, structure: SiteStructure): string {
   const tag = page.tags.find((t) => t.startsWith(TEMPLATE_TAG_PREFIX));
   if (tag) {
     const name = tag.slice(TEMPLATE_TAG_PREFIX.length);

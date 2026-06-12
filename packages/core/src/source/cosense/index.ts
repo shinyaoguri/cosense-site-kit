@@ -1,10 +1,6 @@
+import type { SiteSource, SourcePageRaw, SourcePageRef } from "../types";
 import { CosenseApi } from "./api";
 import { createPageCache, type PageCache } from "./cache";
-import type {
-  SiteSource,
-  SourcePageRaw,
-  SourcePageRef,
-} from "../types";
 
 export interface CosenseSourceOptions {
   project: string;

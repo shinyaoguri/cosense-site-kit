@@ -1,10 +1,7 @@
 ---
 import { getCollection } from "astro:content";
-import options from "virtual:cosense-theme-default/options";
 import site from "virtual:cosense-site-kit/site";
-import Layout from "../components/Layout.astro";
-import EntryTags from "../components/EntryTags.astro";
-import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
+import options from "virtual:cosense-theme-default/options";
 import {
   formatDate,
   hidesDates,
@@ -14,6 +11,9 @@ import {
   path,
   vtName,
 } from "@cosense-site-kit/theme-utils";
+import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
+import EntryTags from "../components/EntryTags.astro";
+import Layout from "../components/Layout.astro";
 
 const structure = await loadStructure();
 const titleToSlug = await loadTitleToSlug();

@@ -96,7 +96,12 @@ describe("createCosenseSource cache freshness", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
 
     // Second call with the same updated should hit cache only.
-    const page = await source.fetch({ id: "a", title: "A", updated: 1_700_000_000, sourceUrl: "u" });
+    const page = await source.fetch({
+      id: "a",
+      title: "A",
+      updated: 1_700_000_000,
+      sourceUrl: "u",
+    });
     expect(page.text).toContain("v1");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
@@ -112,7 +117,12 @@ describe("createCosenseSource cache freshness", () => {
     fetchSpy.mockResolvedValueOnce(
       pageResponse({ id: "a", title: "A", updated: 1_700_000_500, text: "A\nv2" }),
     );
-    const page = await source.fetch({ id: "a", title: "A", updated: 1_700_000_500, sourceUrl: "u" });
+    const page = await source.fetch({
+      id: "a",
+      title: "A",
+      updated: 1_700_000_500,
+      sourceUrl: "u",
+    });
     expect(page.text).toContain("v2");
     expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect((await source.cache.get("a"))?.text).toContain("v2");
@@ -129,7 +139,12 @@ describe("createCosenseSource cache freshness", () => {
     fetchSpy.mockResolvedValueOnce(
       pageResponse({ id: "a", title: "A", updated: 1_700_000_000, text: "A\nrefetched" }),
     );
-    const page = await forced.fetch({ id: "a", title: "A", updated: 1_700_000_000, sourceUrl: "u" });
+    const page = await forced.fetch({
+      id: "a",
+      title: "A",
+      updated: 1_700_000_000,
+      sourceUrl: "u",
+    });
     expect(page.text).toContain("refetched");
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });

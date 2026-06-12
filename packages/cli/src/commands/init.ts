@@ -1,4 +1,4 @@
-import { writeFile, access } from "node:fs/promises";
+import { access, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import pc from "picocolors";
 
@@ -45,9 +45,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   if (!opts.force) {
     try {
       await access(target);
-      throw new Error(
-        `${target} already exists. Re-run with --force to overwrite.`,
-      );
+      throw new Error(`${target} already exists. Re-run with --force to overwrite.`);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
     }

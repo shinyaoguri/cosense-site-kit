@@ -12,11 +12,46 @@ import ListTree from "./ListTree.astro";
 // on an exotic extension. Light/dark are emitted as one block; a theme picks
 // the active set via CSS keyed on its skin (see theme-default global.css).
 const SHIKI_LANGS = new Set([
-  "ts", "tsx", "js", "jsx", "json", "jsonc", "python", "ruby", "go", "rust",
-  "bash", "shell", "sh", "markdown", "md", "yaml", "yml", "html", "css", "scss",
-  "less", "sql", "toml", "ini", "diff", "xml", "c", "cpp", "csharp", "java",
-  "kotlin", "swift", "php", "vue", "svelte", "astro", "dockerfile", "graphql",
-  "plaintext", "text",
+  "ts",
+  "tsx",
+  "js",
+  "jsx",
+  "json",
+  "jsonc",
+  "python",
+  "ruby",
+  "go",
+  "rust",
+  "bash",
+  "shell",
+  "sh",
+  "markdown",
+  "md",
+  "yaml",
+  "yml",
+  "html",
+  "css",
+  "scss",
+  "less",
+  "sql",
+  "toml",
+  "ini",
+  "diff",
+  "xml",
+  "c",
+  "cpp",
+  "csharp",
+  "java",
+  "kotlin",
+  "swift",
+  "php",
+  "vue",
+  "svelte",
+  "astro",
+  "dockerfile",
+  "graphql",
+  "plaintext",
+  "text",
 ]);
 function safeLang(lang: string | undefined): string {
   const l = lang?.toLowerCase();
@@ -60,9 +95,7 @@ const {
 // image block claims it (a name must be unique within the document).
 let morphPlaced = false;
 const hidden = new Set(["site.yaml", ...hideFilenames]);
-const visible = blocks.filter(
-  (b) => !(b.type === "code" && b.filename && hidden.has(b.filename)),
-);
+const visible = blocks.filter((b) => !(b.type === "code" && b.filename && hidden.has(b.filename)));
 
 // The parser emits one block per line, so consecutive list items / quote lines
 // arrive as separate blocks. Fold each run together: list runs become one

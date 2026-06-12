@@ -7,10 +7,5 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   target: "node20",
-  external: [
-    "astro",
-    "astro:content",
-    "virtual:cosense-site-kit/structure",
-    "katex",
-  ],
+  external: ["astro", "astro:content", "virtual:cosense-site-kit/structure", "katex"],
 });

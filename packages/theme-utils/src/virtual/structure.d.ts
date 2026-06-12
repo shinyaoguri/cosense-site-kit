@@ -3,6 +3,7 @@
 
 declare module "virtual:cosense-site-kit/structure" {
   import type { SiteStructure } from "@cosense-site-kit/core";
+
   const structure: SiteStructure;
   export default structure;
 }

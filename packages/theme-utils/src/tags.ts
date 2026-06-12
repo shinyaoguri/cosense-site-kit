@@ -11,13 +11,7 @@
 /** A page tagged `#no-date` renders without its publish/update dates. */
 export const NO_DATE_TAG = "no-date";
 
-const HIDDEN_CONTROL_TAGS = new Set([
-  "publish",
-  "draft",
-  "private",
-  "internal",
-  NO_DATE_TAG,
-]);
+const HIDDEN_CONTROL_TAGS = new Set(["publish", "draft", "private", "internal", NO_DATE_TAG]);
 
 // Namespaced framework-metadata tags carry a value, not a category, so they
 // should never render. #published/<date> and #updated/<date> set a page's
@@ -26,8 +20,7 @@ const HIDDEN_TAG_PREFIXES = ["published/", "updated/"];
 
 export function isHiddenTag(name: string): boolean {
   return (
-    HIDDEN_CONTROL_TAGS.has(name) ||
-    HIDDEN_TAG_PREFIXES.some((prefix) => name.startsWith(prefix))
+    HIDDEN_CONTROL_TAGS.has(name) || HIDDEN_TAG_PREFIXES.some((prefix) => name.startsWith(prefix))
   );
 }
 

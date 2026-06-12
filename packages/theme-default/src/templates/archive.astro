@@ -1,6 +1,5 @@
 ---
 import { getCollection } from "astro:content";
-import type { GetStaticPaths, PaginateFunction } from "astro";
 import {
   formatDate,
   hidesDates,
@@ -9,8 +8,9 @@ import {
   path,
   vtName,
 } from "@cosense-site-kit/theme-utils";
-import Layout from "../components/Layout.astro";
+import type { GetStaticPaths, PaginateFunction } from "astro";
 import EntryTags from "../components/EntryTags.astro";
+import Layout from "../components/Layout.astro";
 import Pagination from "../components/Pagination.astro";
 import { POSTS_PER_PAGE } from "../constants";
 
@@ -29,7 +29,12 @@ export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
     : [];
 
   if (posts.length === 0) {
-    return [{ params: { page: undefined }, props: { entries: [], pageInfo: null, configured: Boolean(postTag) } }];
+    return [
+      {
+        params: { page: undefined },
+        props: { entries: [], pageInfo: null, configured: Boolean(postTag) },
+      },
+    ];
   }
 
   return (paginate as PaginateFunction)(posts, { pageSize: POSTS_PER_PAGE }).map((route) => ({

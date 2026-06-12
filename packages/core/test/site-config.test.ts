@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { emptySiteStructure, siteStructureSchema } from "../src/schema/v1/site-structure";
-import { parseSitePage, SiteConfigParseError } from "../src/parse/site-config";
 import type { CosenseSitePage } from "../src";
+import { parseSitePage, SiteConfigParseError } from "../src/parse/site-config";
+import { emptySiteStructure, siteStructureSchema } from "../src/schema/v1/site-structure";
 
 function pageWith(blocks: CosenseSitePage["blocks"]): CosenseSitePage {
   return {
@@ -163,8 +163,7 @@ posts:
   });
 
   it("throws SiteConfigParseError on malformed YAML", () => {
-    const result = () =>
-      parseSitePage(pageWith([codeBlock("site.yaml", "nav: [\n  -")]));
+    const result = () => parseSitePage(pageWith([codeBlock("site.yaml", "nav: [\n  -")]));
     expect(result).toThrowError(SiteConfigParseError);
   });
 
@@ -200,8 +199,6 @@ describe("siteStructureSchema defaults", () => {
   });
 
   it("siteStructureSchema rejects unknown nav variants", () => {
-    expect(() =>
-      siteStructureSchema.parse({ nav: [{ label: "x" }] }),
-    ).toThrow();
+    expect(() => siteStructureSchema.parse({ nav: [{ label: "x" }] })).toThrow();
   });
 });

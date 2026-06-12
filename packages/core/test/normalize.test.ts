@@ -18,9 +18,7 @@ const sample: SourcePageRaw = {
 describe("normalizePage", () => {
   it("produces a schema-valid intermediate page", () => {
     const page = normalizePage(sample, "my-proj");
-    expect(() =>
-      pageSchema.parse({ ...page, slug: "welcome" }),
-    ).not.toThrow();
+    expect(() => pageSchema.parse({ ...page, slug: "welcome" })).not.toThrow();
   });
 
   it("merges parsed page links with source-side links and dedupes", () => {

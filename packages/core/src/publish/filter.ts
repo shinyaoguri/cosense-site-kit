@@ -1,5 +1,5 @@
-import type { CosenseSitePage } from "../schema/v1/page";
 import type { CosenseSiteConfig } from "../config";
+import type { CosenseSitePage } from "../schema/v1/page";
 
 export interface ExcludedPage {
   title: string;
