@@ -94,7 +94,8 @@ const htmlStyle = [
     {metaDescription && <meta name="twitter:description" content={metaDescription} />}
     {ogImage && <meta name="twitter:image" content={ogImage} />}
 
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+    {/* Escape "<" so remote page titles can't close the script tag (XSS). */}
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, "\\u003c")} is:inline />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     {fontHref ? (
