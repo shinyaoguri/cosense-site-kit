@@ -13,6 +13,8 @@ declare module "virtual:cosense-theme-default/options" {
     tokens: Record<string, string>;
     colorScheme?: "light" | "dark";
     fontHref?: string;
+    /** Whether the header search box should render (mirrors index generation). */
+    search: boolean;
   }
   const options: ThemeDefaultRuntimeOptions;
   export default options;

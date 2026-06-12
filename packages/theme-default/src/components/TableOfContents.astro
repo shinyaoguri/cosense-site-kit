@@ -48,7 +48,10 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    background: rgb(255 255 255 / 0.96);
+    /* Token-driven so dark/custom skins keep the panel readable; color-mix
+       restores the slight translucency the old hardcoded white had. */
+    background: var(--color-bg);
+    background: color-mix(in srgb, var(--color-bg) 96%, transparent);
     backdrop-filter: blur(8px);
     border-radius: 6px;
     box-shadow: 0 4px 16px rgb(15 15 15 / 0.08), 0 1px 3px rgb(15 15 15 / 0.06);
@@ -57,8 +60,12 @@
     max-width: 16rem;
     min-width: 9rem;
   }
-  .toc:hover .toc-panel { opacity: 1; pointer-events: auto; }
-  .toc:hover .toc-indicator { opacity: 0; }
+  /* focus-within keeps keyboard users from tabbing onto invisible links —
+     the anchors are reachable even while the panel is opacity:0. */
+  .toc:hover .toc-panel,
+  .toc:focus-within .toc-panel { opacity: 1; pointer-events: auto; }
+  .toc:hover .toc-indicator,
+  .toc:focus-within .toc-indicator { opacity: 0; }
   .toc-list {
     list-style: none;
     padding: 0;

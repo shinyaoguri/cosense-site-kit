@@ -6,9 +6,9 @@
 :root {
   /* ----- Palette (Notion-warm) ----- */
   --color-bg: #ffffff;
-  --color-bg-soft: #f7f6f3;          /* Notion's signature off-white */
-  --color-bg-hover: #efebe5;          /* Hover surface */
-  --color-text: #37352f;              /* Warm dark, not pure black */
+  --color-bg-soft: #f7f6f3; /* Notion's signature off-white */
+  --color-bg-hover: #efebe5; /* Hover surface */
+  --color-text: #37352f; /* Warm dark, not pure black */
   --color-text-soft: #6f6e69;
   --color-text-muted: #9b9a97;
   --color-text-faint: #cbcac6;
@@ -16,7 +16,7 @@
   --color-border-soft: #f1efeb;
   --color-divider: rgb(55 53 47 / 0.09);
 
-  --color-accent: #2383e2;            /* Notion blue */
+  --color-accent: #2383e2; /* Notion blue */
   --color-accent-hover: #1a73d1;
   --color-accent-soft: #e7f3f9;
 
@@ -40,17 +40,19 @@
   --width-narrow: 36rem;
 
   /* Type */
-  --font-sans: 'M PLUS 2', -apple-system, BlinkMacSystemFont,
-    "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
-  --font-display: 'M PLUS 2', var(--font-sans);
-  --font-mono: 'M PLUS 1 Code', ui-monospace, SFMono-Regular,
-    Menlo, Consolas, monospace;
+  --font-sans:
+    "M PLUS 2", -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic UI",
+    sans-serif;
+  --font-display: "M PLUS 2", var(--font-sans);
+  --font-mono: "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Motion */
   --ease: cubic-bezier(0.16, 0.84, 0.44, 1);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 /* ===================== View Transitions ===================== */
 /* Native cross-document (MPA) transitions — no client JS. Chromium animates a
@@ -58,7 +60,9 @@
    normal instant navigation, so nothing breaks. The sticky header and the page
    title get their own names below so they morph in place instead of fading with
    the rest of the document. */
-@view-transition { navigation: auto; }
+@view-transition {
+  navigation: auto;
+}
 
 ::view-transition-group(root) {
   animation-duration: 0.28s;
@@ -67,7 +71,9 @@
 
 /* The header is fixed at the top on every page; giving it a stable name keeps
    it visually pinned through the swap rather than cross-fading. */
-.site-header { view-transition-name: site-header; }
+.site-header {
+  view-transition-name: site-header;
+}
 /* The page-title morph (detail → detail) and the thumbnail → first-image morph
    (list → detail) are named inline on the relevant elements (page.astro h1 /
    PageContent image), not here, so list headers don't pair into a flickery
@@ -76,8 +82,12 @@
 /* Respect the OS "reduce motion" setting: navigation:none disables the whole
    cross-document transition, so the inline element morphs don't run either. */
 @media (prefers-reduced-motion: reduce) {
-  @view-transition { navigation: none; }
-  .site-header { view-transition-name: none; }
+  @view-transition {
+    navigation: none;
+  }
+  .site-header {
+    view-transition-name: none;
+  }
 }
 
 html {
@@ -108,9 +118,16 @@ a {
   text-underline-offset: 3px;
   transition: text-decoration-color 0.15s var(--ease);
 }
-a:hover { text-decoration-color: currentColor; }
+a:hover {
+  text-decoration-color: currentColor;
+}
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -178,7 +195,9 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration: none;
   font-weight: 500;
   white-space: nowrap;
-  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+  transition:
+    background 0.15s var(--ease),
+    color 0.15s var(--ease);
 }
 .site-nav a:hover {
   background: var(--color-bg-hover);
@@ -205,14 +224,18 @@ h1, h2, h3, h4, h5, h6 {
   background: transparent;
   color: var(--color-text-soft);
   cursor: pointer;
-  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+  transition:
+    background 0.15s var(--ease),
+    color 0.15s var(--ease);
 }
 .site-search-toggle:hover,
 .site-nav-toggle:hover {
   background: var(--color-bg-hover);
   color: var(--color-text);
 }
-.site-header.has-js .site-search-toggle { display: inline-flex; }
+.site-header.has-js .site-search-toggle {
+  display: inline-flex;
+}
 .site-search {
   display: inline-flex;
   align-items: center;
@@ -228,7 +251,9 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 50;
   visibility: hidden;
   opacity: 0;
-  transition: opacity 0.18s var(--ease), visibility 0.18s var(--ease);
+  transition:
+    opacity 0.18s var(--ease),
+    visibility 0.18s var(--ease);
 }
 .search-overlay.is-open {
   visibility: visible;
@@ -264,7 +289,9 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.8125rem;
   color: var(--color-text-muted);
 }
-.search-box-note[hidden] { display: none; }
+.search-box-note[hidden] {
+  display: none;
+}
 
 /* On narrow screens the box can't fit while pinned to the icon, so make it a
    near-full-width sheet (overrides the JS-set right/width). */
@@ -302,7 +329,9 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text-muted);
   font-size: 0.8125rem;
 }
-#cosense-search .pagefind-ui__search-clear:hover { color: var(--color-text); }
+#cosense-search .pagefind-ui__search-clear:hover {
+  color: var(--color-text);
+}
 #cosense-search .pagefind-ui__message {
   font-size: 0.8125rem;
   font-weight: 500;
@@ -329,6 +358,7 @@ h1, h2, h3, h4, h5, h6 {
    Translucent so it reads on both the light and dark skins. */
 #cosense-search mark {
   background: var(--color-accent-soft);
+  /* biome-ignore lint/suspicious/noDuplicateProperties: the line above is the fallback for browsers without color-mix() */
   background: color-mix(in srgb, var(--color-accent) 18%, transparent);
   color: inherit;
   border-radius: 2px;
@@ -336,21 +366,34 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 720px) {
-  .site-header-inner { padding: 0.625rem 1rem; }
-  .site-brand { font-size: 0.875rem; }
+  .site-header-inner {
+    padding: 0.625rem 1rem;
+  }
+  .site-brand {
+    font-size: 0.875rem;
+  }
 
   /* No-JS fallback: nav wraps to its own full-width row and stays visible.
      (The hamburger only does anything once JS adds `has-js`.) */
-  .site-nav-wrap { flex-basis: 100%; }
-  .site-nav { flex-direction: column; gap: 0.125rem; }
+  .site-nav-wrap {
+    flex-basis: 100%;
+  }
+  .site-nav {
+    flex-direction: column;
+    gap: 0.125rem;
+  }
 
   /* JS enhancement: reveal the hamburger and collapse the nav into a dropdown
      anchored below the header, toggled by `.is-open`. */
-  .site-header.has-js .site-nav-toggle { display: inline-flex; }
+  .site-header.has-js .site-nav-toggle {
+    display: inline-flex;
+  }
   /* Put the search icon to the LEFT of the hamburger by sending the hamburger
      last in the flex order; the hamburger then sits at the far right. (Desktop
      hides the hamburger and keeps search rightmost, so this is mobile-only.) */
-  .site-header.has-js .site-nav-toggle { order: 1; }
+  .site-header.has-js .site-nav-toggle {
+    order: 1;
+  }
   .site-header.has-js .site-nav-wrap {
     position: absolute;
     top: 100%;
@@ -364,7 +407,9 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: 1px solid var(--color-border);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
   }
-  .site-header.has-js .site-nav-wrap.is-open { display: block; }
+  .site-header.has-js .site-nav-wrap.is-open {
+    display: block;
+  }
 }
 
 /* ===================== Main column ===================== */
@@ -378,7 +423,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 540px) {
-  .site-main { padding: 2.5rem 1.25rem 4rem; }
+  .site-main {
+    padding: 2.5rem 1.25rem 4rem;
+  }
 }
 
 /* ===================== Footer ===================== */
@@ -425,7 +472,9 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.75;
 }
 
-.page-content > * + * { margin-top: 0.75rem; }
+.page-content > * + * {
+  margin-top: 0.75rem;
+}
 
 .page-content h1,
 .page-content h2,
@@ -434,9 +483,15 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 2rem;
   margin-bottom: 0.5rem;
 }
-.page-content h2 { font-size: 1.5rem; }
-.page-content h3 { font-size: 1.25rem; }
-.page-content h4 { font-size: 1.0625rem; }
+.page-content h2 {
+  font-size: 1.5rem;
+}
+.page-content h3 {
+  font-size: 1.25rem;
+}
+.page-content h4 {
+  font-size: 1.0625rem;
+}
 
 .page-content p {
   margin: 0.5rem 0;
@@ -447,13 +502,22 @@ h1, h2, h3, h4, h5, h6 {
   padding-left: 1.5rem;
   margin: 0.25rem 0;
 }
-.page-content li { margin: 0.125rem 0; padding-left: 0.25rem; }
-.page-content ul { list-style: disc; }
-.page-content ol { list-style: decimal; }
+.page-content li {
+  margin: 0.125rem 0;
+  padding-left: 0.25rem;
+}
+.page-content ul {
+  list-style: disc;
+}
+.page-content ol {
+  list-style: decimal;
+}
 .page-content ul ul,
 .page-content ol ol,
 .page-content ul ol,
-.page-content ol ul { margin: 0; }
+.page-content ol ul {
+  margin: 0;
+}
 
 /* Notion-style horizontal rule */
 .page-content hr {
@@ -470,7 +534,9 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text-soft);
   font-size: 1rem;
 }
-.page-content blockquote p { margin: 0.25rem 0; }
+.page-content blockquote p {
+  margin: 0.25rem 0;
+}
 
 /* ===================== Code ===================== */
 
@@ -567,9 +633,13 @@ html[data-theme="dark"] .page-content .astro-code span {
   cursor: pointer;
   border-radius: 4px;
   opacity: 0;
-  transition: opacity 0.15s var(--ease), background 0.15s var(--ease);
+  transition:
+    opacity 0.15s var(--ease),
+    background 0.15s var(--ease);
 }
-.page-content pre:hover .code-block-copy { opacity: 1; }
+.page-content pre:hover .code-block-copy {
+  opacity: 1;
+}
 .code-block-copy:hover {
   background: var(--color-bg-hover);
   color: var(--color-text);
@@ -596,7 +666,9 @@ html[data-theme="dark"] .page-content .astro-code span {
   cursor: zoom-in;
 }
 /* A linked image follows its link on click, so keep the normal pointer. */
-.page-content a img { cursor: pointer; }
+.page-content a img {
+  cursor: pointer;
+}
 
 /* Images mixed inline with text (vs. an image on its own line, which is a
    block figure). Keep them in the text flow, sized to sit on the line. */
@@ -652,7 +724,9 @@ html[data-theme="dark"] .page-content .astro-code span {
   text-align: left;
   border-bottom: 1px solid var(--color-border);
 }
-.page-content tr:last-child td { border-bottom: 0; }
+.page-content tr:last-child td {
+  border-bottom: 0;
+}
 .page-content th {
   background: var(--color-bg-soft);
   font-weight: 600;
@@ -739,9 +813,18 @@ html[data-theme="dark"] .page-content .astro-code span {
   color: var(--color-text-soft);
   font-weight: 600;
 }
-.featured ul { list-style: none; padding: 0; margin: 0; }
-.featured li { margin: 0.375rem 0; font-size: 0.9375rem; }
-.featured a { font-weight: 500; }
+.featured ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.featured li {
+  margin: 0.375rem 0;
+  font-size: 0.9375rem;
+}
+.featured a {
+  font-weight: 500;
+}
 
 .recent-pages,
 .tag-page-list {
@@ -772,7 +855,9 @@ html[data-theme="dark"] .page-content .astro-code span {
   gap: 0.875rem;
 }
 .recent-pages li:last-child,
-.tag-page-list li:last-child { border-bottom: 0; }
+.tag-page-list li:last-child {
+  border-bottom: 0;
+}
 
 /* Left thumbnail + right text column for list entries. */
 .recent-pages .entry-body,
@@ -824,7 +909,9 @@ html[data-theme="dark"] .page-content .astro-code span {
   transition: color 0.15s var(--ease);
 }
 .recent-pages a:hover,
-.tag-page-list a:hover { color: var(--color-accent); }
+.tag-page-list a:hover {
+  color: var(--color-accent);
+}
 .recent-pages .summary,
 .tag-page-list .summary,
 .summary {
@@ -984,7 +1071,9 @@ html[data-theme="dark"] .page-content .astro-code span {
   color: var(--color-text-soft);
   text-decoration: none;
   background: var(--color-bg-soft);
-  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+  transition:
+    background 0.15s var(--ease),
+    color 0.15s var(--ease);
 }
 .pagination__link:hover {
   background: var(--color-bg-hover);
@@ -1056,8 +1145,12 @@ html[data-theme="dark"] .page-content .astro-code span {
   font-size: 0.8125rem;
   color: var(--color-text-muted);
 }
-.source a { color: var(--color-text-muted); }
-.source a:hover { color: var(--color-text-soft); }
+.source a {
+  color: var(--color-text-muted);
+}
+.source a:hover {
+  color: var(--color-text-soft);
+}
 
 /* ===================== Selection ===================== */
 
@@ -1084,8 +1177,12 @@ html[data-theme="dark"] .page-content .astro-code span {
 /* `display: grid` above beats the UA `[hidden] { display: none }` rule, which
    would leave the (invisible, opacity:0) overlay on top swallowing every click
    after close — so hide it explicitly when the hidden attribute is set. */
-.lightbox[hidden] { display: none; }
-.lightbox.is-open { opacity: 1; }
+.lightbox[hidden] {
+  display: none;
+}
+.lightbox.is-open {
+  opacity: 1;
+}
 .lightbox__img {
   max-width: 100%;
   max-height: 100%;
@@ -1095,11 +1192,17 @@ html[data-theme="dark"] .page-content .astro-code span {
   transform: scale(0.96);
   transition: transform 0.2s var(--ease);
 }
-.lightbox.is-open .lightbox__img { transform: scale(1); }
+.lightbox.is-open .lightbox__img {
+  transform: scale(1);
+}
 /* Stop the page behind the overlay from scrolling while it's open. */
-html.lightbox-open { overflow: hidden; }
+html.lightbox-open {
+  overflow: hidden;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .lightbox,
-  .lightbox__img { transition: none; }
+  .lightbox__img {
+    transition: none;
+  }
 }

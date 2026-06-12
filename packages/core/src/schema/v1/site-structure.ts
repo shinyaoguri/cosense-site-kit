@@ -4,12 +4,29 @@ import { z } from "zod";
 // whatever page they configure as the site-config page) inside a single
 // `code:site.yaml` block. Themes consume this through IntermediateData.
 
+// `.site` is remote input (anyone with project edit rights can write it), and
+// Astro's attribute escaping cannot neutralize a `javascript:` href — so URL
+// shapes are enforced here, at the validated-model boundary.
+// Allowed: absolute http(s) URL, mailto:/tel:, site-relative path (/blog —
+// but not protocol-relative //host), or fragment (#about). Theme navHref
+// helpers prefix site-relative paths with Astro's base.
+const SAFE_HREF = /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i;
+// Redirect destinations are slugs or site-relative paths — never a scheme
+// (no open redirects to external sites) and never protocol-relative.
+const SAFE_REDIRECT = /^(?![a-z][a-z0-9+.-]*:)(?!\/\/)/i;
+
 export const navItemSchema = z.union([
   z.object({ label: z.string().min(1), page: z.string().min(1) }),
-  // `href` accepts any non-empty string: absolute URL (https://...), site-
-  // relative path (/blog, /tags/foo), mailto:/tel:, or fragment (#about).
-  // Theme navHref helpers prefix site-relative paths with Astro's base.
-  z.object({ label: z.string().min(1), href: z.string().min(1) }),
+  z.object({
+    label: z.string().min(1),
+    href: z
+      .string()
+      .min(1)
+      .regex(
+        SAFE_HREF,
+        "href must be http(s)://, mailto:, tel:, a site-relative path, or #fragment",
+      ),
+  }),
 ]);
 
 export const siteStructureSchema = z
@@ -27,7 +44,14 @@ export const siteStructureSchema = z
     // Explicit redirects the operator wants, oldSlug → newSlug. Forwarded to
     // Astro's redirects. Authored in `.site`, so they can be managed from the
     // browser without touching the repo.
-    redirects: z.record(z.string(), z.string()).default({}),
+    redirects: z
+      .record(
+        z.string(),
+        z
+          .string()
+          .regex(SAFE_REDIRECT, "redirect destinations must be a slug or site-relative path"),
+      )
+      .default({}),
     // Map from Cosense page title to template name. Used as a fallback when
     // the page itself doesn't carry a `#template/<name>` tag. The tag wins.
     templates: z.record(z.string(), z.string().min(1)).default({}),

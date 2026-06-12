@@ -54,9 +54,7 @@ describe("block schema", () => {
   });
 
   it("rejects a heading with depth 4", () => {
-    expect(() =>
-      blockSchema.parse({ type: "heading", depth: 4, children: [] }),
-    ).toThrow();
+    expect(() => blockSchema.parse({ type: "heading", depth: 4, children: [] })).toThrow();
   });
 });
 

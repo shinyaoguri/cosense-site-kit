@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import { Command, InvalidArgumentError } from "commander";
 import pc from "picocolors";
 import { runDeployInit } from "./commands/deploy";
@@ -6,7 +7,17 @@ import { runFetch } from "./commands/fetch";
 import { runInit } from "./commands/init";
 import { runValidate } from "./commands/validate";
 
-export const VERSION = "0.0.0";
+// Read the real version at runtime — a hardcoded constant inevitably drifts
+// (it sat at "0.0.0" while the package shipped 0.1.x). ../package.json
+// resolves from both src/ (tests) and dist/ (published bundle).
+export const VERSION: string = (() => {
+  try {
+    const pkg = createRequire(import.meta.url)("../package.json") as { version?: string };
+    return pkg.version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+})();
 
 // Reject a --concurrency that isn't a positive integer. parseInt would have
 // silently turned "abc" into NaN, which downstream makes the fetch loop never

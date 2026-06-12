@@ -1,9 +1,9 @@
 ---
 import { getCollection } from "astro:content";
-import type { GetStaticPaths, PaginateFunction } from "astro";
 import { isPublicTag, path, vtName } from "@cosense-site-kit/theme-utils";
-import Layout from "../components/Layout.astro";
+import type { GetStaticPaths, PaginateFunction } from "astro";
 import EntryTags from "../components/EntryTags.astro";
+import Layout from "../components/Layout.astro";
 import Pagination from "../components/Pagination.astro";
 import { POSTS_PER_PAGE } from "../constants";
 
@@ -21,6 +21,12 @@ export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
       list.push(entry);
       tagMap.set(tag, list);
     }
+  }
+
+  // Newest first, matching home and /posts — getCollection order is the
+  // loader's internal order, not a presentation order.
+  for (const list of tagMap.values()) {
+    list.sort((a, b) => (b.data.publishedAt ?? "").localeCompare(a.data.publishedAt ?? ""));
   }
 
   return Array.from(tagMap.entries()).flatMap(([tag, entries]) =>

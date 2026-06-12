@@ -30,11 +30,14 @@ jobs:
           node-version: 24
           cache: npm
 
+      # The key must be unique per run: actions/cache never saves on an exact
+      # hit, so a fixed key would freeze the cache at its first-run contents
+      # and the differential fetch would re-download everything ever after.
       - name: Restore Cosense cache
         uses: actions/cache@v5
         with:
           path: site/.cosense-cache
-          key: cosense-cache-${{ github.ref }}
+          key: cosense-cache-${{ github.run_id }}
           restore-keys: |
             cosense-cache-
 

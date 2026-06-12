@@ -54,13 +54,22 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   const refs = await source.list({ signal });
   opts.onProgress?.({ kind: "list", total: refs.length });
 
+  // Degraded-mode and data-quality notes (stale-cache fallback, pages deleted
+  // mid-build, slug collisions). Collected into data.warnings so doctor
+  // surfaces them.
+  const pipelineWarnings: string[] = [];
+  const onWarn = (message: string) => {
+    pipelineWarnings.push(message);
+    opts.onProgress?.({ kind: "warn", message });
+  };
+
   const raws: SourcePageRaw[] = [];
   let done = 0;
   for (let i = 0; i < refs.length; i += concurrency) {
     const batch = refs.slice(i, i + concurrency);
     const results = await Promise.all(
       batch.map(async (ref) => {
-        const raw = await source.fetch(ref, { signal });
+        const raw = await source.fetch(ref, { signal, onWarn });
         done++;
         opts.onProgress?.({
           kind: "fetch",
@@ -71,7 +80,8 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
         return raw;
       }),
     );
-    raws.push(...results);
+    // null = the page vanished upstream (already warned); skip it.
+    raws.push(...results.filter((r): r is SourcePageRaw => r !== null));
   }
 
   const normalized = raws.map((raw) => normalizePage(raw, config.source.project));
@@ -102,7 +112,7 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
     : [];
   const published = draftPages.length > 0 ? [...kept, ...draftPages] : kept;
 
-  const slugged = assignSlugs(published, config.routing);
+  const slugged = assignSlugs(published, config.routing, onWarn);
 
   const titleToSlug = buildTitleToSlug(slugged);
   const linked = resolveInternalLinks(slugged, titleToSlug);
@@ -114,27 +124,32 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   const data: IntermediateData = {
     schemaVersion: "1",
     generatedAt: new Date().toISOString(),
-    site: { ...config.site, icon: pickFavicon(raws, structure.home?.page) },
+    site: { ...config.site, icon: pickFavicon(withDates, structure.home?.page) },
     pages: withDates,
     excluded,
     linkGraph,
     structure,
-    warnings: [...warnings, ...dateWarnings],
+    warnings: [...pipelineWarnings, ...warnings, ...dateWarnings],
   };
 
   return intermediateDataSchema.parse(data);
 }
 
-// Cosense uses the project's first page's icon as the favicon. We mirror that:
-// prefer the configured home page's image, otherwise the first source-listed
-// page that actually has one (`raws` preserves the source list order). Returns
-// undefined when no candidate has an image.
-function pickFavicon(raws: SourcePageRaw[], homePage: string | undefined): string | undefined {
+// Favicon: prefer the configured home page's image, otherwise fall back to a
+// page that has one. Candidates are restricted to *published* pages — using
+// the raw source list would leak a draft/private page's image onto the public
+// site — and the fallback scans in title order, which is stable across builds
+// (the source list is updated-desc, so it reshuffles on every edit).
+function pickFavicon(
+  pages: ReadonlyArray<{ title: string; image?: string | null }>,
+  homePage: string | undefined,
+): string | undefined {
   if (homePage) {
-    const home = raws.find((r) => r.title === homePage);
+    const home = pages.find((p) => p.title === homePage);
     if (home?.image) return home.image;
   }
-  return raws.find((r) => r.image)?.image ?? undefined;
+  const fallback = [...pages].sort((a, b) => a.title.localeCompare(b.title)).find((p) => p.image);
+  return fallback?.image ?? undefined;
 }
 
 function extractStructure(

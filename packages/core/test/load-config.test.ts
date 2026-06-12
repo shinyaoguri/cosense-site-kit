@@ -50,9 +50,9 @@ describe("loadCosenseSiteConfig", () => {
   });
 
   it("throws a clear error when the config file is missing", async () => {
-    await expect(
-      loadCosenseSiteConfig(join(dir, "missing.config.ts"), dir),
-    ).rejects.toThrow(/Could not load cosense config/);
+    await expect(loadCosenseSiteConfig(join(dir, "missing.config.ts"), dir)).rejects.toThrow(
+      /Could not load cosense config/,
+    );
   });
 
   it("throws when the config fails schema validation", async () => {

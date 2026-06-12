@@ -1,6 +1,12 @@
 import { getCollection } from "astro:content";
 import type { CosenseSitePage } from "@cosense-site-kit/core";
-import { buildSitemap, isPublicTag, path, type SitemapUrl } from "@cosense-site-kit/theme-utils";
+import {
+  buildSitemap,
+  isPublicTag,
+  loadStructure,
+  path,
+  type SitemapUrl,
+} from "@cosense-site-kit/theme-utils";
 import type { APIContext } from "astro";
 
 // /sitemap.xml — every published page plus the home, /posts and tag indexes.
@@ -20,6 +26,10 @@ export async function GET(context: APIContext): Promise<Response> {
       lastmod: entry.data.modifiedAt ?? entry.data.publishedAt,
     });
   }
+
+  // /posts exists only when the site declares a posts tag.
+  const structure = await loadStructure();
+  if (structure.posts?.tag) urls.push({ loc: abs(path("posts")) });
 
   // Tag index pages (skip namespaced metadata tags like template/foo).
   const tags = new Set<string>();

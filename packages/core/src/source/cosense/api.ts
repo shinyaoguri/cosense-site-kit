@@ -1,5 +1,11 @@
+import { z } from "zod";
 import { withRetry } from "../../util/retry";
-import type { CosenseListResponse, CosensePageResponse } from "./api-types";
+import {
+  type CosenseListResponse,
+  type CosensePageResponse,
+  cosenseListResponseSchema,
+  cosensePageResponseSchema,
+} from "./api-types";
 
 const DEFAULT_BASE = "https://scrapbox.io/api";
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -30,7 +36,8 @@ export class CosenseApi {
     const url = new URL(`${this.baseUrl}/pages/${encodeURIComponent(project)}`);
     url.searchParams.set("limit", String(LIST_PAGE_SIZE));
     url.searchParams.set("skip", String(skip));
-    return this.getJson<CosenseListResponse>(url, signal);
+    const json = await this.getJson<unknown>(url, signal);
+    return validateShape(cosenseListResponseSchema, json, url);
   }
 
   async *listAllPages(
@@ -54,7 +61,8 @@ export class CosenseApi {
     const url = new URL(
       `${this.baseUrl}/pages/${encodeURIComponent(project)}/${encodeURIComponent(title)}`,
     );
-    return this.getJson<CosensePageResponse>(url, signal);
+    const json = await this.getJson<unknown>(url, signal);
+    return validateShape(cosensePageResponseSchema, json, url);
   }
 
   private async getJson<T>(url: URL, externalSignal?: AbortSignal): Promise<T> {
@@ -89,6 +97,19 @@ export class CosenseApi {
       },
     );
   }
+}
+
+// Validate the wire shape after a successful response. Retrying won't fix a
+// shape mismatch, so this runs outside withRetry and produces an actionable
+// message instead of a crash deep inside parsing.
+function validateShape<S extends z.ZodType>(schema: S, json: unknown, url: URL): z.infer<S> {
+  const result = schema.safeParse(json);
+  if (!result.success) {
+    throw new Error(
+      `Cosense API returned an unexpected response shape from ${url}: ${z.prettifyError(result.error)}`,
+    );
+  }
+  return result.data;
 }
 
 export class CosenseApiError extends Error {

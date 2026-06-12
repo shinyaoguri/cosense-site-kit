@@ -66,17 +66,25 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
         onWarn: (m) => logger.warn(m),
       });
 
-      store.clear();
+      // Diff against the persisted store instead of clear()-ing it: store.set
+      // skips entries whose digest is unchanged, which is what makes Astro's
+      // Content Layer incremental — clearing first would mark every page as
+      // changed on every build. Entries whose page disappeared are deleted.
+      const seen = new Set<string>();
       for (const page of data.pages) {
         const parsed = await parseData({
           id: page.slug,
           data: page as unknown as Record<string, unknown>,
         });
+        seen.add(page.slug);
         store.set({
           id: page.slug,
           data: parsed,
           digest: generateDigest(parsed),
         });
+      }
+      for (const id of store.keys()) {
+        if (!seen.has(id)) store.delete(id);
       }
     },
   };

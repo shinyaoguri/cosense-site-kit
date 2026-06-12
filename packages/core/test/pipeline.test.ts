@@ -144,7 +144,85 @@ describe("slug + link + backlink resolution", () => {
   });
 });
 
+describe("assignSlugs collision handling", () => {
+  const routing = { slug: "metadata-or-encoded-title" } as const;
+  const mk = (id: string, title: string, createdAt: string) => ({
+    ...normalizePage(rawPage({ id, title, text: `${title}\nbody` }), "p"),
+    createdAt,
+  });
+
+  it("suffixes the newer page deterministically regardless of input order", () => {
+    // "Foo Bar" and "Foo_Bar" collide (spaces become underscores). The input
+    // order follows the list API's updated-desc, which changes on every edit —
+    // suffix assignment must not, or the two public URLs silently swap.
+    const older = mk("a", "Foo Bar", "2020-01-01T00:00:00.000Z");
+    const newer = mk("b", "Foo_Bar", "2021-01-01T00:00:00.000Z");
+    for (const input of [
+      [older, newer],
+      [newer, older],
+    ]) {
+      const byId = Object.fromEntries(assignSlugs(input, routing).map((p) => [p.id, p.slug]));
+      expect(byId.a).toBe("Foo_Bar");
+      expect(byId.b).toBe("Foo_Bar-2");
+    }
+  });
+
+  it("reports collisions through onWarn", () => {
+    const warnings: string[] = [];
+    assignSlugs(
+      [
+        mk("a", "Foo Bar", "2020-01-01T00:00:00.000Z"),
+        mk("b", "Foo_Bar", "2021-01-01T00:00:00.000Z"),
+      ],
+      routing,
+      (m) => warnings.push(m),
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("slug collision");
+    expect(warnings[0]).toContain("Foo_Bar-2");
+  });
+});
+
 describe("buildIntermediate", () => {
+  it("never picks a favicon from an unpublished page", async () => {
+    // The fallback used to scan the raw source list (publish filter not yet
+    // applied), so a #draft page's image could become the public favicon.
+    const raws = [
+      rawPage({ id: "a", title: "Public", text: "Public\n#publish" }),
+      {
+        ...rawPage({ id: "b", title: "Secret", text: "Secret\n#draft" }),
+        image: "https://i.example/secret.png",
+      },
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    expect(data.site.icon).toBeUndefined();
+  });
+
+  it("picks the favicon fallback deterministically (title order)", async () => {
+    const raws = [
+      {
+        ...rawPage({ id: "z", title: "Zeta", text: "Zeta\n#publish" }),
+        image: "https://i.example/z.png",
+      },
+      {
+        ...rawPage({ id: "a", title: "Alpha", text: "Alpha\n#publish" }),
+        image: "https://i.example/a.png",
+      },
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    // Input order is Zeta-first (the list API's updated-desc); the pick must
+    // not depend on it.
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    expect(data.site.icon).toBe("https://i.example/a.png");
+  });
+
   it("runs the full pipeline with an injected source", async () => {
     const raws = [
       rawPage({ id: "a", title: "Home", text: "Home\n#publish\nhello [Sub]", links: ["Sub"] }),
@@ -168,6 +246,33 @@ describe("buildIntermediate", () => {
       expect(sub.backlinks).toEqual(["Home"]);
       expect(data.linkGraph[home.slug]).toEqual([sub.slug]);
     }
+  });
+
+  it("skips pages whose fetch returns null and records source warnings", async () => {
+    // One page vanished upstream between list and fetch — the build must keep
+    // going with the remaining pages instead of failing wholesale.
+    const raws = [
+      rawPage({ id: "a", title: "A", text: "A\n#publish" }),
+      rawPage({ id: "b", title: "B", text: "B\n#publish" }),
+    ];
+    const base = stubSource(raws);
+    const source: SiteSource = {
+      ...base,
+      async fetch(ref, opts) {
+        if (ref.id === "b") {
+          opts?.onWarn?.('page "B" disappeared between list and fetch (404); skipped');
+          return null;
+        }
+        return base.fetch(ref, opts);
+      },
+    };
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source });
+    expect(data.pages.map((p) => p.title)).toEqual(["A"]);
+    expect(data.warnings.some((w) => w.includes('"B"'))).toBe(true);
   });
 
   it("still fetches every page when concurrency is NaN", async () => {

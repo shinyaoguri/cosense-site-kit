@@ -1,8 +1,8 @@
 import { loadConfig } from "c12";
 import {
-  cosenseSiteConfigSchema,
   type CosenseSiteConfig,
   type CosenseSiteConfigInput,
+  cosenseSiteConfigSchema,
 } from "./config";
 
 // Loads cosense.config.{ts,js,mjs} via c12 (which uses jiti for TS support).

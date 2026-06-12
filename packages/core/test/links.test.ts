@@ -70,4 +70,33 @@ describe("resolveInternalLinks", () => {
     if (inner?.type !== "pageLink") throw new Error("expected pageLink");
     expect(inner.slug).toBe("target");
   });
+
+  it("matches link targets case-insensitively, like Cosense itself", () => {
+    // On Cosense, [target] in a body links to the page titled "Target".
+    const pages = resolveInternalLinks([
+      page("Target", []),
+      page("Src", [{ type: "paragraph", children: [link("target"), link("TARGET")] }]),
+    ]);
+    const para = pages[1]?.blocks[0];
+    if (para?.type !== "paragraph") throw new Error("expected paragraph");
+    for (const node of para.children) {
+      if (node.type !== "pageLink") throw new Error("expected pageLink");
+      expect(node.exists).toBe(true);
+      expect(node.slug).toBe("target");
+    }
+  });
+});
+
+describe("resolveLinkData", () => {
+  it("accumulates backlinks across case-variant link spellings", async () => {
+    const { resolveLinkData } = await import("../src/resolve/backlinks");
+    const target = page("Target", []);
+    const a = { ...page("A", []), links: ["target"] };
+    const b = { ...page("B", []), links: ["TARGET"] };
+    const { pages, linkGraph } = resolveLinkData([target, a, b]);
+    const resolved = pages.find((p) => p.title === "Target");
+    expect(resolved?.backlinks.sort()).toEqual(["A", "B"]);
+    expect(linkGraph.a).toEqual(["target"]);
+    expect(linkGraph.b).toEqual(["target"]);
+  });
 });

@@ -1,67 +1,55 @@
-// Internal Cosense API response types. These are NOT exported from core —
+import { z } from "zod";
+
+// Internal Cosense API response schemas. These are NOT exported from core —
 // they're the wire format we're isolating from the rest of the framework.
 // If the API changes, this file (plus normalize.ts) is the only place to fix.
+//
+// Validation is deliberately minimal: only the fields the framework actually
+// consumes are checked, and `.loose()` passes everything else through. The
+// goal is a clear "the Cosense API returned an unexpected shape" error at the
+// wire boundary instead of an inscrutable crash deep inside normalize/parse
+// (e.g. `new Date(NaN).toISOString()` throwing RangeError).
 
-export interface CosenseListItem {
-  id: string;
-  title: string;
-  image: string | null;
-  descriptions: string[];
-  user: { id: string; name?: string; displayName?: string };
-  pin: number;
-  views: number;
-  linked: number;
-  commitId?: string;
-  created: number;
-  updated: number;
-  accessed?: number;
-  lastAccessed?: number | null;
-  snapshotCreated?: number | null;
-  snapshotCount?: number;
-  pageRank?: number;
-  linksHash?: string;
-}
+const cosenseUserSchema = z
+  .object({
+    id: z.string(),
+    name: z.string().optional(),
+    displayName: z.string().optional(),
+    photo: z.string().optional(),
+  })
+  .loose();
 
-export interface CosenseListResponse {
-  projectName: string;
-  skip: number;
-  limit: number;
-  count: number;
-  pages: CosenseListItem[];
-}
+export const cosenseListItemSchema = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    updated: z.number(),
+  })
+  .loose();
 
-export interface CosenseLine {
-  id: string;
-  text: string;
-  userId: string;
-  created: number;
-  updated: number;
-}
+export const cosenseListResponseSchema = z
+  .object({
+    count: z.number(),
+    pages: z.array(cosenseListItemSchema),
+  })
+  .loose();
 
-export interface CosenseUser {
-  id: string;
-  name?: string;
-  displayName?: string;
-  photo?: string;
-}
+export const cosensePageResponseSchema = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    image: z.string().nullable().optional(),
+    descriptions: z.array(z.string()).optional(),
+    user: cosenseUserSchema.optional(),
+    lastUpdateUser: cosenseUserSchema.optional(),
+    collaborators: z.array(cosenseUserSchema).optional(),
+    created: z.number(),
+    updated: z.number(),
+    lines: z.array(z.object({ text: z.string() }).loose()),
+    links: z.array(z.string()).optional(),
+  })
+  .loose();
 
-export interface CosensePageResponse {
-  id: string;
-  title: string;
-  image: string | null;
-  descriptions: string[];
-  user: CosenseUser;
-  lastUpdateUser?: CosenseUser;
-  pin: number;
-  views: number;
-  linked: number;
-  commitId?: string;
-  created: number;
-  updated: number;
-  persistent: boolean;
-  lines: CosenseLine[];
-  links: string[];
-  icons?: Record<string, number>;
-  files?: string[];
-  collaborators?: CosenseUser[];
-}
+export type CosenseListItem = z.infer<typeof cosenseListItemSchema>;
+export type CosenseListResponse = z.infer<typeof cosenseListResponseSchema>;
+export type CosensePageResponse = z.infer<typeof cosensePageResponseSchema>;

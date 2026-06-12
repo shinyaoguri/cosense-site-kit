@@ -1,5 +1,5 @@
-import { loadCosenseSiteConfig, runDoctor } from "@cosense-site-kit/core";
 import type { DoctorCheck } from "@cosense-site-kit/core";
+import { loadCosenseSiteConfig, runDoctor } from "@cosense-site-kit/core";
 import pc from "picocolors";
 
 export interface DoctorOptions {

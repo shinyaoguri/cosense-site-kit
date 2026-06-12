@@ -1,16 +1,16 @@
 import { parse as parseYaml } from "yaml";
 import type { CosenseSitePage } from "../schema/v1/page";
-import {
-  siteStructureSchema,
-  type SiteStructure,
-} from "../schema/v1/site-structure";
+import { type SiteStructure, siteStructureSchema } from "../schema/v1/site-structure";
 
 // File names accepted for the YAML config block inside the site-config page.
 // Authors usually write `code:site.yaml`; `site.yml` is accepted as a courtesy.
 const ACCEPTED_FILENAMES = new Set(["site.yaml", "site.yml"]);
 
 export class SiteConfigParseError extends Error {
-  constructor(message: string, override readonly cause?: unknown) {
+  constructor(
+    message: string,
+    override readonly cause?: unknown,
+  ) {
     super(message);
     this.name = "SiteConfigParseError";
   }
