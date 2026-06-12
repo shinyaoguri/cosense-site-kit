@@ -1,6 +1,7 @@
 import { getCollection } from "astro:content";
 import structure from "virtual:cosense-site-kit/structure";
 import { pathFor, type SiteStructure } from "@cosense-site-kit/core";
+import { safeHref } from "./collection";
 
 // Name of the Astro content collection that the cosense() integration's
 // pages loader populates. Hardcoded across themes; if a theme wants a
@@ -40,11 +41,15 @@ export function navHref(
   titleToSlug: Map<string, string>,
 ): string {
   if ("href" in item && item.href) {
-    if (item.href.startsWith("/")) {
+    // Site-relative, but not protocol-relative (//host would become
+    // "/base//host", a link off-site disguised as a local path).
+    if (item.href.startsWith("/") && !item.href.startsWith("//")) {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       return `${base}${item.href}`;
     }
-    return item.href;
+    // Defense in depth behind the core schema's SAFE_HREF check — a theme may
+    // also call this with an unvalidated structure.
+    return safeHref(item.href) ?? "#";
   }
   if ("page" in item && item.page) {
     const slug = titleToSlug.get(item.page);

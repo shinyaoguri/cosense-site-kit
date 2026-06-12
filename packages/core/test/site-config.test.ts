@@ -186,6 +186,36 @@ posts:
       SiteConfigParseError,
     );
   });
+
+  it("rejects script-capable and protocol-relative nav.href schemes", () => {
+    // .site is remote input; Astro's attribute escaping can't neutralize a
+    // javascript: href, so the schema must.
+    for (const href of ["javascript:alert(1)", "data:text/html,x", "//evil.example/x"]) {
+      const yaml = `nav:\n  - { label: 'x', href: '${href}' }\n`;
+      expect(() => parseSitePage(pageWith([codeBlock("site.yaml", yaml)]))).toThrowError(
+        SiteConfigParseError,
+      );
+    }
+  });
+
+  it("accepts mailto:/tel:/fragment nav.href", () => {
+    for (const href of ["mailto:me@example.com", "tel:+81-3-0000-0000", "#about"]) {
+      const yaml = `nav:\n  - { label: 'x', href: '${href}' }\n`;
+      const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+      expect(result?.structure.nav[0]).toEqual({ label: "x", href });
+    }
+  });
+
+  it("rejects external-URL redirect destinations (no open redirects)", () => {
+    for (const to of ["https://evil.example/", "//evil.example/x", "javascript:alert(1)"]) {
+      const yaml = `redirects:\n  old: "${to}"\n`;
+      expect(() => parseSitePage(pageWith([codeBlock("site.yaml", yaml)]))).toThrowError(
+        SiteConfigParseError,
+      );
+    }
+    const ok = parseSitePage(pageWith([codeBlock("site.yaml", "redirects:\n  old: new-slug\n")]));
+    expect(ok?.structure.redirects).toEqual({ old: "new-slug" });
+  });
 });
 
 describe("siteStructureSchema defaults", () => {
