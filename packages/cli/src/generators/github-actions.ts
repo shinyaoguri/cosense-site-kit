@@ -84,6 +84,11 @@ on:
   schedule:
     - cron: "${a.schedule}"
 
+# Avoid a manual dispatch racing a cron run into a half-deployed state.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -96,11 +101,14 @@ jobs:
         with:
           node-version: ${a.nodeVersion}
 
+      # The key must be unique per run: actions/cache never saves on an exact
+      # hit, so a fixed key would freeze the cache at its first-run contents
+      # and the differential fetch would re-download everything ever after.
       - name: Restore Cosense cache
         uses: actions/cache@v5
         with:
           path: ${cachePath}
-          key: cosense-cache-\${{ github.ref }}
+          key: cosense-cache-\${{ github.run_id }}
           restore-keys: |
             cosense-cache-
 
@@ -161,11 +169,14 @@ jobs:
         with:
           node-version: ${a.nodeVersion}
 
+      # The key must be unique per run: actions/cache never saves on an exact
+      # hit, so a fixed key would freeze the cache at its first-run contents
+      # and the differential fetch would re-download everything ever after.
       - name: Restore Cosense cache
         uses: actions/cache@v5
         with:
           path: ${cachePath}
-          key: cosense-cache-\${{ github.ref }}
+          key: cosense-cache-\${{ github.run_id }}
           restore-keys: |
             cosense-cache-
 
