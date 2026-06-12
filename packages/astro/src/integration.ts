@@ -142,9 +142,13 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           updateConfig({ base: normalized.replace(/\/$/, "") });
         }
 
+        // Redirect *sources* are route patterns, so Astro prefixes them with
+        // `base` itself; *destinations* are emitted verbatim into the Location
+        // header / meta refresh, so the base must be baked in here or subpath
+        // deployments (GitHub Pages project sites) redirect to a 404.
         const redirects: Record<string, string> = {};
         for (const [from, to] of Object.entries(structure.redirects)) {
-          redirects[pathFor(from)] = pathFor(to);
+          redirects[pathFor(from)] = pathFor(to, normalized);
         }
         if (Object.keys(redirects).length > 0) {
           updateConfig({ redirects });
