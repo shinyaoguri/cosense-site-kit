@@ -789,6 +789,9 @@ html[data-theme="dark"] .page-content .astro-code span {
    and add block margins / rounded corners. */
 .page-content img.icon,
 .icon {
+  /* Must undo the body-image display:block, or mid-sentence icons force a
+     line break (vertical-align below only works on inline-level boxes). */
+  display: inline-block;
   height: 1.3em;
   width: auto;
   vertical-align: -0.3em;
