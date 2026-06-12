@@ -1,5 +1,18 @@
 # @cosense-site-kit/theme-utils
 
+## 0.4.1
+
+### Patch Changes
+
+- bd053d2: Validate URL schemes in `.site` declarations: `nav[].href` must be http(s)/mailto/tel, a site-relative path, or a fragment (a `javascript:` href passes Astro's attribute escaping untouched), and `redirects` destinations must be slugs or site-relative paths — no open redirects to external sites. `navHref` in theme-utils additionally guards protocol-relative `//host` paths and runs hrefs through `safeHref` as defense in depth.
+- Updated dependencies [0982ff4]
+- Updated dependencies [a1b77b0]
+- Updated dependencies [f976209]
+- Updated dependencies [7d7ac4d]
+- Updated dependencies [47ab6b2]
+- Updated dependencies [bd053d2]
+  - @cosense-site-kit/core@0.3.1
+
 ## 0.4.0
 
 ### Minor Changes

@@ -1,5 +1,16 @@
 # @cosense-site-kit/core
 
+## 0.3.1
+
+### Patch Changes
+
+- 0982ff4: Validate the Cosense API wire format and cache files at the boundary: unexpected response shapes now fail with an actionable "unexpected response shape" message instead of crashing deep inside parsing (e.g. `RangeError: Invalid time value`), corrupt or truncated cache files register as cache misses (refetch) instead of failing every build until manually deleted, and cache writes are atomic (write-then-rename).
+- a1b77b0: Match internal page links case-insensitively, like Cosense itself: `[foo]` in a body now resolves to the page titled "Foo", and backlinks accumulate on the target page regardless of how the link was capitalized. Previously such links rendered as broken on the generated site even though they work on Cosense.
+- f976209: Make slug collision suffixes deterministic: when two titles map to the same slug (e.g. "Foo Bar" and "Foo_Bar"), the `-2` suffix is now assigned by creation date instead of the list API's updated-desc order, which silently swapped the two pages' public URLs whenever either was edited. Collisions are also reported as pipeline warnings so `doctor` surfaces them.
+- 7d7ac4d: Restrict the favicon fallback to published pages and make it deterministic: it previously scanned the raw source list, so a draft/private page's image could leak onto the public site as its favicon, and the pick followed the list API's updated-desc order, changing from build to build.
+- 47ab6b2: Make unattended builds resilient to per-page fetch failures: a page deleted between list and fetch (404) is now skipped with a warning instead of failing the whole build, and transient failures (network errors, 5xx after retries) fall back to the stale cached copy as the cache layer always documented. Warnings surface in `data.warnings` and `doctor`. `SiteSource.fetch` may now return `null` and accepts an `onWarn` callback.
+- bd053d2: Validate URL schemes in `.site` declarations: `nav[].href` must be http(s)/mailto/tel, a site-relative path, or a fragment (a `javascript:` href passes Astro's attribute escaping untouched), and `redirects` destinations must be slugs or site-relative paths — no open redirects to external sites. `navHref` in theme-utils additionally guards protocol-relative `//host` paths and runs hrefs through `safeHref` as defense in depth.
+
 ## 0.3.0
 
 ### Minor Changes
