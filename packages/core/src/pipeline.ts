@@ -54,11 +54,12 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   const refs = await source.list({ signal });
   opts.onProgress?.({ kind: "list", total: refs.length });
 
-  // Degraded-mode notes from the source (stale-cache fallback, pages deleted
-  // mid-build). Collected into data.warnings so doctor surfaces them.
-  const fetchWarnings: string[] = [];
+  // Degraded-mode and data-quality notes (stale-cache fallback, pages deleted
+  // mid-build, slug collisions). Collected into data.warnings so doctor
+  // surfaces them.
+  const pipelineWarnings: string[] = [];
   const onWarn = (message: string) => {
-    fetchWarnings.push(message);
+    pipelineWarnings.push(message);
     opts.onProgress?.({ kind: "warn", message });
   };
 
@@ -111,7 +112,7 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
     : [];
   const published = draftPages.length > 0 ? [...kept, ...draftPages] : kept;
 
-  const slugged = assignSlugs(published, config.routing);
+  const slugged = assignSlugs(published, config.routing, onWarn);
 
   const titleToSlug = buildTitleToSlug(slugged);
   const linked = resolveInternalLinks(slugged, titleToSlug);
@@ -128,7 +129,7 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
     excluded,
     linkGraph,
     structure,
-    warnings: [...fetchWarnings, ...warnings, ...dateWarnings],
+    warnings: [...pipelineWarnings, ...warnings, ...dateWarnings],
   };
 
   return intermediateDataSchema.parse(data);

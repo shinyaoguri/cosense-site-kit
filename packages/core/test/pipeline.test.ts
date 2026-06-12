@@ -144,6 +144,45 @@ describe("slug + link + backlink resolution", () => {
   });
 });
 
+describe("assignSlugs collision handling", () => {
+  const routing = { slug: "metadata-or-encoded-title" } as const;
+  const mk = (id: string, title: string, createdAt: string) => ({
+    ...normalizePage(rawPage({ id, title, text: `${title}\nbody` }), "p"),
+    createdAt,
+  });
+
+  it("suffixes the newer page deterministically regardless of input order", () => {
+    // "Foo Bar" and "Foo_Bar" collide (spaces become underscores). The input
+    // order follows the list API's updated-desc, which changes on every edit —
+    // suffix assignment must not, or the two public URLs silently swap.
+    const older = mk("a", "Foo Bar", "2020-01-01T00:00:00.000Z");
+    const newer = mk("b", "Foo_Bar", "2021-01-01T00:00:00.000Z");
+    for (const input of [
+      [older, newer],
+      [newer, older],
+    ]) {
+      const byId = Object.fromEntries(assignSlugs(input, routing).map((p) => [p.id, p.slug]));
+      expect(byId.a).toBe("Foo_Bar");
+      expect(byId.b).toBe("Foo_Bar-2");
+    }
+  });
+
+  it("reports collisions through onWarn", () => {
+    const warnings: string[] = [];
+    assignSlugs(
+      [
+        mk("a", "Foo Bar", "2020-01-01T00:00:00.000Z"),
+        mk("b", "Foo_Bar", "2021-01-01T00:00:00.000Z"),
+      ],
+      routing,
+      (m) => warnings.push(m),
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("slug collision");
+    expect(warnings[0]).toContain("Foo_Bar-2");
+  });
+});
+
 describe("buildIntermediate", () => {
   it("runs the full pipeline with an injected source", async () => {
     const raws = [

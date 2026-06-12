@@ -24,27 +24,50 @@ export function computeSlug(
   }
 }
 
-// Assign unique slugs to all pages, mutating each page.slug. Duplicates get a
-// numeric suffix (`-2`, `-3`, …). Pages are processed in input order so the
-// first occurrence keeps the bare slug.
+// Assign unique slugs to all pages. Duplicates get a numeric suffix (`-2`,
+// `-3`, …) and are reported through onWarn — a collision means two titles
+// produce the same URL, which the author almost certainly wants to know.
+//
+// Suffixes are assigned in (createdAt, id) order, NOT input order: the input
+// follows the list API's updated-desc ordering, so order-dependent suffixes
+// would silently swap the two pages' public URLs whenever either was edited.
 export function assignSlugs(
   pages: CosenseSitePage[],
   routing: CosenseSiteConfig["routing"],
+  onWarn?: (message: string) => void,
 ): CosenseSitePage[] {
-  const used = new Set<string>();
-  return pages.map((page) => {
-    const base =
+  const withBase = pages.map((page) => ({
+    page,
+    base:
       hostSafeSlug(computeSlug(page, routing.slug)) ||
       hostSafeSlug(encodeTitle(page.title)) ||
-      page.id;
+      page.id,
+  }));
+
+  const order = [...withBase].sort(
+    (a, b) =>
+      (a.page.createdAt ?? "").localeCompare(b.page.createdAt ?? "") ||
+      a.page.id.localeCompare(b.page.id),
+  );
+
+  const used = new Set<string>();
+  const assigned = new Map<string, string>(); // page id → slug
+  for (const { page, base } of order) {
     let slug = base;
     let i = 2;
     while (used.has(slug)) {
       slug = `${base}-${i++}`;
     }
+    if (slug !== base) {
+      onWarn?.(
+        `slug collision: "${page.title}" also maps to "${base}"; assigned "${slug}" instead`,
+      );
+    }
     used.add(slug);
-    return { ...page, slug };
-  });
+    assigned.set(page.id, slug);
+  }
+
+  return pages.map((page) => ({ ...page, slug: assigned.get(page.id) ?? page.slug }));
 }
 
 // Normalize an Astro-style base path to start and end with exactly one slash.
