@@ -1,5 +1,20 @@
 # @cosense-site-kit/theme-default
 
+## 0.7.1
+
+### Patch Changes
+
+- b23f95e: Fix XSS: escape `<` in the JSON-LD `<script>` payload so a page title containing `</script>` cannot break out of the script element
+- 8d4bc29: Theme fixes: the hover TOC panel now uses theme tokens for its background (it was hardcoded white, unreadable on the dark skin) and opens on keyboard focus (`:focus-within`), tag pages sort newest-first like home and /posts, `/posts` is included in sitemap.xml when a posts tag is configured, and the virtual options type shim gained the missing `search` field.
+- Updated dependencies [0982ff4]
+- Updated dependencies [a1b77b0]
+- Updated dependencies [f976209]
+- Updated dependencies [7d7ac4d]
+- Updated dependencies [47ab6b2]
+- Updated dependencies [bd053d2]
+  - @cosense-site-kit/core@0.3.1
+  - @cosense-site-kit/theme-utils@0.4.1
+
 ## 0.7.0
 
 ### Minor Changes

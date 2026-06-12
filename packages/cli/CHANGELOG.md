@@ -1,5 +1,20 @@
 # @cosense-site-kit/cli
 
+## 0.1.7
+
+### Patch Changes
+
+- 22f16c8: `deploy init`: fix the generated `actions/cache` key — a fixed key is never re-saved after the first exact hit, freezing the Cosense cache at its first-run contents and defeating the differential fetch. The key is now unique per run (`github.run_id`) with a `restore-keys` prefix fallback. Also adds a `concurrency` group to the Cloudflare workflow so cron and manual dispatch never race. Existing sites: re-run `cosense-site deploy init --force` to pick this up.
+- 6cd9387: `deploy init`: a fully non-ASCII site title (e.g. Japanese) no longer produces an empty `name` in wrangler.jsonc — it falls back to the Cosense project name. `cosense-site --version` now reports the real package version instead of a hardcoded 0.0.0.
+- c497c5e: `deploy init`: the generated wrangler.jsonc `$schema` URL pointed at a workerd path that now 404s; it now uses wrangler's own published config schema so editor completion works.
+- Updated dependencies [0982ff4]
+- Updated dependencies [a1b77b0]
+- Updated dependencies [f976209]
+- Updated dependencies [7d7ac4d]
+- Updated dependencies [47ab6b2]
+- Updated dependencies [bd053d2]
+  - @cosense-site-kit/core@0.3.1
+
 ## 0.1.6
 
 ### Patch Changes
