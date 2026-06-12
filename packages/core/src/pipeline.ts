@@ -124,7 +124,7 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   const data: IntermediateData = {
     schemaVersion: "1",
     generatedAt: new Date().toISOString(),
-    site: { ...config.site, icon: pickFavicon(raws, structure.home?.page) },
+    site: { ...config.site, icon: pickFavicon(withDates, structure.home?.page) },
     pages: withDates,
     excluded,
     linkGraph,
@@ -135,16 +135,21 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   return intermediateDataSchema.parse(data);
 }
 
-// Cosense uses the project's first page's icon as the favicon. We mirror that:
-// prefer the configured home page's image, otherwise the first source-listed
-// page that actually has one (`raws` preserves the source list order). Returns
-// undefined when no candidate has an image.
-function pickFavicon(raws: SourcePageRaw[], homePage: string | undefined): string | undefined {
+// Favicon: prefer the configured home page's image, otherwise fall back to a
+// page that has one. Candidates are restricted to *published* pages — using
+// the raw source list would leak a draft/private page's image onto the public
+// site — and the fallback scans in title order, which is stable across builds
+// (the source list is updated-desc, so it reshuffles on every edit).
+function pickFavicon(
+  pages: ReadonlyArray<{ title: string; image?: string | null }>,
+  homePage: string | undefined,
+): string | undefined {
   if (homePage) {
-    const home = raws.find((r) => r.title === homePage);
+    const home = pages.find((p) => p.title === homePage);
     if (home?.image) return home.image;
   }
-  return raws.find((r) => r.image)?.image ?? undefined;
+  const fallback = [...pages].sort((a, b) => a.title.localeCompare(b.title)).find((p) => p.image);
+  return fallback?.image ?? undefined;
 }
 
 function extractStructure(

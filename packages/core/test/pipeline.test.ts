@@ -184,6 +184,45 @@ describe("assignSlugs collision handling", () => {
 });
 
 describe("buildIntermediate", () => {
+  it("never picks a favicon from an unpublished page", async () => {
+    // The fallback used to scan the raw source list (publish filter not yet
+    // applied), so a #draft page's image could become the public favicon.
+    const raws = [
+      rawPage({ id: "a", title: "Public", text: "Public\n#publish" }),
+      {
+        ...rawPage({ id: "b", title: "Secret", text: "Secret\n#draft" }),
+        image: "https://i.example/secret.png",
+      },
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    expect(data.site.icon).toBeUndefined();
+  });
+
+  it("picks the favicon fallback deterministically (title order)", async () => {
+    const raws = [
+      {
+        ...rawPage({ id: "z", title: "Zeta", text: "Zeta\n#publish" }),
+        image: "https://i.example/z.png",
+      },
+      {
+        ...rawPage({ id: "a", title: "Alpha", text: "Alpha\n#publish" }),
+        image: "https://i.example/a.png",
+      },
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    // Input order is Zeta-first (the list API's updated-desc); the pick must
+    // not depend on it.
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    expect(data.site.icon).toBe("https://i.example/a.png");
+  });
+
   it("runs the full pipeline with an injected source", async () => {
     const raws = [
       rawPage({ id: "a", title: "Home", text: "Home\n#publish\nhello [Sub]", links: ["Sub"] }),
