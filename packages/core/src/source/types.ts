@@ -25,5 +25,14 @@ export interface SourcePageRaw {
 export interface SiteSource {
   readonly name: string;
   list(opts?: { signal?: AbortSignal }): Promise<SourcePageRef[]>;
-  fetch(ref: SourcePageRef, opts?: { signal?: AbortSignal }): Promise<SourcePageRaw>;
+  /**
+   * Fetch one page's full content. Returns null when the page no longer
+   * exists upstream (deleted between list and fetch) — callers skip it.
+   * `onWarn` surfaces degraded-mode notes (e.g. a stale-cache fallback)
+   * without failing the build.
+   */
+  fetch(
+    ref: SourcePageRef,
+    opts?: { signal?: AbortSignal; onWarn?: (message: string) => void },
+  ): Promise<SourcePageRaw | null>;
 }

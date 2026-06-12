@@ -170,6 +170,33 @@ describe("buildIntermediate", () => {
     }
   });
 
+  it("skips pages whose fetch returns null and records source warnings", async () => {
+    // One page vanished upstream between list and fetch — the build must keep
+    // going with the remaining pages instead of failing wholesale.
+    const raws = [
+      rawPage({ id: "a", title: "A", text: "A\n#publish" }),
+      rawPage({ id: "b", title: "B", text: "B\n#publish" }),
+    ];
+    const base = stubSource(raws);
+    const source: SiteSource = {
+      ...base,
+      async fetch(ref, opts) {
+        if (ref.id === "b") {
+          opts?.onWarn?.('page "B" disappeared between list and fetch (404); skipped');
+          return null;
+        }
+        return base.fetch(ref, opts);
+      },
+    };
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source });
+    expect(data.pages.map((p) => p.title)).toEqual(["A"]);
+    expect(data.warnings.some((w) => w.includes('"B"'))).toBe(true);
+  });
+
   it("still fetches every page when concurrency is NaN", async () => {
     // A bad --concurrency parsed to NaN once made the fetch loop never advance,
     // silently returning zero pages. Guard against that regression.

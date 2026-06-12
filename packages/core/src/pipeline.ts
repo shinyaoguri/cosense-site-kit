@@ -54,13 +54,21 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   const refs = await source.list({ signal });
   opts.onProgress?.({ kind: "list", total: refs.length });
 
+  // Degraded-mode notes from the source (stale-cache fallback, pages deleted
+  // mid-build). Collected into data.warnings so doctor surfaces them.
+  const fetchWarnings: string[] = [];
+  const onWarn = (message: string) => {
+    fetchWarnings.push(message);
+    opts.onProgress?.({ kind: "warn", message });
+  };
+
   const raws: SourcePageRaw[] = [];
   let done = 0;
   for (let i = 0; i < refs.length; i += concurrency) {
     const batch = refs.slice(i, i + concurrency);
     const results = await Promise.all(
       batch.map(async (ref) => {
-        const raw = await source.fetch(ref, { signal });
+        const raw = await source.fetch(ref, { signal, onWarn });
         done++;
         opts.onProgress?.({
           kind: "fetch",
@@ -71,7 +79,8 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
         return raw;
       }),
     );
-    raws.push(...results);
+    // null = the page vanished upstream (already warned); skip it.
+    raws.push(...results.filter((r): r is SourcePageRaw => r !== null));
   }
 
   const normalized = raws.map((raw) => normalizePage(raw, config.source.project));
@@ -119,7 +128,7 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
     excluded,
     linkGraph,
     structure,
-    warnings: [...warnings, ...dateWarnings],
+    warnings: [...fetchWarnings, ...warnings, ...dateWarnings],
   };
 
   return intermediateDataSchema.parse(data);

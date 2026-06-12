@@ -1,5 +1,5 @@
 import type { SiteSource, SourcePageRaw, SourcePageRef } from "../types";
-import { CosenseApi } from "./api";
+import { CosenseApi, CosenseApiError } from "./api";
 import { createPageCache, type PageCache } from "./cache";
 
 export interface CosenseSourceOptions {
@@ -37,12 +37,33 @@ export function createCosenseSource(opts: CosenseSourceOptions): SiteSource & {
       return refs;
     },
 
-    async fetch(ref, { signal } = {}) {
+    async fetch(ref, { signal, onWarn } = {}) {
       if (!force) {
         const cached = await cache.get(ref.id);
         if (cached && cached.updated >= ref.updated) return cached;
       }
-      const page = await api.getPage(project, ref.title, signal);
+      let page: Awaited<ReturnType<CosenseApi["getPage"]>>;
+      try {
+        page = await api.getPage(project, ref.title, signal);
+      } catch (err) {
+        // A cancelled build must abort, never degrade.
+        if (signal?.aborted) throw err;
+        if (err instanceof CosenseApiError && err.status === 404) {
+          // Deleted between list and fetch. Skip it — serving a stale cached
+          // copy here would resurrect a page the author removed.
+          onWarn?.(`page "${ref.title}" disappeared between list and fetch (404); skipped`);
+          return null;
+        }
+        // Transient failure (network, 5xx after retries, rate limit): a stale
+        // cached copy keeps the scheduled unattended build alive.
+        const stale = await cache.get(ref.id);
+        if (stale) {
+          const msg = err instanceof Error ? err.message : String(err);
+          onWarn?.(`fetch failed for "${ref.title}" (${msg}); using the cached copy`);
+          return stale;
+        }
+        throw err;
+      }
       const raw: SourcePageRaw = {
         id: page.id,
         title: page.title,
