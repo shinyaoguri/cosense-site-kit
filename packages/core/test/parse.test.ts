@@ -66,6 +66,25 @@ describe("parseScrapboxText", () => {
     expect(images).toEqual(["https://example.com/pic.png"]);
   });
 
+  it("keeps the link on a standalone linked image ([url image-url])", () => {
+    const { blocks } = parseScrapboxText(
+      "Title\n[https://example.com/dest https://example.com/pic.png]",
+      "demo",
+    );
+    expect(blocks[0]).toEqual({
+      type: "image",
+      url: "https://example.com/pic.png",
+      href: "https://example.com/dest",
+    });
+  });
+
+  it("renders helpfeel lines as inline code with the ? marker preserved", () => {
+    const { blocks } = parseScrapboxText("Title\n? how do I deploy", "demo");
+    const para = blocks[0];
+    if (!para || para.type !== "paragraph") throw new Error("expected paragraph");
+    expect(para.children).toEqual([{ type: "code", value: "? how do I deploy" }]);
+  });
+
   it("emits an inline image node for an image mixed with text (not a text link)", () => {
     const { blocks } = parseScrapboxText(
       "Title\nbefore [https://example.com/pic.png] after",

@@ -168,7 +168,7 @@ for (const block of visible) {
         // that host images reliably can opt into <Image> (see docs/THEMES.md).
         const morph = !morphPlaced && morphName && block.url === morphImageUrl;
         if (morph) morphPlaced = true;
-        return (
+        const img = (
           <img
             src={block.url}
             alt={block.alt ?? ""}
@@ -176,6 +176,13 @@ for (const block of visible) {
             decoding="async"
             style={morph ? `view-transition-name:${morphName}` : undefined}
           />
+        );
+        // `[url image-url]` — a linked image navigates on click. The lightbox
+        // already ignores images inside <a>, so the two don't conflict.
+        return block.href ? (
+          <a href={block.href} rel="noopener noreferrer">{img}</a>
+        ) : (
+          img
         );
       }
       case "embed": {
