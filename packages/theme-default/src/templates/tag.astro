@@ -23,6 +23,12 @@ export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
     }
   }
 
+  // Newest first, matching home and /posts — getCollection order is the
+  // loader's internal order, not a presentation order.
+  for (const list of tagMap.values()) {
+    list.sort((a, b) => (b.data.publishedAt ?? "").localeCompare(a.data.publishedAt ?? ""));
+  }
+
   return Array.from(tagMap.entries()).flatMap(([tag, entries]) =>
     (paginate as PaginateFunction)(entries, { pageSize: POSTS_PER_PAGE, params: { tag } }).map(
       (route) => ({
