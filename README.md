@@ -287,13 +287,12 @@ export const collections = {
 };
 ```
 
-```jsonc
-// package.json（dependencies 抜粋）
-"@cosense-site-kit/astro": "^0.1",
-"@cosense-site-kit/cli": "^0.1",
-"@cosense-site-kit/core": "^0.2",
-"@cosense-site-kit/theme-default": "^0.2",
-"astro": "^6"
+```bash
+# dependencies は最新版をそのままインストール（pre-1.0 は caret が次の
+# minor を拾わないため、README にバージョンを書き写すと古い組み合わせに
+# なりがち。npm install で揃えるのが安全）
+npm install @cosense-site-kit/astro @cosense-site-kit/cli \
+  @cosense-site-kit/core @cosense-site-kit/theme-default astro
 ```
 
 | | npm import（既定） | vendored（手動コピー） |
@@ -509,7 +508,7 @@ export default defineCosenseSite({
 
 `cosense-site deploy init` で次のファイルが生成されます:
 
-- `.github/workflows/build.yml` — checkout → Cosense cache 復元 → `cosense-site fetch` → `astro build` → `cloudflare/wrangler-action@v3` で Workers へ、または `actions/deploy-pages@v4` で GitHub Pages へ公開
+- `.github/workflows/build.yml` — checkout → Cosense cache 復元 → `cosense-site fetch` → `astro build` → `cloudflare/wrangler-action` で Workers へ、または `actions/deploy-pages` で GitHub Pages へ公開
 - `wrangler.jsonc`（Cloudflare 用のみ） — Workers Static Assets を `./dist` に向けた設定（404 ページ配信のための `not_found_handling: "404-page"` を含む）
 
 ビルドは cron + `workflow_dispatch` の併用が前提です。Cosense は分単位で更新するものではないので、1 日 2 回で十分です。
@@ -557,7 +556,7 @@ site: {
 
 ## fetch キャッシュの仕組み
 
-`.cosense-cache/pages/<shard>/<pageId>.json` に各ページの最新本文を保持します。`cosense-site fetch` は毎回 Cosense の一覧 API を呼んで `updated` タイムスタンプを比較し、変更されたページだけ本文を再取得します。キャッシュは `actions/cache@v4` で CI 実行間にまたがって永続化され、ビルド中にネットワーク障害が起きても直前の cache でビルドを継続できます。
+`.cosense-cache/pages/<shard>/<pageId>.json` に各ページの最新本文を保持します。`cosense-site fetch` は毎回 Cosense の一覧 API を呼んで `updated` タイムスタンプを比較し、変更されたページだけ本文を再取得します。キャッシュは `actions/cache` で CI 実行間にまたがって永続化され、ビルド中にネットワーク障害が起きても直前の cache でビルドを継続できます。
 
 `cosense-site fetch --force` でキャッシュを無視して全件再取得できます。
 

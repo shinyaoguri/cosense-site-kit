@@ -151,14 +151,19 @@ interface CosenseSitePage {
   slug: string;          // URL 用スラッグ (assignSlugs() の結果)
   sourceUrl: string;     // https://scrapbox.io/proj/Title
   template: string;      // resolveTemplate() の結果 (デフォルト "page")
-  createdAt?: string;    // ISO timestamp
+  createdAt?: string;    // Cosense の生タイムスタンプ (ISO)
   updatedAt?: string;
+  publishedAt?: string;  // 表示用の公開日。#published/YYYY-MM-DD で上書き可、
+                         // 無指定は createdAt にフォールバック。並び順・表示はこちらを使う
+  modifiedAt?: string;   // 表示用の更新日 (#updated/... / updatedAt)
   summary?: string;      // 1段落目のテキスト
+  image?: string;        // 本文先頭の画像 URL (OG カード用)
   tags: string[];        // #publish も含む生のタグ配列
   links: string[];       // [Other Page] で参照したタイトル一覧
   backlinks: string[];   // このページにリンクしている他ページのタイトル
+  authors?: string[];    // 執筆・編集ユーザー名
+  draft?: boolean;       // dev プレビューでのみ true (本番ビルドには現れない)
   blocks: CosenseBlock[]; // パース済み本文
-  raw?: { text?: string };
 }
 ```
 
@@ -170,8 +175,9 @@ import { getCollection } from "astro:content";
 const all = await getCollection("pages");
 const recent = all
   .filter((e) => e.data.tags.includes("blog"))
+  // 並び順は表示用の publishedAt を使う（createdAt/updatedAt は生タイムスタンプ）
   .sort((a, b) =>
-    (b.data.updatedAt ?? "").localeCompare(a.data.updatedAt ?? ""),
+    (b.data.publishedAt ?? "").localeCompare(a.data.publishedAt ?? ""),
   )
   .slice(0, 10);
 ```

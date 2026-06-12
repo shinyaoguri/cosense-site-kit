@@ -9,7 +9,9 @@ export interface WranglerOptions {
 export function generateWranglerJsonc(opts: WranglerOptions): string {
   const date = opts.compatibilityDate ?? new Date().toISOString().slice(0, 10);
   const config = {
-    $schema: "https://raw.githubusercontent.com/cloudflare/workerd/main/json-schema/wrangler.json",
+    // The old workerd raw.githubusercontent URL 404s; wrangler ships its own
+    // schema, served here with redirects to the latest published version.
+    $schema: "https://www.unpkg.com/wrangler/config-schema.json",
     name: opts.name,
     compatibility_date: date,
     assets: {

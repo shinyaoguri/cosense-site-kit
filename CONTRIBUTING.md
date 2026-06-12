@@ -27,7 +27,7 @@ npm run build    # 各パッケージを tsup でビルド（dist 生成）
 | `packages/astro` | Astro 用 Content Loader + `cosense()` インテグレーション |
 | `packages/theme-utils` | テーマ共通ヘルパー（`loadStructure` / `parseCollection` / `Inline`・`PageContent` 等） |
 | `packages/theme-default` | デフォルトテーマ（テンプレート・スキン・Pagefind 検索） |
-| `packages/cli` | `cosense-site`（init / fetch / build / validate / doctor / deploy） |
+| `packages/cli` | `cosense-site`（init / fetch / validate / doctor / deploy） |
 | `site` | **公式ドキュメントサイト本体**（dogfooding）。`@cosense-site-kit/*` を `"*"`＝ローカル workspace から解決し、Cosense プロジェクト `cosense-site-kit` を公開元にする |
 
 ## 日常の開発コマンド（リポジトリのルートで実行）
