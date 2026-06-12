@@ -30,6 +30,13 @@ jobs:
 
       - run: npm ci
 
+      # Gate the release on the same checks as ci.yml — nothing should reach
+      # npm without passing build + tests + lint + typecheck.
+      - run: npm run build
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+
       # On a push that contains changesets, this opens/updates a "Version
       # Packages" PR (running `version`). When that PR is merged — changesets
       # consumed, versions bumped — the next run finds no changesets and runs
