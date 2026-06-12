@@ -1,5 +1,6 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { z } from "zod";
 import type { SourcePageRaw } from "../types";
 
 // File-backed cache for fetched pages. Keyed by Cosense page id so renames
@@ -15,24 +16,54 @@ export interface PageCache {
   dir(): string;
 }
 
+// Shape check for entries read back from disk. A truncated or hand-edited
+// file must register as a cache miss (refetch) — not crash every subsequent
+// build until someone deletes the cache by hand.
+const cachedPageSchema = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    updated: z.number(),
+    created: z.number(),
+    text: z.string(),
+    links: z.array(z.string()),
+    image: z.string().nullable(),
+    descriptions: z.array(z.string()),
+    sourceUrl: z.string(),
+    authors: z.array(z.string()).optional(),
+  })
+  .loose();
+
 export function createPageCache(cacheDir: string): PageCache {
   return {
     dir: () => cacheDir,
 
     async get(id) {
+      let buf: string;
       try {
-        const buf = await readFile(pagePath(cacheDir, id), "utf8");
-        return JSON.parse(buf) as SourcePageRaw;
+        buf = await readFile(pagePath(cacheDir, id), "utf8");
       } catch (err) {
         if (isNotFound(err)) return null;
         throw err;
+      }
+      try {
+        const parsed = cachedPageSchema.safeParse(JSON.parse(buf));
+        return parsed.success ? parsed.data : null;
+      } catch {
+        // Corrupt JSON (e.g. a write interrupted before the atomic rename
+        // existed): treat as a miss so the page is simply refetched.
+        return null;
       }
     },
 
     async set(page) {
       const path = pagePath(cacheDir, page.id);
       await mkdir(dirname(path), { recursive: true });
-      await writeFile(path, `${JSON.stringify(page, null, 2)}\n`);
+      // Write-then-rename so an interrupted build can't leave a truncated
+      // entry behind (rename within a directory is atomic on POSIX).
+      const tmp = `${path}.tmp-${process.pid}`;
+      await writeFile(tmp, `${JSON.stringify(page, null, 2)}\n`);
+      await rename(tmp, path);
     },
   };
 }

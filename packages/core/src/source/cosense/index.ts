@@ -71,7 +71,7 @@ export function createCosenseSource(opts: CosenseSourceOptions): SiteSource & {
         created: page.created,
         text: page.lines.map((l) => l.text).join("\n"),
         links: page.links ?? [],
-        image: page.image,
+        image: page.image ?? null,
         descriptions: page.descriptions ?? [],
         sourceUrl: pageUrl(project, page.title),
         authors: collectAuthors(page),

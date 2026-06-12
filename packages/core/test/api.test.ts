@@ -46,8 +46,8 @@ describe("CosenseApi", () => {
           limit: 100,
           count: 3,
           pages: [
-            { id: "a", title: "A" },
-            { id: "b", title: "B" },
+            { id: "a", title: "A", updated: 1 },
+            { id: "b", title: "B", updated: 2 },
           ],
         }),
       )
@@ -57,7 +57,7 @@ describe("CosenseApi", () => {
           skip: 2,
           limit: 100,
           count: 3,
-          pages: [{ id: "c", title: "C" }],
+          pages: [{ id: "c", title: "C", updated: 3 }],
         }),
       );
     const api = new CosenseApi();
@@ -86,11 +86,28 @@ describe("CosenseApi", () => {
   });
 
   it("getPage URL-encodes the title", async () => {
-    fetchSpy.mockResolvedValueOnce(jsonResponse({ id: "1", title: "Hello World" }));
+    fetchSpy.mockResolvedValueOnce(
+      jsonResponse({ id: "1", title: "Hello World", created: 1, updated: 2, lines: [] }),
+    );
     const api = new CosenseApi();
     await api.getPage("proj", "Hello World");
     const url = new URL(fetchSpy.mock.calls[0]![0] as URL);
     expect(url.pathname).toBe("/api/pages/proj/Hello%20World");
+  });
+
+  it("reports an actionable error when the list response shape is unexpected", async () => {
+    // e.g. an API change or an HTML error page served with status 200.
+    fetchSpy.mockResolvedValueOnce(jsonResponse({ projectName: "p" })); // no pages/count
+    const api = new CosenseApi();
+    await expect(api.listPagesPage("p", 0)).rejects.toThrow(/unexpected response shape/);
+  });
+
+  it("reports an actionable error when the page response shape is unexpected", async () => {
+    // Missing created/updated previously crashed much later with
+    // `RangeError: Invalid time value` inside normalize.
+    fetchSpy.mockResolvedValueOnce(jsonResponse({ id: "a", title: "A", lines: [] }));
+    const api = new CosenseApi();
+    await expect(api.getPage("p", "A")).rejects.toThrow(/unexpected response shape/);
   });
 
   it("throws CosenseApiError on 404 without retrying (client error)", async () => {

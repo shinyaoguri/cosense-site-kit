@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -65,6 +65,30 @@ describe("createPageCache", () => {
     const got = await cache.get("abc");
     expect(got?.title).toBe("v2");
     expect(got?.updated).toBe(1_800_000_000);
+  });
+
+  it("treats a corrupt (truncated) cache file as a miss instead of throwing", async () => {
+    const cache = createPageCache(dir);
+    await cache.set(rawPage("abc123", "Hello"));
+    // Simulate a write interrupted mid-file (pre-atomic-rename builds).
+    const path = join(dir, "pages", "ab", "abc123.json");
+    await writeFile(path, '{"id": "abc123", "title": "Hel');
+    expect(await cache.get("abc123")).toBeNull();
+  });
+
+  it("treats a wrong-shape cache file as a miss", async () => {
+    const cache = createPageCache(dir);
+    await cache.set(rawPage("abc123", "Hello"));
+    const path = join(dir, "pages", "ab", "abc123.json");
+    await writeFile(path, JSON.stringify({ id: "abc123", totally: "unrelated" }));
+    expect(await cache.get("abc123")).toBeNull();
+  });
+
+  it("leaves no temp files behind after set", async () => {
+    const cache = createPageCache(dir);
+    await cache.set(rawPage("abc123", "Hello"));
+    const entries = await readdir(join(dir, "pages", "ab"));
+    expect(entries).toEqual(["abc123.json"]);
   });
 
   it("exposes the cache directory", () => {
