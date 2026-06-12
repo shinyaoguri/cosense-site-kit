@@ -17,11 +17,23 @@ export function resolveInternalLinks(
   }));
 }
 
+// Cosense matches page links case-insensitively — `[foo]` in a body links to
+// the page titled "Foo" — so lookups must go through the same normalization
+// or links that work on Cosense silently break on the generated site.
+export function titleKey(title: string): string {
+  return title.toLowerCase();
+}
+
 export function buildTitleToSlug(
   pages: ReadonlyArray<{ title: string; slug: string }>,
 ): Map<string, string> {
   const map = new Map<string, string>();
-  for (const p of pages) map.set(p.title, p.slug);
+  // First-wins on key collisions: Cosense itself treats case-variant titles
+  // as one page, so collisions only occur for pathological inputs.
+  for (const p of pages) {
+    const key = titleKey(p.title);
+    if (!map.has(key)) map.set(key, p.slug);
+  }
   return map;
 }
 
@@ -34,7 +46,7 @@ function resolveBlock(block: CosenseBlock, m: Map<string, string>): CosenseBlock
 function resolveInline(node: InlineNode, m: Map<string, string>): InlineNode {
   switch (node.type) {
     case "pageLink": {
-      const slug = m.get(node.title);
+      const slug = m.get(titleKey(node.title));
       return { type: "pageLink", title: node.title, slug, exists: slug !== undefined };
     }
     case "strong":
