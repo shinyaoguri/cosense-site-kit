@@ -40,8 +40,9 @@ export async function runDeployInit(opts: DeployInitOptions): Promise<void> {
   console.log(pc.green("✓ wrote"), workflowPath);
 
   if (target === "cloudflare-workers") {
-    const projectName = sanitize(config.site.title);
-    const wrangler = generateWranglerJsonc({ name: projectName });
+    const wrangler = generateWranglerJsonc({
+      name: workerName(config.site.title, config.source.project),
+    });
     const wranglerPath = resolve(opts.cwd, "wrangler.jsonc");
     await writeIfAbsent(wranglerPath, wrangler, opts.force);
     console.log(pc.green("✓ wrote"), wranglerPath);
@@ -59,6 +60,14 @@ async function writeIfAbsent(path: string, content: string, force?: boolean): Pr
     }
   }
   await writeFile(path, content);
+}
+
+// Workers names must be 1–63 chars of [a-z0-9-]; a fully non-ASCII site title
+// (common for Japanese sites) sanitizes to "", which wrangler rejects at
+// deploy time. Fall back to the Cosense project name (already an ASCII slug),
+// then to a fixed default. Exported for tests.
+export function workerName(siteTitle: string, project: string): string {
+  return sanitize(siteTitle) || sanitize(project) || "cosense-site";
 }
 
 function sanitize(s: string): string {

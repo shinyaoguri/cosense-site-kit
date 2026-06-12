@@ -50,6 +50,14 @@ describe("generateGithubActionsWorkflow", () => {
     expect(yml).toContain("concurrency:");
   });
 
+  it("worker name falls back when the site title sanitizes to nothing", async () => {
+    const { workerName } = await import("../src/commands/deploy");
+    expect(workerName("My Site", "my-proj")).toBe("my-site");
+    // A fully Japanese title sanitizes to "" — wrangler rejects an empty name.
+    expect(workerName("私のサイト", "my-proj")).toBe("my-proj");
+    expect(workerName("私のサイト", "")).toBe("cosense-site");
+  });
+
   it("uses a per-run cache key so the cache is re-saved after every run", () => {
     // actions/cache never saves on an exact key hit, so a fixed key (e.g.
     // github.ref) would freeze the cache at its first-run contents and the
