@@ -145,6 +145,23 @@ describe("parseScrapboxText", () => {
     expect(b.url).toBe("https://example.com/page");
   });
 
+  it("turns a standalone Google Map notation into an embed block", () => {
+    const { blocks } = parseScrapboxText("T\n[N35.681236,E139.767125,Z18 東京駅]", "demo");
+    const b = blocks[0];
+    if (!b || b.type !== "embed") throw new Error("expected embed block");
+    expect(b.url).toContain("google.com/maps");
+    expect(b.url).toContain("@35.681236,139.767125,18z");
+  });
+
+  it("keeps a Google Map notation mixed with text as an inline link", () => {
+    const { blocks } = parseScrapboxText("T\nsee [N35.6,E139.7,Z18 Tokyo] here", "demo");
+    const para = blocks[0];
+    if (!para || para.type !== "paragraph") throw new Error("expected paragraph");
+    const link = para.children.find((c) => c.type === "link");
+    if (!link || link.type !== "link") throw new Error("expected inline link");
+    expect(link.href).toContain("google.com/maps");
+  });
+
   it("converts [*** heading] to a heading block with depth 2", () => {
     const { blocks } = parseScrapboxText("Title\n[*** Section]", "demo");
     const h = blocks[0];

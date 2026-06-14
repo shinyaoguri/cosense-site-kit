@@ -93,7 +93,11 @@ const spotify: EmbedProvider = {
   name: "spotify",
   resolve(url) {
     if (url.hostname.toLowerCase().replace(/^www\./, "") !== "open.spotify.com") return null;
-    const m = url.pathname.match(/^\/(track|album|playlist|episode|show)\/([A-Za-z0-9]+)/);
+    // Share links carry a locale segment (open.spotify.com/intl-ja/track/…),
+    // so skip an optional /intl-xx prefix before the resource type.
+    const m = url.pathname.match(
+      /^(?:\/intl-[a-z-]+)?\/(track|album|playlist|episode|show)\/([A-Za-z0-9]+)/,
+    );
     if (!m) return null;
     const [, type, id] = m;
     return {
@@ -107,7 +111,28 @@ const spotify: EmbedProvider = {
   },
 };
 
-export const DEFAULT_EMBED_PROVIDERS: EmbedProvider[] = [youtube, vimeo, spotify];
+const googlemaps: EmbedProvider = {
+  name: "googlemaps",
+  resolve(url) {
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    if (host !== "google.com" && host !== "maps.google.com") return null;
+    if (!url.pathname.startsWith("/maps")) return null;
+    // Cosense's [N35.6,E139.7,Z18 place] notation yields a /maps URL with the
+    // viewport encoded as @lat,lng,zoomz. Drive the keyless embed off those.
+    const at = url.pathname.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?),(\d+(?:\.\d+)?)z/);
+    if (!at) return null;
+    const [, lat, lng, zoom] = at;
+    return {
+      provider: "googlemaps",
+      // output=embed is the no-API-key embeddable map.
+      src: `https://maps.google.com/maps?q=${lat},${lng}&z=${zoom}&output=embed`,
+      title: "Google Maps",
+      aspectRatio: "16 / 9",
+    };
+  },
+};
+
+export const DEFAULT_EMBED_PROVIDERS: EmbedProvider[] = [youtube, vimeo, spotify, googlemaps];
 
 // Resolve a URL to a player via the providers (first match wins). Themes may
 // prepend their own providers; pass them ahead of the defaults.

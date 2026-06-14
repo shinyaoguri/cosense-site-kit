@@ -159,6 +159,14 @@ function appendLineBlock(
     return;
   }
 
+  // A `[N…,E…,Z… place]` map on its own line becomes an embed block (the
+  // theme's embed registry turns the maps URL into an iframe). Mixed with
+  // text it stays an inline link — see convertInline's googleMap case.
+  if (nodes.length === 1 && only?.type === "googleMap") {
+    out.push({ type: "embed", kind: "link", url: only.url });
+    return;
+  }
+
   const children = nodes.flatMap((n) => convertInline(n, ctx));
   if (line.indent > 0) {
     out.push({ type: "list", depth: line.indent, children });

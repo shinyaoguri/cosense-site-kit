@@ -45,6 +45,26 @@ describe("resolveEmbed", () => {
     expect(resolveEmbed("https://open.spotify.com/playlist/xyz789")?.height).toBe(352);
   });
 
+  it("resolves Spotify share links that carry a locale prefix", () => {
+    // open.spotify.com/intl-ja/track/…?si=… is what the Share button copies.
+    const track = resolveEmbed("https://open.spotify.com/intl-ja/track/abc123?si=xyz");
+    expect(track?.src).toBe("https://open.spotify.com/embed/track/abc123");
+    expect(resolveEmbed("https://open.spotify.com/intl-en/album/def456")?.src).toBe(
+      "https://open.spotify.com/embed/album/def456",
+    );
+  });
+
+  it("resolves a Google Maps place URL to a keyless embed", () => {
+    const info = resolveEmbed("https://www.google.com/maps/place/Tokyo/@35.681236,139.767125,18z");
+    expect(info?.provider).toBe("googlemaps");
+    expect(info?.src).toBe("https://maps.google.com/maps?q=35.681236,139.767125&z=18&output=embed");
+    expect(info?.aspectRatio).toBe("16 / 9");
+  });
+
+  it("does not embed a Google Maps URL without a coordinate viewport", () => {
+    expect(resolveEmbed("https://www.google.com/maps/search/cafe")).toBeNull();
+  });
+
   it("returns null for unknown providers and bad URLs", () => {
     expect(resolveEmbed("https://example.com/page")).toBeNull();
     expect(resolveEmbed("not a url")).toBeNull();
