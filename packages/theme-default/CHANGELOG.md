@@ -1,5 +1,14 @@
 # @cosense-site-kit/theme-default
 
+## 0.7.2
+
+### Patch Changes
+
+- 83a00bc: Fix `[name.icon]` icons breaking the line mid-sentence: the body-image rule's `display: block` was never overridden for icons, so they rendered on their own line instead of inline with the text like on Cosense.
+- Updated dependencies [8e90094]
+  - @cosense-site-kit/core@0.3.2
+  - @cosense-site-kit/theme-utils@0.4.2
+
 ## 0.7.1
 
 ### Patch Changes
