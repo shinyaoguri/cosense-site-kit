@@ -1,5 +1,11 @@
 # @cosense-site-kit/core
 
+## 0.3.2
+
+### Patch Changes
+
+- 8e90094: Two notation-fidelity fixes found via the kitchen-sink page: a linked image on its own line (`[url image-url]`) now keeps its link — the standalone-image path dropped it, so the rendered image wasn't clickable (the intermediate image block gained an optional `href`, and PageContent wraps the `<img>` in an `<a>`; the lightbox already ignores linked images). Helpfeel lines (`? hint`) now render with their `?` marker preserved instead of looking like ordinary inline code.
+
 ## 0.3.1
 
 ### Patch Changes
