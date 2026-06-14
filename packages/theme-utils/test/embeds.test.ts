@@ -54,6 +54,12 @@ describe("resolveEmbed", () => {
     );
   });
 
+  it("resolves a Spotify artist link (collection-height player)", () => {
+    const artist = resolveEmbed("https://open.spotify.com/intl-ja/artist/0Pn9eKty96tdakwQBYPWu7");
+    expect(artist?.src).toBe("https://open.spotify.com/embed/artist/0Pn9eKty96tdakwQBYPWu7");
+    expect(artist?.height).toBe(352);
+  });
+
   it("resolves a Google Maps place URL to a keyless embed", () => {
     const info = resolveEmbed("https://www.google.com/maps/place/Tokyo/@35.681236,139.767125,18z");
     expect(info?.provider).toBe("googlemaps");

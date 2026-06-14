@@ -96,7 +96,7 @@ const spotify: EmbedProvider = {
     // Share links carry a locale segment (open.spotify.com/intl-ja/track/…),
     // so skip an optional /intl-xx prefix before the resource type.
     const m = url.pathname.match(
-      /^(?:\/intl-[a-z-]+)?\/(track|album|playlist|episode|show)\/([A-Za-z0-9]+)/,
+      /^(?:\/intl-[a-z-]+)?\/(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]+)/,
     );
     if (!m) return null;
     const [, type, id] = m;
