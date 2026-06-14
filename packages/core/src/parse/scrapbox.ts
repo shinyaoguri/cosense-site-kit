@@ -90,7 +90,13 @@ function appendLineBlock(
     const only = nodes[0];
     if (only && only.type === "image") {
       ctx.images.push(only.src);
-      out.push({ type: "image", url: only.src });
+      out.push({
+        type: "image",
+        url: only.src,
+        // `link` mirrors `src` when the image isn't wrapped in a link; only a
+        // distinct href means `[url image-url]`, which themes render as <a><img>.
+        href: only.link && only.link !== only.src ? only.link : undefined,
+      });
       return;
     }
     if (only && only.type === "strongImage") {
@@ -185,8 +191,10 @@ function convertInline(node: SbNode, ctx: Context): InlineNode[] {
       return [{ type: "text", value: node.text }];
 
     case "helpfeel":
-      // `? hint` lines — render as inline code for now.
-      return [{ type: "code", value: node.text }];
+      // `? hint` lines — render as inline code. Keep the `?` marker: the
+      // parser strips it from node.text, but Cosense displays it, and without
+      // it the line is indistinguishable from ordinary inline code.
+      return [{ type: "code", value: `? ${node.text}` }];
 
     case "code":
       return [{ type: "code", value: node.text }];

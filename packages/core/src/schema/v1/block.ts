@@ -7,7 +7,7 @@ export type CosenseBlock =
   | { type: "quote"; children: InlineNode[] }
   | { type: "list"; depth: number; ordered?: boolean; children: InlineNode[] }
   | { type: "code"; filename?: string; lang?: string; value: string }
-  | { type: "image"; url: string; alt?: string }
+  | { type: "image"; url: string; alt?: string; href?: string }
   | { type: "embed"; kind: "gyazo" | "youtube" | "link" | "unknown"; url: string }
   | { type: "table"; filename?: string; rows: InlineNode[][][] }
   | { type: "raw"; value: string };
@@ -32,7 +32,14 @@ export const blockSchema: z.ZodType<CosenseBlock> = z.discriminatedUnion("type",
     lang: z.string().optional(),
     value: z.string(),
   }),
-  z.object({ type: z.literal("image"), url: z.string(), alt: z.string().optional() }),
+  z.object({
+    type: z.literal("image"),
+    url: z.string(),
+    alt: z.string().optional(),
+    // Set when the image is wrapped in a link (`[url image-url]`); themes wrap
+    // the <img> in an <a>. Parser-guaranteed to be an absolute http(s) URL.
+    href: z.string().optional(),
+  }),
   z.object({
     type: z.literal("embed"),
     kind: z.enum(["gyazo", "youtube", "link", "unknown"]),
