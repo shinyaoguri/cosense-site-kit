@@ -10,7 +10,7 @@ export type InlineNode =
   | { type: "link"; href: string; children: InlineNode[] }
   | { type: "pageLink"; title: string; slug?: string; exists: boolean }
   | { type: "tag"; name: string }
-  | { type: "icon"; pageTitle: string; project: string; src: string }
+  | { type: "icon"; pageTitle: string; project: string; src: string; strong?: boolean }
   | { type: "image"; src: string; href?: string; alt?: string };
 
 export const inlineNodeSchema: z.ZodType<InlineNode> = z.lazy(() =>
@@ -38,6 +38,8 @@ export const inlineNodeSchema: z.ZodType<InlineNode> = z.lazy(() =>
       pageTitle: z.string(),
       project: z.string(),
       src: z.string(),
+      // `[[name.icon]]` (strongIcon) — themes render it larger, like Cosense.
+      strong: z.boolean().optional(),
     }),
     z.object({
       type: z.literal("image"),

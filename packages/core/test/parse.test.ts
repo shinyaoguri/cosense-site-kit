@@ -197,4 +197,18 @@ describe("parseScrapboxText", () => {
     expect(icon.pageTitle).toBe("bar baz");
     expect(icon.src).toBe("https://scrapbox.io/api/pages/other/bar%20baz/icon");
   });
+
+  it("flags [[name.icon]] (strongIcon) as a strong icon, plain [name.icon] not", () => {
+    const { blocks } = parseScrapboxText("Title\n[foo.icon] [[foo.icon]]", "myproj");
+    const para = blocks[0];
+    if (!para || para.type !== "paragraph") throw new Error("expected paragraph");
+    const icons = para.children.filter((c) => c.type === "icon");
+    if (icons.length !== 2) throw new Error("expected two icons");
+    const [plain, strong] = icons;
+    if (plain?.type !== "icon" || strong?.type !== "icon") throw new Error("expected icons");
+    expect(plain.strong).toBeUndefined();
+    expect(strong.strong).toBe(true);
+    // Same target/src — only the size differs.
+    expect(strong.src).toBe(plain.src);
+  });
 });

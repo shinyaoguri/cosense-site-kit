@@ -796,6 +796,13 @@ html[data-theme="dark"] .page-content .astro-code span {
   margin: 0 0.0625em;
   border-radius: 0;
 }
+/* `[[name.icon]]` (strongIcon) — Cosense renders these enlarged. ~2.5× the
+   normal icon; middle alignment reads better at this size. */
+.page-content img.icon-strong,
+.icon-strong {
+  height: 3.25em;
+  vertical-align: middle;
+}
 
 /* ===================== Featured / Recent lists ===================== */
 
