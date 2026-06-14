@@ -699,14 +699,12 @@ html[data-theme="dark"] .page-content .astro-code span {
   height: 100%;
   border: 0;
 }
-/* Spotify ships a fixed-height player rather than a 16:9 box. */
+/* Spotify ships a fixed-height player rather than a 16:9 box. The container
+   gets an explicit pixel height inline (152 compact / 352 full); drop the
+   aspect-ratio so it isn't fought over, and let the base .embed iframe rule
+   fill that exact height — so the card matches the player with no empty gap. */
 .page-content .embed-spotify {
   aspect-ratio: auto;
-}
-.page-content .embed-spotify iframe {
-  position: static;
-  height: auto;
-  display: block;
 }
 
 .page-content table {
