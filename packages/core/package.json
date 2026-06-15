@@ -1,6 +1,6 @@
 {
   "name": "@cosense-site-kit/core",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Core: Cosense source, schema, and pipeline for cosense-site-kit",
   "license": "MIT",
   "repository": {
