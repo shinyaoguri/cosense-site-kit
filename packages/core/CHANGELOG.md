@@ -1,5 +1,12 @@
 # @cosense-site-kit/core
 
+## 0.3.4
+
+### Patch Changes
+
+- b9dda01: Render `[[name.icon]]` (strongIcon) larger than `[name.icon]`, matching Cosense. The intermediate icon node now carries a `strong` flag, and theme-default sizes strong icons at ~2.5× the normal inline icon. Previously both forms rendered at the same size.
+- dd80acb: Render full inline markup inside table cells. The upstream Scrapbox parser only resolves page links (`[Page]`) inside `table:` cells and leaves labeled external links (`[url label]`), decorations (`[* …]`, `[/ …]`), inline code, formulas, and icons as plain text. Core now re-parses each cell's raw text as a line, so cells get the same inline support as body text — matching how Cosense renders them.
+
 ## 0.3.3
 
 ### Patch Changes

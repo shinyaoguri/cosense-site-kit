@@ -1,5 +1,15 @@
 # @cosense-site-kit/theme-utils
 
+## 0.4.5
+
+### Patch Changes
+
+- daeac04: Fix the Spotify embed card height: `height: auto` on the iframe overrode its `height` attribute and collapsed it to the default ~150px, so the card no longer matched the player (empty gap, or compact content in an oversized box). The fixed-height container now gets the player height (152 compact / 352 full) inline and the iframe fills it exactly. Also fixes a stray JSX comment that leaked into the embed `<div>` markup.
+- b9dda01: Render `[[name.icon]]` (strongIcon) larger than `[name.icon]`, matching Cosense. The intermediate icon node now carries a `strong` flag, and theme-default sizes strong icons at ~2.5× the normal inline icon. Previously both forms rendered at the same size.
+- Updated dependencies [b9dda01]
+- Updated dependencies [dd80acb]
+  - @cosense-site-kit/core@0.3.4
+
 ## 0.4.4
 
 ### Patch Changes
