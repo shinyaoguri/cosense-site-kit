@@ -55,6 +55,35 @@ describe("parseScrapboxText", () => {
     expect(pageLinks).toContain("Other Page");
   });
 
+  it("parses labeled external links and decorations inside table cells", () => {
+    // The upstream parser leaves these as plain text in cells; core re-parses
+    // each cell so they get the same inline support as body text.
+    const text = [
+      "Title",
+      "table:data",
+      " 外部リンク\t[https://astro.build Astro]",
+      " 装飾\t[*/ 太字斜体]",
+      " コード\t`npm i`",
+    ].join("\n");
+    const { blocks } = parseScrapboxText(text, "demo");
+    const table = blocks.find((b) => b.type === "table");
+    if (!table || table.type !== "table") throw new Error("expected table");
+
+    const linkCell = table.rows[0]?.[1];
+    const link = linkCell?.find((n) => n.type === "link");
+    if (!link || link.type !== "link") throw new Error("expected a link in the cell");
+    expect(link.href).toBe("https://astro.build");
+    expect(link.children[0]).toEqual({ type: "text", value: "Astro" });
+
+    const decoCell = table.rows[1]?.[1];
+    // [*/ …] → strong wrapping emphasis (or emphasis wrapping strong).
+    expect(JSON.stringify(decoCell)).toContain("strong");
+    expect(JSON.stringify(decoCell)).toContain("emphasis");
+
+    const codeCell = table.rows[2]?.[1];
+    expect(codeCell?.[0]).toEqual({ type: "code", value: "npm i" });
+  });
+
   it("treats indented lines as list items", () => {
     const { blocks } = parseScrapboxText("Title\n one\n two", "demo");
     expect(blocks.map((b) => b.type)).toEqual(["list", "list"]);
