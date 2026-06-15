@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # npm dependencies across the whole workspace (single root lockfile).
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Roll routine minor/patch bumps into one PR to cut noise. Majors still
+      # get their own PR so breaking changes get individual review.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Keep the GitHub Actions used by the workflows current.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"
