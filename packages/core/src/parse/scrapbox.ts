@@ -46,9 +46,7 @@ export function parseScrapboxText(text: string, project: string): ParsedPage {
         blocks.push({
           type: "table",
           filename: block.fileName || undefined,
-          rows: block.cells.map((row) =>
-            row.map((cell) => cell.flatMap((n) => convertInline(n, ctx))),
-          ),
+          rows: block.cells.map((row) => row.map((cell) => convertCell(cell, ctx))),
         });
         break;
       case "line":
@@ -192,6 +190,23 @@ function detectHeading(nodes: SbNode[]): { depth: 1 | 2 | 3; children: SbNode[] 
   return { depth, children: only.nodes };
 }
 
+// Convert one table cell's inline content. The upstream parser only resolves
+// page links inside table cells — labeled external links, decorations, code,
+// formulas, icons, etc. all come back as plain text. Reconstruct the cell's
+// raw text and re-parse it as a standalone line so cells get the same inline
+// support as body text (Cosense renders cell content richly too).
+function convertCell(cell: SbNode[], ctx: Context): InlineNode[] {
+  const raw = cell.map((n) => n.raw).join("");
+  if (raw) {
+    const reparsed = scrapboxParse(raw, { hasTitle: false });
+    const line = reparsed.find((b) => b.type === "line");
+    if (line?.type === "line") {
+      return line.nodes.flatMap((n) => convertInline(n, ctx));
+    }
+  }
+  return cell.flatMap((n) => convertInline(n, ctx));
+}
+
 function convertInline(node: SbNode, ctx: Context): InlineNode[] {
   switch (node.type) {
     case "plain":
@@ -241,8 +256,10 @@ function convertInline(node: SbNode, ctx: Context): InlineNode[] {
     }
 
     case "icon":
+      return [resolveIcon(node.path, ctx.project, false)];
+
     case "strongIcon":
-      return [resolveIcon(node.path, ctx.project)];
+      return [resolveIcon(node.path, ctx.project, true)];
 
     case "image":
       ctx.images.push(node.src);
@@ -349,7 +366,7 @@ function inferLang(filename: string | undefined): string | undefined {
 
 // `[foo.icon]` (relative) → icon of `foo` in the current project.
 // `[/other/foo.icon]` (root) → icon of `foo` in project `other`.
-function resolveIcon(path: string, defaultProject: string): InlineNode {
+function resolveIcon(path: string, defaultProject: string, strong: boolean): InlineNode {
   let project = defaultProject;
   let pageTitle = path;
   if (path.startsWith("/")) {
@@ -363,5 +380,7 @@ function resolveIcon(path: string, defaultProject: string): InlineNode {
     }
   }
   const src = `https://scrapbox.io/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(pageTitle)}/icon`;
-  return { type: "icon", pageTitle, project, src };
+  return strong
+    ? { type: "icon", pageTitle, project, src, strong: true }
+    : { type: "icon", pageTitle, project, src };
 }

@@ -188,16 +188,21 @@ for (const block of visible) {
       case "embed": {
         const embed = resolveEmbed(block.url, embedProviders);
         if (embed) {
+          // Fixed-height players (Spotify) size the container in pixels and let
+          // the iframe fill it; ratio players (YouTube, …) use a box.
           return (
             <div
               class={`embed embed-${embed.provider}`}
-              style={embed.height ? undefined : `--embed-ratio: ${embed.aspectRatio ?? "16 / 9"}`}
+              style={
+                embed.height
+                  ? `height: ${embed.height}px`
+                  : `--embed-ratio: ${embed.aspectRatio ?? "16 / 9"}`
+              }
             >
               <iframe
                 src={embed.src}
                 title={embed.title}
                 loading="lazy"
-                height={embed.height}
                 referrerpolicy="strict-origin-when-cross-origin"
                 allow={embed.allow}
                 allowfullscreen

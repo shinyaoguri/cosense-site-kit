@@ -699,14 +699,12 @@ html[data-theme="dark"] .page-content .astro-code span {
   height: 100%;
   border: 0;
 }
-/* Spotify ships a fixed-height player rather than a 16:9 box. */
+/* Spotify ships a fixed-height player rather than a 16:9 box. The container
+   gets an explicit pixel height inline (152 compact / 352 full); drop the
+   aspect-ratio so it isn't fought over, and let the base .embed iframe rule
+   fill that exact height — so the card matches the player with no empty gap. */
 .page-content .embed-spotify {
   aspect-ratio: auto;
-}
-.page-content .embed-spotify iframe {
-  position: static;
-  height: auto;
-  display: block;
 }
 
 .page-content table {
@@ -797,6 +795,13 @@ html[data-theme="dark"] .page-content .astro-code span {
   vertical-align: -0.3em;
   margin: 0 0.0625em;
   border-radius: 0;
+}
+/* `[[name.icon]]` (strongIcon) — Cosense renders these enlarged. ~2.5× the
+   normal icon; middle alignment reads better at this size. */
+.page-content img.icon-strong,
+.icon-strong {
+  height: 3.25em;
+  vertical-align: middle;
 }
 
 /* ===================== Featured / Recent lists ===================== */
