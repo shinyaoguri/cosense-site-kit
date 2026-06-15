@@ -1,5 +1,11 @@
 # @cosense-site-kit/core
 
+## 0.3.5
+
+### Patch Changes
+
+- 46fa60b: Remove regular-expression denial-of-service (ReDoS) hot spots flagged by code scanning: the tag-only-line check in `normalize` (an exponential `/^(#\S+\s*)+$/`), the slash trim in `normalizeBase` (a quadratic `/^\/+|\/+$/`), and the markdown-link scan in `renderInlineLinks` (a quadratic `/\[([^\]]+)\]\(([^)\s]+)\)/g`, which runs on remote Cosense content). All three are rewritten to linear scans with unchanged behavior.
+
 ## 0.3.4
 
 ### Patch Changes
