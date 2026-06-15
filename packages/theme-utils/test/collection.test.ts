@@ -135,4 +135,25 @@ describe("renderInlineLinks", () => {
   it("does not emit anchors for unsafe href schemes", () => {
     expect(renderInlineLinks("a [x](javascript:evil) b")).toBe("a x b");
   });
+
+  it("leaves malformed/partial link syntax as escaped text", () => {
+    expect(renderInlineLinks("[no close](")).toBe("[no close](");
+    expect(renderInlineLinks("[label]()")).toBe("[label]()");
+    expect(renderInlineLinks("[](https://e.com)")).toBe("[](https://e.com)");
+    expect(renderInlineLinks("[a](ht tp)")).toBe("[a](ht tp)");
+  });
+
+  it("renders two links in one string", () => {
+    expect(renderInlineLinks("[a](https://a.com) and [b](https://b.com)")).toBe(
+      '<a href="https://a.com" target="_blank" rel="noopener noreferrer">a</a> and ' +
+        '<a href="https://b.com" target="_blank" rel="noopener noreferrer">b</a>',
+    );
+  });
+
+  it("stays fast on adversarial bracket-heavy input (no ReDoS)", () => {
+    const evil = `${"[".repeat(50000)}](`;
+    const start = performance.now();
+    renderInlineLinks(evil);
+    expect(performance.now() - start).toBeLessThan(500);
+  });
 });
