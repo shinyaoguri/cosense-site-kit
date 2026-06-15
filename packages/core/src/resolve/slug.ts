@@ -75,7 +75,13 @@ export function assignSlugs(
 // "/" or "" → "/"
 export function normalizeBase(base: string): string {
   if (!base || base === "/") return "/";
-  const stripped = base.replace(/^\/+|\/+$/g, "");
+  // Trim leading/trailing "/" by index — /^\/+|\/+$/ scans O(n²) on a string
+  // of many slashes (ReDoS), which CodeQL flags.
+  let start = 0;
+  let end = base.length;
+  while (start < end && base.charCodeAt(start) === 47 /* "/" */) start++;
+  while (end > start && base.charCodeAt(end - 1) === 47) end--;
+  const stripped = base.slice(start, end);
   return stripped ? `/${stripped}/` : "/";
 }
 

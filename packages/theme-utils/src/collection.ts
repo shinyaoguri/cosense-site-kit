@@ -212,21 +212,43 @@ export function renderInlineLinks(text: string): string {
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+  // Scan for `[label](href)` with indexOf rather than a global regex: the old
+  // /\[([^\]]+)\]\(([^)\s]+)\)/g backtracks O(n²) on adversarial content (this
+  // runs on remote Cosense text), which CodeQL flags as ReDoS.
   let out = "";
   let last = 0;
-  const re = /\[([^\]]+)\]\(([^)\s]+)\)/g;
-  let m = re.exec(text);
-  while (m !== null) {
-    const label = m[1] ?? "";
-    const href = m[2] ?? "";
-    out += esc(text.slice(last, m.index));
+  let i = 0;
+  while (i < text.length) {
+    const open = text.indexOf("[", i);
+    if (open === -1) break;
+    const close = text.indexOf("]", open + 1);
+    // Need "](" with a non-empty label.
+    if (close === -1 || close === open + 1 || text[close + 1] !== "(") {
+      i = open + 1;
+      continue;
+    }
+    // href runs to the closing ")"; it may not contain whitespace or ")".
+    const hrefStart = close + 2;
+    let k = hrefStart;
+    while (k < text.length) {
+      const ch = text[k] ?? "";
+      if (ch === ")" || /\s/.test(ch)) break;
+      k++;
+    }
+    if (text[k] !== ")" || k === hrefStart) {
+      i = open + 1;
+      continue;
+    }
+    const label = text.slice(open + 1, close);
+    const href = text.slice(hrefStart, k);
+    out += esc(text.slice(last, open));
     if (SAFE_HREF.test(href)) {
       out += `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
     } else {
       out += esc(label);
     }
-    last = m.index + m[0].length;
-    m = re.exec(text);
+    last = k + 1;
+    i = k + 1;
   }
   out += esc(text.slice(last));
   return out;

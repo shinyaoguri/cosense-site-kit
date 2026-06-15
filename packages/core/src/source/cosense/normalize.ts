@@ -91,8 +91,10 @@ function cleanDescription(descriptions: string[] | undefined): string | undefine
   for (const raw of descriptions ?? []) {
     const trimmed = raw.trim();
     if (trimmed.length === 0) continue;
-    // Tag-only line (e.g. "#publish #post") — metadata, not prose.
-    if (/^(#\S+\s*)+$/.test(trimmed)) continue;
+    // Tag-only line (e.g. "#publish #post") — metadata, not prose. Check each
+    // whitespace-separated token instead of /^(#\S+\s*)+$/, whose nested
+    // quantifiers backtrack exponentially on adversarial input (ReDoS).
+    if (trimmed.split(/\s+/).every((tok) => /^#\S+$/.test(tok))) continue;
     // A whole-line code span — Cosense backtick-wraps code-block body lines.
     if (/^`[^`]+`$/.test(trimmed)) continue;
     return trimmed;
