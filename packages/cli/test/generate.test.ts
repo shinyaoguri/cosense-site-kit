@@ -50,6 +50,23 @@ describe("generateGithubActionsWorkflow", () => {
     expect(yml).toContain("concurrency:");
   });
 
+  it("wires configure-pages base_path/origin into the Pages build (auto base)", () => {
+    for (const wd of [undefined, "site"]) {
+      const yml = generateGithubActionsWorkflow({ target: "github-pages", workingDirectory: wd });
+      expect(yml).toContain("id: pages");
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+      expect(yml).toContain("PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}");
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+      expect(yml).toContain("PAGES_ORIGIN: ${{ steps.pages.outputs.origin }}");
+    }
+  });
+
+  it("does not inject Pages env into the Cloudflare workflow", () => {
+    const yml = generateGithubActionsWorkflow({ target: "cloudflare-workers" });
+    expect(yml).not.toContain("PAGES_BASE_PATH");
+    expect(yml).not.toContain("steps.pages.outputs");
+  });
+
   it("worker name falls back when the site title sanitizes to nothing", async () => {
     const { workerName } = await import("../src/commands/deploy");
     expect(workerName("My Site", "my-proj")).toBe("my-site");
