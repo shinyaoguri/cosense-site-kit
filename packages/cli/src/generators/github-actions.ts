@@ -59,16 +59,29 @@ function buildStep(a: RenderArgs): string {
 // that race entirely. astro is a normal published dependency, so its bin link
 // is created reliably — `npx astro build` resolves the version-correct entry
 // (the internal path moved between Astro 5 and 6) and runs in working-directory.
-function renderMonorepoRunSteps(): string {
+function renderMonorepoRunSteps(pagesEnv = false): string {
   return `      - run: node \${{ github.workspace }}/packages/cli/dist/index.js fetch
-      - run: npx astro build`;
+      - run: npx astro build${pagesBuildEnv(pagesEnv)}`;
 }
 
 // Single-package consumers install @cosense-site-kit/cli from npm where the
 // dist/ is already present, so npm creates a working bin link. npx is fine.
-function renderRunSteps(): string {
+function renderRunSteps(pagesEnv = false): string {
   return `      - run: npx cosense-site fetch
-      - run: npx astro build`;
+      - run: npx astro build${pagesBuildEnv(pagesEnv)}`;
+}
+
+// On GitHub Pages, feed configure-pages' detected base_path/origin to the build
+// as PAGES_BASE_PATH / PAGES_ORIGIN. cosense.config.ts reads them into
+// site.base / site.baseUrl, so the site works at any Pages URL (user page at
+// "/" or project page at "/REPO") without the user editing the config — the
+// classic cause of missing CSS on a renamed fork.
+function pagesBuildEnv(pagesEnv: boolean): string {
+  if (!pagesEnv) return "";
+  return `
+        env:
+          PAGES_BASE_PATH: \${{ steps.pages.outputs.base_path }}
+          PAGES_ORIGIN: \${{ steps.pages.outputs.origin }}`;
 }
 
 function renderCloudflareWorkflow(a: RenderArgs): string {
@@ -181,12 +194,13 @@ jobs:
             cosense-cache-
 
       - name: Configure Pages
+        id: pages
         uses: actions/configure-pages@v6
 
       - run: npm install
         working-directory: \${{ github.workspace }}
 ${buildStep(a)}
-${a.buildWorkspaces ? renderMonorepoRunSteps() : renderRunSteps()}
+${a.buildWorkspaces ? renderMonorepoRunSteps(true) : renderRunSteps(true)}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5

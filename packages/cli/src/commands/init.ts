@@ -14,7 +14,13 @@ export default defineCosenseSite({
   site: {
     title: "My Cosense Site",
     description: "Built with cosense-site-kit",
-    baseUrl: "https://example.com",
+    // On GitHub Pages, the deploy workflow injects the right origin and subpath
+    // (PAGES_ORIGIN / PAGES_BASE_PATH from actions/configure-pages), so the site
+    // works at any URL — user page ("/") or project page ("/REPO") — with no
+    // edits. Change the fallbacks for local builds or other hosts (Cloudflare
+    // serves at the root, so "/" is correct there).
+    baseUrl: process.env.PAGES_ORIGIN || "https://example.com",
+    base: process.env.PAGES_BASE_PATH || "/",
     lang: "ja",
   },
 
@@ -55,7 +61,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   console.log(pc.green("✓ created"), target);
   console.log();
   console.log("Next:");
-  console.log(`  1. Edit ${pc.cyan("cosense.config.ts")} (set baseUrl, project, etc.)`);
+  console.log(`  1. Edit ${pc.cyan("cosense.config.ts")} (set source.project, title)`);
   console.log(`  2. Run ${pc.cyan("cosense-site fetch")} to pull pages`);
   console.log(`  3. Run ${pc.cyan("npm run dev")} (Astro)`);
 }
