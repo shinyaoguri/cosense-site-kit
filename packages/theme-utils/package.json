@@ -41,7 +41,7 @@
     "yaml": "^2.6.1"
   },
   "devDependencies": {
-    "astro": "^6.4.7",
+    "astro": "^6.4.8",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   },
