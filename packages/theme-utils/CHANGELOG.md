@@ -1,5 +1,12 @@
 # @cosense-site-kit/theme-utils
 
+## 0.4.7
+
+### Patch Changes
+
+- Updated dependencies [25b6dad]
+  - @cosense-site-kit/core@0.4.0
+
 ## 0.4.6
 
 ### Patch Changes
