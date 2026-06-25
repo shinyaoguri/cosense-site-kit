@@ -50,6 +50,16 @@ export const cosensePageResponseSchema = z
   })
   .loose();
 
+// Project metadata (GET /api/projects/<project>). We only consume `image`,
+// the project's configured icon — the natural Scrapbox-native default favicon.
+export const cosenseProjectResponseSchema = z
+  .object({
+    name: z.string(),
+    image: z.string().nullable().optional(),
+  })
+  .loose();
+
 export type CosenseListItem = z.infer<typeof cosenseListItemSchema>;
 export type CosenseListResponse = z.infer<typeof cosenseListResponseSchema>;
 export type CosensePageResponse = z.infer<typeof cosensePageResponseSchema>;
+export type CosenseProjectResponse = z.infer<typeof cosenseProjectResponseSchema>;

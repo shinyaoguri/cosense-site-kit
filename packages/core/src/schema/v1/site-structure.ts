@@ -32,6 +32,13 @@ export const navItemSchema = z.union([
 export const siteStructureSchema = z
   .object({
     home: z.object({ page: z.string().min(1) }).optional(),
+    // Favicon source, authored in `.site` so it's set from the browser with no
+    // repo edit. Either an absolute http(s) URL (used directly) or a Cosense
+    // page title (that page's first image becomes the favicon). Any other shape
+    // — including a `javascript:`/`data:` string — is treated as a page title,
+    // so it can only ever resolve to a Cosense-hosted image, never reach `href`
+    // as a raw URL. Resolution lives in pickFavicon (pipeline.ts).
+    favicon: z.string().min(1).optional(),
     nav: z.array(navItemSchema).default([]),
     posts: z
       .object({

@@ -35,4 +35,15 @@ export interface SiteSource {
     ref: SourcePageRef,
     opts?: { signal?: AbortSignal; onWarn?: (message: string) => void },
   ): Promise<SourcePageRaw | null>;
+  /**
+   * The source's own icon URL (e.g. a Cosense project's configured image),
+   * used as the default favicon when `.site` declares none. Optional — a
+   * source without a project-level icon omits it. Returns null when the source
+   * has no icon or the lookup fails; never throws (a missing icon must not fail
+   * the build).
+   */
+  siteIcon?(opts?: {
+    signal?: AbortSignal;
+    onWarn?: (message: string) => void;
+  }): Promise<string | null>;
 }

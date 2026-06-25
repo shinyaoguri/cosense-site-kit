@@ -37,6 +37,21 @@ export function createCosenseSource(opts: CosenseSourceOptions): SiteSource & {
       return refs;
     },
 
+    async siteIcon({ signal, onWarn } = {}) {
+      try {
+        const info = await api.getProject(project, signal);
+        return info.image ?? null;
+      } catch (err) {
+        // A cancelled build must abort, never degrade.
+        if (signal?.aborted) throw err;
+        // The project icon is a best-effort default — a 404 (private project,
+        // no API access) or a transient failure must not break the build.
+        const msg = err instanceof Error ? err.message : String(err);
+        onWarn?.(`could not fetch the Cosense project icon (${msg}); skipping it as a favicon`);
+        return null;
+      }
+    },
+
     async fetch(ref, { signal, onWarn } = {}) {
       if (!force) {
         const cached = await cache.get(ref.id);

@@ -3,8 +3,10 @@ import { withRetry } from "../../util/retry";
 import {
   type CosenseListResponse,
   type CosensePageResponse,
+  type CosenseProjectResponse,
   cosenseListResponseSchema,
   cosensePageResponseSchema,
+  cosenseProjectResponseSchema,
 } from "./api-types";
 
 const DEFAULT_BASE = "https://scrapbox.io/api";
@@ -63,6 +65,12 @@ export class CosenseApi {
     );
     const json = await this.getJson<unknown>(url, signal);
     return validateShape(cosensePageResponseSchema, json, url);
+  }
+
+  async getProject(project: string, signal?: AbortSignal): Promise<CosenseProjectResponse> {
+    const url = new URL(`${this.baseUrl}/projects/${encodeURIComponent(project)}`);
+    const json = await this.getJson<unknown>(url, signal);
+    return validateShape(cosenseProjectResponseSchema, json, url);
   }
 
   private async getJson<T>(url: URL, externalSignal?: AbortSignal): Promise<T> {
