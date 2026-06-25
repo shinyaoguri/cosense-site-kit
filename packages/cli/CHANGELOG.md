@@ -1,5 +1,12 @@
 # @cosense-site-kit/cli
 
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies [25b6dad]
+  - @cosense-site-kit/core@0.4.0
+
 ## 0.1.8
 
 ### Patch Changes
