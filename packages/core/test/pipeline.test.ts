@@ -23,7 +23,7 @@ function rawPage(
   };
 }
 
-function stubSource(raws: SourcePageRaw[]): SiteSource {
+function stubSource(raws: SourcePageRaw[], opts: { siteIcon?: string | null } = {}): SiteSource {
   return {
     name: "stub",
     async list() {
@@ -39,6 +39,13 @@ function stubSource(raws: SourcePageRaw[]): SiteSource {
       if (!r) throw new Error(`missing ${ref.id}`);
       return r;
     },
+    ...("siteIcon" in opts
+      ? {
+          async siteIcon() {
+            return opts.siteIcon ?? null;
+          },
+        }
+      : {}),
   };
 }
 
@@ -221,6 +228,105 @@ describe("buildIntermediate", () => {
     // not depend on it.
     const data = await buildIntermediate({ config, source: stubSource(raws) });
     expect(data.site.icon).toBe("https://i.example/a.png");
+  });
+
+  it("uses an explicit `.site` favicon URL over the auto-pick", async () => {
+    const siteYaml = [".site", "code:site.yaml", " favicon: https://cdn.example/logo.png"].join(
+      "\n",
+    );
+    const raws = [
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      {
+        ...rawPage({ id: "a", title: "Alpha", text: "Alpha\n#publish" }),
+        image: "https://i/a.png",
+      },
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    expect(data.site.icon).toBe("https://cdn.example/logo.png");
+  });
+
+  it("resolves a `.site` favicon page title to that page's image", async () => {
+    const siteYaml = [".site", "code:site.yaml", " favicon: Logo"].join("\n");
+    const raws = [
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      {
+        ...rawPage({ id: "a", title: "Alpha", text: "Alpha\n#publish" }),
+        image: "https://i/a.png",
+      },
+      {
+        ...rawPage({ id: "l", title: "Logo", text: "Logo\n#publish" }),
+        image: "https://i/logo.png",
+      },
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    // Logo wins despite Alpha sorting first in the auto-pick fallback.
+    expect(data.site.icon).toBe("https://i/logo.png");
+  });
+
+  it("never lets a non-URL favicon string reach the icon as a raw href", async () => {
+    // A `javascript:` value is read as a page title, not a URL — no such page
+    // exists, so it falls through to the auto-pick and never appears verbatim.
+    const siteYaml = [".site", "code:site.yaml", " favicon: 'javascript:alert(1)'"].join("\n");
+    const raws = [
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      {
+        ...rawPage({ id: "a", title: "Alpha", text: "Alpha\n#publish" }),
+        image: "https://i/a.png",
+      },
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    expect(data.site.icon).toBe("https://i/a.png");
+    expect(data.warnings.join(" ")).toMatch(/favicon/);
+  });
+
+  it("uses the source's project icon as the default favicon", async () => {
+    const raws = [
+      {
+        ...rawPage({ id: "a", title: "Alpha", text: "Alpha\n#publish" }),
+        image: "https://i/a.png",
+      },
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({
+      config,
+      source: stubSource(raws, { siteIcon: "https://scrapbox.io/api/projects/p/icon" }),
+    });
+    // Project icon wins over the alphabetical page-image fallback.
+    expect(data.site.icon).toBe("https://scrapbox.io/api/projects/p/icon");
+  });
+
+  it("prefers an explicit `.site` favicon over the source project icon", async () => {
+    const siteYaml = [".site", "code:site.yaml", " favicon: https://cdn.example/logo.png"].join(
+      "\n",
+    );
+    const raws = [
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      rawPage({ id: "a", title: "Alpha", text: "Alpha\n#publish" }),
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({
+      config,
+      source: stubSource(raws, { siteIcon: "https://scrapbox.io/icon.png" }),
+    });
+    expect(data.site.icon).toBe("https://cdn.example/logo.png");
   });
 
   it("runs the full pipeline with an injected source", async () => {

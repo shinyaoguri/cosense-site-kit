@@ -121,10 +121,22 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   const { pages: withDates, warnings: dateWarnings } = assignDates(withTemplates);
   for (const w of dateWarnings) opts.onProgress?.({ kind: "warn", message: w });
 
+  // The source's own icon (e.g. the Cosense project image) is the default
+  // favicon when `.site` declares none. Best-effort: skipped if unavailable.
+  const sourceIcon = (await source.siteIcon?.({ signal, onWarn })) ?? undefined;
+
   const data: IntermediateData = {
     schemaVersion: "1",
     generatedAt: new Date().toISOString(),
-    site: { ...config.site, icon: pickFavicon(withDates, structure.home?.page) },
+    site: {
+      ...config.site,
+      icon: pickFavicon(withDates, {
+        favicon: structure.favicon,
+        sourceIcon,
+        homePage: structure.home?.page,
+        onWarn,
+      }),
+    },
     pages: withDates,
     excluded,
     linkGraph,
@@ -135,15 +147,41 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   return intermediateDataSchema.parse(data);
 }
 
-// Favicon: prefer the configured home page's image, otherwise fall back to a
-// page that has one. Candidates are restricted to *published* pages — using
-// the raw source list would leak a draft/private page's image onto the public
-// site — and the fallback scans in title order, which is stable across builds
-// (the source list is updated-desc, so it reshuffles on every edit).
+// Favicon precedence:
+//   1. `.site` `favicon:` — an explicit author choice, set from the browser.
+//      An http(s) URL is used directly; anything else is read as a Cosense page
+//      title and resolves to that page's image. A non-URL string therefore can
+//      only ever produce a Cosense-hosted image, so a `javascript:`/`data:`
+//      value can't slip through to the `href`.
+//   2. the source's own icon (the Cosense project image) — the Scrapbox-native
+//      default, predictable because it's a deliberate project setting.
+//   3. the configured home page's image.
+//   4. the first published page (title order) that has an image.
+// Candidates for 3 and 4 are restricted to *published* pages — using the raw
+// source list would leak a draft/private page's image onto the public site —
+// and the fallback scans in title order, which is stable across builds (the
+// source list is updated-desc, so it reshuffles on every edit).
 function pickFavicon(
   pages: ReadonlyArray<{ title: string; image?: string | null }>,
-  homePage: string | undefined,
+  opts: {
+    favicon?: string | undefined;
+    sourceIcon?: string | undefined;
+    homePage?: string | undefined;
+    onWarn?: (message: string) => void;
+  },
 ): string | undefined {
+  const { favicon, sourceIcon, homePage, onWarn } = opts;
+  if (favicon) {
+    if (/^https?:\/\//i.test(favicon)) return favicon;
+    const named = pages.find((p) => p.title === favicon);
+    if (named?.image) return named.image;
+    // Explicit but unresolvable: warn and fall through to the auto-pick so the
+    // site still gets a sensible icon rather than silently none.
+    onWarn?.(
+      `favicon: "${favicon}" is not an http(s) URL and no published page with that title has an image; falling back to the auto-picked favicon`,
+    );
+  }
+  if (sourceIcon) return sourceIcon;
   if (homePage) {
     const home = pages.find((p) => p.title === homePage);
     if (home?.image) return home.image;

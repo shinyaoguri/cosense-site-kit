@@ -198,6 +198,7 @@ import site from "virtual:cosense-site-kit/site";
 ```ts
 interface SiteStructure {
   home?: { page: string };
+  favicon?: string;               // Cosense title (→ その画像) または http(s) URL
   nav: NavItem[];                 // [{ label, page }] or [{ label, href }]
   posts?: { tag: string; limit?: number; route?: string };
   featured: string[];             // Cosense title 配列
