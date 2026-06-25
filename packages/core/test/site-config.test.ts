@@ -68,6 +68,73 @@ redirects:
     expect(result?.structure.posts).toBeUndefined();
   });
 
+  it("treats an empty list field as its default without discarding the rest", () => {
+    // The reported bug: `featured:` left blank parses to `featured: null`, which
+    // failed array validation and discarded the whole block (home, nav, ...).
+    const yaml = `
+home:
+  page: Welcome
+nav:
+  - { label: "About", page: "About" }
+featured:
+`;
+    const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+    expect(result).not.toBeNull();
+    if (!result) return;
+    expect(result.structure.home?.page).toBe("Welcome");
+    expect(result.structure.nav).toHaveLength(1);
+    expect(result.structure.featured).toEqual([]);
+  });
+
+  it("treats every blank field as its default / absent", () => {
+    const yaml = `
+home:
+nav:
+posts:
+featured:
+redirects:
+templates:
+favicon:
+theme:
+`;
+    const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+    expect(result).not.toBeNull();
+    if (!result) return;
+    expect(result.structure.home).toBeUndefined();
+    expect(result.structure.posts).toBeUndefined();
+    expect(result.structure.favicon).toBeUndefined();
+    expect(result.structure.nav).toEqual([]);
+    expect(result.structure.featured).toEqual([]);
+    expect(result.structure.redirects).toEqual({});
+    expect(result.structure.templates).toEqual({});
+    expect((result.structure as Record<string, unknown>).theme).toBeUndefined();
+  });
+
+  it("treats a section with only blank sub-fields as absent", () => {
+    // `home:` present but its required `page:` left blank — drop the whole
+    // section rather than error on the missing required key.
+    const yaml = `
+home:
+  page:
+nav:
+  - { label: "About", page: "About" }
+theme:
+  skin:
+`;
+    const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+    expect(result).not.toBeNull();
+    if (!result) return;
+    expect(result.structure.home).toBeUndefined();
+    expect((result.structure as Record<string, unknown>).theme).toBeUndefined();
+    expect(result.structure.nav).toHaveLength(1);
+  });
+
+  it("drops blank entries inside a list", () => {
+    const yaml = "featured:\n  - Top\n  -\n  - Second\n";
+    const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+    expect(result?.structure.featured).toEqual(["Top", "Second"]);
+  });
+
   it("accepts site.yml as an alternative extension", () => {
     const result = parseSitePage(pageWith([codeBlock("site.yml", "featured: [a, b]")]));
     expect(result?.structure.featured).toEqual(["a", "b"]);

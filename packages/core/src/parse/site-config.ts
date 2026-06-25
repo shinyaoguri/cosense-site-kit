@@ -56,7 +56,15 @@ export function parseSitePage(page: CosenseSitePage): SiteConfigResult | null {
     return { structure: siteStructureSchema.parse({}), warnings };
   }
 
-  const result = siteStructureSchema.safeParse(parsed);
+  // YAML renders an empty value as null (`featured:` with nothing after it
+  // parses to `featured: null`). Zod's `.default()` only fills in for
+  // `undefined`, so a single blank field would fail validation — and because
+  // the whole block is validated at once, that one blank field used to discard
+  // every *other* setting too. Normalize empties away first so each blank field
+  // falls back to its schema default (or stays absent for optional fields).
+  const cleaned = dropEmptyValues(parsed);
+
+  const result = siteStructureSchema.safeParse(cleaned);
   if (!result.success) {
     throw new SiteConfigParseError(
       `site.yaml does not match the expected schema on page "${page.title}":\n${result.error.message}`,
@@ -71,6 +79,43 @@ export function parseSitePage(page: CosenseSitePage): SiteConfigResult | null {
     warnings.push(...lintIgnoredKeys(parsed as Record<string, unknown>, page.title));
   }
   return { structure: result.data, warnings };
+}
+
+// Recursively strip "empty" values an author leaves in YAML so they fall back
+// to schema defaults instead of failing validation:
+//   - object keys whose value is null/undefined are dropped (`featured:` →
+//     default `[]`; `home:` → optional, becomes absent);
+//   - a nested object that becomes empty after cleaning is itself dropped, so
+//     a section with only blank fields (`home:\n  page:`) is treated as absent
+//     rather than an invalid object missing a required key;
+//   - null/undefined entries inside arrays are removed (`nav:\n  -` → `[]`).
+// Empty arrays and empty strings are left intact: `[]` already equals the
+// defaults, and an empty string is a real value the schema can reject on its
+// own merits.
+function dropEmptyValues(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.filter((v) => v !== null && v !== undefined).map(dropEmptyValues);
+  }
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v === null || v === undefined) continue;
+      const cleaned = dropEmptyValues(v);
+      if (isEmptyObject(cleaned)) continue;
+      out[key] = cleaned;
+    }
+    return out;
+  }
+  return value;
+}
+
+function isEmptyObject(value: unknown): boolean {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value).length === 0
+  );
 }
 
 // --- site.yaml lint: surface keys the schema silently ignores ----------------
