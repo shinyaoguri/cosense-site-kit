@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildIntermediate, defineCosenseSite } from "../src";
+import { dedupeRefs } from "../src/pipeline";
 import { applyPublishRules } from "../src/publish/filter";
 import { resolveLinkData } from "../src/resolve/backlinks";
 import { resolveInternalLinks } from "../src/resolve/links";
@@ -217,7 +218,51 @@ describe("assignSlugs collision handling", () => {
   });
 });
 
+describe("dedupeRefs", () => {
+  const ref = (id: string, updated: number) => ({
+    id,
+    title: id.toUpperCase(),
+    updated,
+    sourceUrl: `https://scrapbox.io/p/${id}`,
+  });
+
+  it("collapses duplicate ids, keeping the newest updated", () => {
+    const out = dedupeRefs([ref("a", 100), ref("b", 50), ref("a", 200)]);
+    expect(out.map((r) => r.id)).toEqual(["a", "b"]);
+    expect(out.find((r) => r.id === "a")?.updated).toBe(200);
+  });
+
+  it("preserves first-seen order and leaves unique lists unchanged", () => {
+    const input = [ref("x", 3), ref("y", 2), ref("z", 1)];
+    expect(dedupeRefs(input).map((r) => r.id)).toEqual(["x", "y", "z"]);
+  });
+});
+
 describe("buildIntermediate", () => {
+  it("keeps a stable slug when list() returns a duplicate ref (pagination race)", async () => {
+    // A page edited mid-fetch can appear in two list windows; without dedupe it
+    // would be fetched twice and collapse to a single collision-suffixed slug
+    // ("A-2"), deleting the canonical "/A".
+    const raw = rawPage({ id: "a", title: "A", text: "A\n#publish" });
+    const dupRef = { id: "a", title: "A", updated: raw.updated, sourceUrl: raw.sourceUrl };
+    const source: SiteSource = {
+      name: "dup",
+      async list() {
+        return [dupRef, dupRef];
+      },
+      async fetch() {
+        return raw;
+      },
+    };
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source });
+    expect(data.pages.map((p) => p.slug)).toEqual(["A"]);
+    expect(data.warnings.join(" ")).not.toMatch(/collision/i);
+  });
+
   it("never picks a favicon from an unpublished page", async () => {
     // The fallback used to scan the raw source list (publish filter not yet
     // applied), so a #draft page's image could become the public favicon.

@@ -13,7 +13,7 @@ import { type IntermediateData, intermediateDataSchema } from "./schema/v1/page"
 import { emptySiteStructure, type SiteStructure } from "./schema/v1/site-structure";
 import { type CosenseSourceOptions, createCosenseSource } from "./source/cosense";
 import { normalizePage } from "./source/cosense/normalize";
-import type { SiteSource, SourcePageRaw } from "./source/types";
+import type { SiteSource, SourcePageRaw, SourcePageRef } from "./source/types";
 import { sanitizeConcurrency } from "./util/concurrency";
 
 export interface BuildIntermediateOptions {
@@ -44,6 +44,18 @@ export type ProgressEvent =
   | { kind: "site-config"; found: boolean; warnings: string[] }
   | { kind: "warn"; message: string };
 
+// Collapse refs sharing an id to one entry, keeping the newest `updated`.
+// Insertion order is preserved (first-seen position), so a stable list stays
+// stable. Exported for tests.
+export function dedupeRefs(refs: SourcePageRef[]): SourcePageRef[] {
+  const byId = new Map<string, SourcePageRef>();
+  for (const ref of refs) {
+    const existing = byId.get(ref.id);
+    if (!existing || ref.updated > existing.updated) byId.set(ref.id, ref);
+  }
+  return [...byId.values()];
+}
+
 export async function buildIntermediate(opts: BuildIntermediateOptions): Promise<IntermediateData> {
   const { config, signal } = opts;
   const source = opts.source ?? defaultSource(config, opts);
@@ -52,7 +64,12 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
   // zero pages. Fall back to the default rather than hang/empty.
   const concurrency = sanitizeConcurrency(opts.concurrency, 4);
 
-  const refs = await source.list({ signal });
+  // Dedupe by id before anything downstream: Cosense's list API paginates over
+  // an updated-desc window, so a page edited mid-fetch can appear in two windows.
+  // A duplicate would otherwise be fetched twice and — because assignSlugs keys
+  // its output Map by id — collapse to a single collision-suffixed slug (`A-2`),
+  // deleting the canonical `/A`. Keep the newest `updated` per id.
+  const refs = dedupeRefs(await source.list({ signal }));
   opts.onProgress?.({ kind: "list", total: refs.length });
 
   // Degraded-mode and data-quality notes (stale-cache fallback, pages deleted
