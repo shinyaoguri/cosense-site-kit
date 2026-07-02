@@ -125,6 +125,7 @@ packages/my-theme/
       home.astro                # /
       page.astro                # default テンプレ
       profile.astro             # オプション例
+      collection.astro          # オプション例（YAML block 駆動の一覧ページ）
       tag.astro                 # /tags/[tag]
     styles/
       global.css
@@ -558,14 +559,15 @@ declare module "virtual:my-theme/options" {
   },
   "peerDependencies": { "astro": "^5.0.0 || ^6.0.0" },
   "dependencies": {
-    "@cosense-site-kit/core": "^0.2.0",
-    "@cosense-site-kit/theme-utils": "^0.2.0"
+    "@cosense-site-kit/core": "latest",
+    "@cosense-site-kit/theme-utils": "latest"
   }
 }
 ```
 
 **重要なポイント**:
 
+- バージョンは書き写さず `npm install @cosense-site-kit/core @cosense-site-kit/theme-utils` で実際の最新版を `package.json` に入れる — 0.x では caret がマイナーを跨がないため、ここに古い版を書き写すとその組み合わせに固定されてしまう（`latest` はプレースホルダ）
 - `files` に `src/components`, `src/templates`, `src/styles`, `src/virtual` を含める — テンプレート (`.astro` 生ファイル) は **dist にバンドルされず、`src/` から直接配布** されるため
 - `exports` で `./components/*`, `./templates/*` をパス export — 他者が `import X from "@your-scope/theme-foo/components/X.astro"` できるようにするため
 - `astro` は **peerDependency** にする (Astro バージョンの一意性を保証)
@@ -640,7 +642,7 @@ npx degit <user/repo> my-site
 
 **公式テーマは `default` の 1 つだけ**です（[cosense-theme-default](https://github.com/shinyaoguri/cosense-theme-default)）。「Use this template」または `npx degit shinyaoguri/cosense-theme-default my-site` で取得します。**それ以外のテーマはすべてサードパーティ** — 登録の仕組みはなく、`npx degit <user/repo> my-site` でそのまま取得できます。
 
-theme-default は npm 公開された「ライブラリ型」テーマでもあるので、**テンプレを同梱せず `@cosense-site-kit/theme-default` を import するだけ**でも使えます（`npm update` で改善に追従）。vendored / npm import の選び方は [README の「テーマの 2 つの使い方」](../README.md#テーマの-2-つの使い方vendored-と-npm-import)を参照。自作テーマも、`package.json` の `files` に `src` を含めて npm 公開すれば同じく両モードに対応できます。
+theme-default は npm 公開された「ライブラリ型」テーマでもあるので、**テンプレを同梱せず `@cosense-site-kit/theme-default` を import するだけ**でも使えます（`npm update` で改善に追従）。vendored / npm import の選び方は [README の「テーマのカスタマイズ：npm import と vendored」](../README.md#テーマのカスタマイズnpm-import-と-vendored)を参照。自作テーマも、`package.json` の `files` に `src` を含めて npm 公開すれば同じく両モードに対応できます。
 
 **発見**はゆるく運用します。公式リポジトリの README にコミュニティ製テーマへのリンクを並べる程度で十分です（GitHub で「Use this template」を有効化し、リポジトリトピックに `cosense-theme` を付けると見つけやすい）。
 
