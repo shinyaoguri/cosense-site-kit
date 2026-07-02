@@ -1,10 +1,14 @@
 ---
-// Stylesheet for KaTeX SSR output emitted by renderInlineMath().
-// Themes drop this inside <head>.
+// KaTeX stylesheet for the SSR math markup emitted by renderInlineMath().
+//
+// Self-hosted on purpose: importing the CSS from the installed `katex` package
+// (a theme-utils dependency) lets Astro bundle it — always the SAME version as
+// the SSR markup, with the fonts, and no offline breakage. The previous
+// hardcoded CDN `<link>` (a pinned version + SRI) silently drifted when katex
+// was bumped: KaTeX requires the CSS to match the markup version, so the
+// mismatch could break rendering, and the SRI meant it never self-corrected.
+//
+// Themes render <KaTeXLink /> in <head>; it emits no element — Astro injects the
+// bundled stylesheet from this import.
+import "katex/dist/katex.min.css";
 ---
-<link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
-  integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
-  crossorigin="anonymous"
-/>
