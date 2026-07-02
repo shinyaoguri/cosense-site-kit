@@ -77,20 +77,21 @@ describe("parseCollection", () => {
     if (first?.kind !== "citation") throw new Error("expected citation");
     expect(first.authors).toBe("X, Y");
     expect(first.year).toBe("2025.12");
-    expect(pubs?.items[2].kind === "citation" && pubs.items[2].url).toBeUndefined(); // empty url dropped
+    const third = pubs?.items[2];
+    expect(third?.kind === "citation" && third.url).toBeUndefined(); // empty url dropped
   });
 
   it("derives tag filters from boolean fields (humanized) and explicit tags", () => {
     const pubs = data?.sections.find((s) => s.key === "publications");
     expect(pubs?.filters).toEqual(["All", "Peer Reviewed", "Full Paper"]);
-    expect(pubs?.items[0].tags).toEqual(["Peer Reviewed"]);
-    expect(pubs?.items[1].tags).toEqual(["Peer Reviewed", "Full Paper"]);
-    expect(pubs?.items[2].tags).toEqual([]);
+    expect(pubs?.items[0]?.tags).toEqual(["Peer Reviewed"]);
+    expect(pubs?.items[1]?.tags).toEqual(["Peer Reviewed", "Full Paper"]);
+    expect(pubs?.items[2]?.tags).toEqual([]);
 
     const explicit = parseCollection(
       `papers:\n  - title: T\n    tags: ["Selected", "Best Paper"]\n`,
     );
-    expect(explicit?.sections[0].filters).toEqual(["All", "Selected", "Best Paper"]);
+    expect(explicit?.sections[0]?.filters).toEqual(["All", "Selected", "Best Paper"]);
   });
 
   it("renders markdown links in entry titles and has no filters when no tags", () => {
