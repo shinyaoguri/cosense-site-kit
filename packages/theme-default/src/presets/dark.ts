@@ -16,8 +16,9 @@ export const presetDark: ThemeDefaultPreset = {
     "--color-bg-soft": "#202020",
     "--color-bg-hover": "#2c2c2b",
     "--color-text": "#e6e6e3",
-    "--color-text-soft": "#a8a8a3",
-    "--color-text-muted": "#7d7c78",
+    "--color-text-soft": "#a8a8a3" /* 7.36:1 on bg — AA */,
+    "--color-text-muted": "#8f8e8a" /* 5.36:1 on bg — AA (was #7d7c78, 4.21:1) */,
+    // Decorative only (see global.css) — below AA for text.
     "--color-text-faint": "#4d4d4a",
     "--color-border": "#333331",
     "--color-border-soft": "#262625",
