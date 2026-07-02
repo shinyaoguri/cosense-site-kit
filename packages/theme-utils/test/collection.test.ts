@@ -1,5 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { parseCollection, renderInlineLinks } from "../src/collection";
+import { parseCollection, renderInlineLinks, safeHref } from "../src/collection";
+
+describe("safeHref (shared with core)", () => {
+  it("allows tel: (was dropped by the old theme-utils copy) and other safe shapes", () => {
+    expect(safeHref("tel:+81-3-0000-0000")).toBe("tel:+81-3-0000-0000");
+    expect(safeHref("https://ok.example")).toBe("https://ok.example");
+    expect(safeHref("mailto:a@b.com")).toBe("mailto:a@b.com");
+    expect(safeHref("/blog")).toBe("/blog");
+    expect(safeHref("#top")).toBe("#top");
+  });
+
+  it("rejects protocol-relative and script URLs", () => {
+    // The old theme-utils regex matched a leading `/`, so `//evil` slipped through.
+    expect(safeHref("//evil.example/x")).toBeUndefined();
+    expect(safeHref("javascript:alert(1)")).toBeUndefined();
+    expect(safeHref(undefined)).toBeUndefined();
+  });
+});
 
 const YAML = `
 education:

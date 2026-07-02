@@ -1,19 +1,12 @@
 import { z } from "zod";
+import { isSafeRedirect, SAFE_HREF } from "../../url";
 
 // SiteStructure is the typed shape of what authors declare in `.site` (or
 // whatever page they configure as the site-config page) inside a single
 // `code:site.yaml` block. Themes consume this through IntermediateData.
-
-// `.site` is remote input (anyone with project edit rights can write it), and
-// Astro's attribute escaping cannot neutralize a `javascript:` href — so URL
-// shapes are enforced here, at the validated-model boundary.
-// Allowed: absolute http(s) URL, mailto:/tel:, site-relative path (/blog —
-// but not protocol-relative //host), or fragment (#about). Theme navHref
-// helpers prefix site-relative paths with Astro's base.
-const SAFE_HREF = /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i;
-// Redirect destinations are slugs or site-relative paths — never a scheme
-// (no open redirects to external sites) and never protocol-relative.
-const SAFE_REDIRECT = /^(?![a-z][a-z0-9+.-]*:)(?!\/\/)/i;
+//
+// URL safety (SAFE_HREF / isSafeRedirect) lives in ../../url so the schema and
+// theme-utils share one definition — see that file.
 
 export const navItemSchema = z.union([
   z.object({ label: z.string().min(1), page: z.string().min(1) }),
@@ -54,9 +47,16 @@ export const siteStructureSchema = z
     redirects: z
       .record(
         z.string(),
+        // Trim first, then allowlist-check: a leading tab/space would let a
+        // protocol-relative or scheme value slip past a naive leading anchor
+        // because browsers strip those before parsing the URL.
         z
           .string()
-          .regex(SAFE_REDIRECT, "redirect destinations must be a slug or site-relative path"),
+          .trim()
+          .refine(
+            isSafeRedirect,
+            "redirect destinations must be a slug or site-relative path (no scheme, no //, no control chars)",
+          ),
       )
       .default({}),
     // Map from Cosense page title to template name. Used as a fallback when
