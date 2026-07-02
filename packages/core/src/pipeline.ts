@@ -9,10 +9,13 @@ import { assignDates } from "./resolve/dates";
 import { buildTitleToSlug, resolveInternalLinks } from "./resolve/links";
 import { assignSlugs } from "./resolve/slug";
 import { assignTemplates } from "./resolve/template";
-import { type IntermediateData, intermediateDataSchema } from "./schema/v1/page";
+import {
+  type CosenseSitePage,
+  type IntermediateData,
+  intermediateDataSchema,
+} from "./schema/v1/page";
 import { emptySiteStructure, type SiteStructure } from "./schema/v1/site-structure";
 import { type CosenseSourceOptions, createCosenseSource } from "./source/cosense";
-import { normalizePage } from "./source/cosense/normalize";
 import type { SiteSource, SourcePageRaw, SourcePageRef } from "./source/types";
 import { sanitizeConcurrency } from "./util/concurrency";
 
@@ -102,7 +105,9 @@ export async function buildIntermediate(opts: BuildIntermediateOptions): Promise
     raws.push(...results.filter((r): r is SourcePageRaw => r !== null));
   }
 
-  const normalized = raws.map((raw) => normalizePage(raw, config.source.project));
+  // The source owns normalization (Scrapbox parsing for Cosense), so the
+  // pipeline no longer imports source-specific parse code.
+  const normalized = raws.map((raw) => source.normalize(raw));
   opts.onProgress?.({ kind: "normalize", total: normalized.length });
 
   // Separate the site-config page (if any) before the publish filter. It is
@@ -213,7 +218,7 @@ function pickFavicon(
 }
 
 function extractStructure(
-  normalized: ReturnType<typeof normalizePage>[],
+  normalized: CosenseSitePage[],
   sitePage: string | null,
   onProgress: BuildIntermediateOptions["onProgress"],
 ): { structure: SiteStructure; warnings: string[]; sitePageTitle: string | null } {

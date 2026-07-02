@@ -1,6 +1,9 @@
 // Source abstraction. Today only Cosense is implemented, but the interface
-// keeps Cosense-specific knowledge out of the pipeline so a future source
-// (e.g. esa, Notion) can plug in without touching consumers.
+// keeps source-specific knowledge (fetching AND how a raw page's body maps to
+// the intermediate model) behind SiteSource, so a future source (e.g. esa,
+// Notion) plugs in without the pipeline touching Cosense internals.
+
+import type { CosenseSitePage } from "../schema/v1/page";
 
 export interface SourcePageRef {
   id: string;
@@ -46,4 +49,12 @@ export interface SiteSource {
     signal?: AbortSignal;
     onWarn?: (message: string) => void;
   }): Promise<string | null>;
+  /**
+   * Convert a fetched raw page into the intermediate model. This is where a
+   * source's body syntax is parsed (Cosense → Scrapbox parser), so the pipeline
+   * never has to know the source's format — it just maps `normalize` over the
+   * fetched pages. Keeping it on the source (not a pipeline import) is what makes
+   * the abstraction real and keeps Cosense knowledge inside source/cosense/.
+   */
+  normalize(raw: SourcePageRaw): CosenseSitePage;
 }

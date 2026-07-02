@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CosenseSiteConfig } from "../src";
 import { defineCosenseSite, runDoctor } from "../src";
+import { normalizePage } from "../src/source/cosense/normalize";
 import type { SiteSource, SourcePageRaw } from "../src/source/types";
 
 function rawPage(o: { id: string; title: string; text: string; links?: string[] }): SourcePageRaw {
@@ -20,6 +21,7 @@ function rawPage(o: { id: string; title: string; text: string; links?: string[] 
 function stubSource(raws: SourcePageRaw[]): SiteSource {
   return {
     name: "stub",
+    normalize: (raw) => normalizePage(raw, "p"),
     async list() {
       return raws.map((r) => ({
         id: r.id,
@@ -274,6 +276,7 @@ describe("runDoctor", () => {
     const config = baseConfig();
     const explodingSource: SiteSource = {
       name: "explode",
+      normalize: (raw) => normalizePage(raw, "p"),
       async list() {
         throw new Error("Cosense API 503");
       },

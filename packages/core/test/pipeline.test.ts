@@ -27,6 +27,7 @@ function rawPage(
 function stubSource(raws: SourcePageRaw[], opts: { siteIcon?: string | null } = {}): SiteSource {
   return {
     name: "stub",
+    normalize: (raw) => normalizePage(raw, "p"),
     async list() {
       return raws.map((r) => ({
         id: r.id,
@@ -247,6 +248,7 @@ describe("buildIntermediate", () => {
     const dupRef = { id: "a", title: "A", updated: raw.updated, sourceUrl: raw.sourceUrl };
     const source: SiteSource = {
       name: "dup",
+      normalize: (r) => normalizePage(r, "p"),
       async list() {
         return [dupRef, dupRef];
       },
