@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hidesDates, isHiddenTag, isPublicTag, NO_DATE_TAG } from "../src/tags";
+import { hasTag, hidesDates, isHiddenTag, isPublicTag, NO_DATE_TAG } from "../src/tags";
 
 describe("isHiddenTag", () => {
   it("hides control tags", () => {
@@ -15,6 +15,21 @@ describe("isHiddenTag", () => {
   it("does not hide ordinary categories", () => {
     expect(isHiddenTag("diary")).toBe(false);
     expect(isHiddenTag("lab/news")).toBe(false);
+  });
+
+  it("hides case-variant control tags (Cosense collapses case)", () => {
+    expect(isHiddenTag("Publish")).toBe(true);
+    expect(isHiddenTag("Draft")).toBe(true);
+    expect(isHiddenTag("Published/2026-05-20")).toBe(true);
+    expect(isPublicTag("Publish")).toBe(false);
+  });
+});
+
+describe("hasTag", () => {
+  it("matches case-insensitively", () => {
+    expect(hasTag(["publish", "Blog"], "blog")).toBe(true);
+    expect(hasTag(["publish", "blog"], "Blog")).toBe(true);
+    expect(hasTag(["publish"], "blog")).toBe(false);
   });
 });
 

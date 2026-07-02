@@ -133,6 +133,17 @@ describe("runDoctor", () => {
     expect(find(report, "Posts tag has content").status).toBe("warn");
   });
 
+  it("counts case-variant posts.tag pages (posts.tag 'blog' matches #Blog)", async () => {
+    const siteYaml = [".site", "code:site.yaml", " posts:", "   tag: blog"].join("\n");
+    const config = baseConfig();
+    const source = stubSource([
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      rawPage({ id: "a", title: "Post", text: "Post\n#publish #Blog" }),
+    ]);
+    const report = await runDoctor({ config, source });
+    expect(find(report, "Posts tag has content").status).toBe("pass");
+  });
+
   it("warns about broken internal page links", async () => {
     const config = baseConfig();
     const source = stubSource([

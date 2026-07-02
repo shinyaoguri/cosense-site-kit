@@ -1,4 +1,5 @@
 import type { CosenseSiteConfig } from "../config";
+import { normalizeKey } from "../keys";
 import { buildIntermediate, type ProgressEvent } from "../pipeline";
 import { forEachBlockInline } from "../schema/v1/block";
 import type { IntermediateData } from "../schema/v1/page";
@@ -204,7 +205,8 @@ function checkPostsTagHasContent(data: IntermediateData): DoctorCheck {
   if (!tag) {
     return { name: "Posts tag has content", status: "pass", message: "posts not configured" };
   }
-  const count = data.pages.filter((p) => p.tags.includes(tag)).length;
+  const tagKey = normalizeKey(tag);
+  const count = data.pages.filter((p) => p.tags.some((t) => normalizeKey(t) === tagKey)).length;
   if (count === 0) {
     return {
       name: "Posts tag has content",
@@ -226,7 +228,10 @@ function checkPostsTagHasContent(data: IntermediateData): DoctorCheck {
 function checkOrphanPosts(data: IntermediateData): DoctorCheck {
   const tag = data.structure.posts?.tag;
   if (!tag) return { name: "No orphan posts", status: "pass", message: "posts not configured" };
-  const orphans = data.excluded.filter((e) => e.tags?.includes(tag)).map((e) => e.title);
+  const tagKey = normalizeKey(tag);
+  const orphans = data.excluded
+    .filter((e) => e.tags?.some((t) => normalizeKey(t) === tagKey))
+    .map((e) => e.title);
   if (orphans.length === 0) {
     return { name: "No orphan posts", status: "pass", message: `every #${tag} page is published` };
   }
@@ -362,10 +367,13 @@ function checkSlugCollisions(data: IntermediateData): DoctorCheck {
 }
 
 function checkDraftLeak(config: CosenseSiteConfig, data: IntermediateData): DoctorCheck {
-  const excludeTags = new Set(config.publish.excludeTags);
+  // Match the same case-insensitive way applyPublishRules does, or doctor would
+  // report "no leak" for a `#Draft` page that the filter actually excluded (or
+  // miss a genuine leak) — the check must mirror the real filter.
+  const excludeTags = new Set(config.publish.excludeTags.map(normalizeKey));
   const leaked: string[] = [];
   for (const p of data.pages) {
-    if (p.tags.some((t) => excludeTags.has(t))) leaked.push(p.title);
+    if (p.tags.some((t) => excludeTags.has(normalizeKey(t)))) leaked.push(p.title);
   }
   if (leaked.length === 0) {
     return { name: "No draft leak", status: "pass", message: "no excluded-tag pages published" };

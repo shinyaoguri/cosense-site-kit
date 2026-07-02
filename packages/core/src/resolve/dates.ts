@@ -1,3 +1,4 @@
+import { normalizeKey } from "../keys";
 import type { CosenseSitePage } from "../schema/v1/page";
 
 const PUBLISHED_TAG_PREFIX = "published/";
@@ -33,7 +34,9 @@ function resolveTagDate(
   prefix: string,
   warnings: string[],
 ): string | undefined {
-  const tag = page.tags.find((t) => t.startsWith(prefix));
+  // Prefix is lowercase; match case-insensitively so `#Published/2024-01-01`
+  // sets the date instead of being silently ignored (Cosense sees one tag).
+  const tag = page.tags.find((t) => normalizeKey(t).startsWith(prefix));
   if (!tag) return undefined;
   const iso = parseUserDate(tag.slice(prefix.length));
   if (!iso) {

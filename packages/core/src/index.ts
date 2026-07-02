@@ -16,6 +16,10 @@ export { type VendorIconsOptions, vendorIcons, vendorImage } from "./assets/icon
 export { type CosenseSiteConfig, defineCosenseSite } from "./config";
 // ── Diagnostics (consumed by the CLI) ────────────────────────────────────
 export { type DoctorCheck, runDoctor } from "./doctor";
+// ── Name matching ─────────────────────────────────────────────────────────
+// Cosense treats page links, tags, and titles case-insensitively; themes that
+// match author-supplied names against page data must normalize the same way.
+export { normalizeKey } from "./keys";
 export { loadCosenseSiteConfig } from "./load-config";
 
 // ── Pipeline (consumed by the Astro integration and the CLI) ─────────────

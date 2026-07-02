@@ -1,3 +1,4 @@
+import { normalizeKey } from "../keys";
 import type { CosenseSitePage } from "../schema/v1/page";
 import type { SiteStructure } from "../schema/v1/site-structure";
 
@@ -9,12 +10,16 @@ const TEMPLATE_TAG_PREFIX = "template/";
 //   2. structure.templates[page.title] (sitewide mapping in .site YAML)
 //   3. DEFAULT_TEMPLATE
 export function resolveTemplate(page: CosenseSitePage, structure: SiteStructure): string {
-  const tag = page.tags.find((t) => t.startsWith(TEMPLATE_TAG_PREFIX));
+  const tag = page.tags.find((t) => normalizeKey(t).startsWith(TEMPLATE_TAG_PREFIX));
   if (tag) {
     const name = tag.slice(TEMPLATE_TAG_PREFIX.length);
     if (name) return name;
   }
-  const mapped = structure.templates[page.title];
+  // The `.site` templates: mapping is keyed by page title; match it
+  // case-insensitively (and only against own keys) the same way Cosense
+  // resolves titles, so `templates: { Home: ... }` still hits the page "home".
+  const title = normalizeKey(page.title);
+  const mapped = Object.entries(structure.templates).find(([k]) => normalizeKey(k) === title)?.[1];
   if (mapped) return mapped;
   return DEFAULT_TEMPLATE;
 }

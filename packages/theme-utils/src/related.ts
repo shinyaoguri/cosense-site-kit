@@ -1,3 +1,4 @@
+import { normalizeKey } from "@cosense-site-kit/core";
 import { isHiddenTag } from "./tags";
 
 // Scrapbox's signature feature is the link network: its "related pages" panel
@@ -43,19 +44,24 @@ export function relatedPages(
   opts: { limit?: number; exclude?: Iterable<string> } = {},
 ): RelatedPage[] {
   const limit = opts.limit ?? 8;
-  const exclude = new Set(opts.exclude ?? []);
-  const current = new Set(currentLinks.filter((l) => !isStructuralLink(l)));
+  // Cosense resolves links case-insensitively, so `[Foo]` and `[foo]` are the
+  // same target. Compare on normalized keys or shared-link overlap is
+  // undercounted (case-variant links look distinct) and related pages get
+  // dropped. See normalizeKey in core.
+  const exclude = new Set([...(opts.exclude ?? [])].map(normalizeKey));
+  const current = new Set(currentLinks.filter((l) => !isStructuralLink(l)).map(normalizeKey));
   if (current.size === 0) return [];
 
   const scored: RelatedPage[] = [];
   for (const candidate of candidates) {
-    if (exclude.has(candidate.title)) continue;
+    if (exclude.has(normalizeKey(candidate.title))) continue;
     let shared = 0;
     const seen = new Set<string>();
     for (const link of candidate.links) {
-      if (seen.has(link)) continue;
-      seen.add(link);
-      if (current.has(link)) shared++;
+      const key = normalizeKey(link);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (current.has(key)) shared++;
     }
     if (shared > 0) {
       scored.push({ title: candidate.title, slug: candidate.slug, shared });

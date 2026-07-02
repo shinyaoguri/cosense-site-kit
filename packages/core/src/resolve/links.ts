@@ -1,3 +1,4 @@
+import { normalizeKey } from "../keys";
 import { type CosenseBlock, mapBlockInlines } from "../schema/v1/block";
 import type { InlineNode } from "../schema/v1/inline";
 import type { CosenseSitePage } from "../schema/v1/page";
@@ -19,9 +20,10 @@ export function resolveInternalLinks(
 
 // Cosense matches page links case-insensitively — `[foo]` in a body links to
 // the page titled "Foo" — so lookups must go through the same normalization
-// or links that work on Cosense silently break on the generated site.
+// or links that work on Cosense silently break on the generated site. Shared
+// with tag/title matching across core via normalizeKey (see keys.ts).
 export function titleKey(title: string): string {
-  return title.toLowerCase();
+  return normalizeKey(title);
 }
 
 export function buildTitleToSlug(
