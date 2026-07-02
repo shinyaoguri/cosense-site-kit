@@ -571,6 +571,10 @@ cosense-site deploy init --working-directory site --repo-root ..
 
 `cosense-site fetch --force` でキャッシュを無視して全件再取得できます。
 
+### dev サーバの鮮度
+
+`npm run dev` 中、パイプライン結果はプロセス内で共有・メモ化されますが、dev では約 30 秒の TTL が付きます。Cosense でページを編集したら、**最大 30 秒後のリロードで反映**されます（再取得は差分 fetch なので速い）。`cosense.config.ts` を編集した場合は、監視対象なので dev サーバが自動で再起動し反映されます。`.site` ページ由来のナビ・サイト構造の変更だけは起動時スナップショットのため、反映には再起動が必要です。なお起動時に Cosense へ到達できなくても失敗はメモ化されないので、回線が復旧すれば次のリロードで自動的に回復します。
+
 ## スキーマのバージョニング
 
 中間モデルは `schemaVersion: "1"` を持っています。スキーマ実体は `packages/core/src/schema/v1/` にあり、`@cosense-site-kit/core/schema` から re-export されています。

@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import {
   type CosenseSiteConfig,
   emptySiteStructure,
@@ -9,13 +9,25 @@ import {
   vendorImage,
 } from "@cosense-site-kit/core";
 import type { AstroIntegration } from "astro";
-import { getSharedIntermediate } from "./intermediate-cache";
+import {
+  DEV_TTL_MS,
+  getSharedIntermediate,
+  invalidateSharedIntermediate,
+} from "./intermediate-cache";
 
 export interface CosenseIntegrationOptions {
   /** Path to cosense.config.{ts,js,mjs}. Default: ./cosense.config */
   configFile?: string;
   /** Pre-loaded config object. Takes priority over configFile. */
   config?: CosenseSiteConfig;
+  /**
+   * Override the cache directory. Default: .cosense-cache. Pass the same value
+   * to the loader so both reuse one shared pipeline run (mismatched options
+   * would key the memo differently and run the pipeline twice).
+   */
+  cacheDir?: string;
+  /** Force a full refetch ignoring the cache. Keep in sync with the loader. */
+  force?: boolean;
   /**
    * Surface excluded pages (drafts) for local preview. Defaults to on in
    * `astro dev`, off in `astro build`. Set explicitly to override. Must match
@@ -87,12 +99,26 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
   return {
     name: "@cosense-site-kit/astro",
     hooks: {
-      "astro:config:setup": async ({ updateConfig, logger, command }) => {
+      "astro:config:setup": async ({ updateConfig, logger, command, addWatchFile }) => {
         const config = opts.config ?? (await loadCosenseSiteConfig(opts.configFile));
         const normalized = normalizeBase(config.site.base);
+        const isDev = command === "dev";
         // Match the loader's draft default (on in dev) so both share one
         // pipeline run; structure itself doesn't depend on drafts.
-        const previewDrafts = opts.previewDrafts ?? command === "dev";
+        const previewDrafts = opts.previewDrafts ?? isDev;
+
+        // config:setup re-runs when Astro restarts on a watched-file change. In
+        // dev, drop the process-level memo first so a config edit (below) or a
+        // manual restart rebuilds from scratch instead of replaying the snapshot
+        // captured at first boot.
+        if (isDev) {
+          invalidateSharedIntermediate();
+          // Restart the dev server when cosense.config changes so the new
+          // publish/site settings take effect without a manual restart.
+          if (opts.configFile) {
+            addWatchFile(isAbsolute(opts.configFile) ? opts.configFile : resolve(opts.configFile));
+          }
+        }
 
         // The virtual:cosense-site-kit/structure module needs a SiteStructure
         // at module-load time. We compute it eagerly here (memoed across the
@@ -104,7 +130,10 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           const data = await getSharedIntermediate({
             configFile: opts.configFile,
             config: opts.config,
+            cacheDir: opts.cacheDir,
+            force: opts.force,
             previewDrafts,
+            ttlMs: isDev ? DEV_TTL_MS : undefined,
           });
           structure = data.structure;
           icon = data.site.icon;

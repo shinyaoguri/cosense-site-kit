@@ -7,7 +7,7 @@ import {
   vendorIcons,
 } from "@cosense-site-kit/core";
 import type { Loader } from "astro/loaders";
-import { getSharedIntermediate } from "./intermediate-cache";
+import { DEV_TTL_MS, getSharedIntermediate } from "./intermediate-cache";
 
 export interface CosenseLoaderOptions {
   /** Path to cosense.config.{ts,js,mjs}. Default: ./cosense.config */
@@ -45,8 +45,13 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
     async load({ store, logger, generateDigest, parseData, watcher }) {
       // Astro only passes a `watcher` in dev, so it's a reliable dev signal:
       // show drafts locally by default, never in a production build.
-      const previewDrafts = opts.previewDrafts ?? Boolean(watcher);
-      const built = await getSharedIntermediate({ ...opts, previewDrafts });
+      const isDev = Boolean(watcher);
+      const previewDrafts = opts.previewDrafts ?? isDev;
+      // In dev, expire the shared result so a Cosense edit shows up on reload
+      // (the fetch is differential, so re-running is cheap). In build, omit the
+      // TTL so the whole build reuses one pipeline run.
+      const ttlMs = isDev ? DEV_TTL_MS : undefined;
+      const built = await getSharedIntermediate({ ...opts, previewDrafts, ttlMs });
       logger.info(`Loaded ${built.pages.length} page(s); excluded ${built.excluded.length}`);
       for (const w of built.warnings) logger.warn(w);
 
