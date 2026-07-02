@@ -1,4 +1,8 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { runDeployInit } from "../src/commands/deploy";
 import { generateGithubActionsWorkflow } from "../src/generators/github-actions";
 import { generateWranglerJsonc } from "../src/generators/wrangler";
 
@@ -152,6 +156,61 @@ describe("generateGithubActionsWorkflow", () => {
   it("defaults to a twice-daily off-the-hour schedule", () => {
     const yml = generateGithubActionsWorkflow({ target: "cloudflare-workers" });
     expect(yml).toContain('cron: "17 1,13 * * *"');
+  });
+
+  it("inserts a doctor gate between fetch and build by default", () => {
+    for (const target of ["cloudflare-workers", "github-pages"] as const) {
+      const yml = generateGithubActionsWorkflow({ target });
+      expect(yml).toContain("npx cosense-site doctor");
+      // Ordering: fetch → doctor → build.
+      expect(yml.indexOf("cosense-site fetch")).toBeLessThan(yml.indexOf("cosense-site doctor"));
+      expect(yml.indexOf("cosense-site doctor")).toBeLessThan(yml.indexOf("astro build"));
+    }
+  });
+
+  it("omits the doctor gate when doctor is false", () => {
+    for (const target of ["cloudflare-workers", "github-pages"] as const) {
+      const yml = generateGithubActionsWorkflow({ target, doctor: false });
+      expect(yml).not.toContain("doctor");
+    }
+  });
+
+  it("runs doctor via the local dist entry in framework-dev mode", () => {
+    const yml = generateGithubActionsWorkflow({
+      target: "github-pages",
+      workingDirectory: "site",
+      frameworkDev: true,
+    });
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions ${{ }} expression
+    expect(yml).toContain("node ${{ github.workspace }}/packages/cli/dist/index.js doctor");
+    expect(yml).not.toContain("npx cosense-site");
+  });
+});
+
+describe("runDeployInit target validation", () => {
+  async function withConfig(fn: (dir: string) => Promise<void>): Promise<void> {
+    const dir = await mkdtemp(join(tmpdir(), "cosense-deploy-"));
+    await writeFile(
+      join(dir, "cosense.config.mjs"),
+      `export default { site: { title: "T", baseUrl: "https://e.com" }, source: { type: "cosense", project: "p" } };\n`,
+    );
+    try {
+      await fn(dir);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("rejects a typo'd target instead of writing a broken workflow", async () => {
+    await withConfig(async (dir) => {
+      await expect(
+        runDeployInit({
+          cwd: dir,
+          configFile: "cosense.config.mjs",
+          target: "github-page" as never,
+        }),
+      ).rejects.toThrow(/Invalid deploy target/);
+    });
   });
 });
 

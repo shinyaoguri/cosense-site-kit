@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+// Deploy targets the generated GitHub Actions workflow supports. Single source
+// of truth: the config schema validates against it, and the CLI's `deploy init
+// --target` flag restricts its choices to the same set (so a typo like
+// `github-page` is rejected up front instead of writing a broken workflow).
+export const DEPLOY_TARGETS = ["cloudflare-workers", "github-pages"] as const;
+export type DeployTarget = (typeof DEPLOY_TARGETS)[number];
+
 export const cosenseSiteConfigSchema = z.object({
   site: z.object({
     title: z.string(),
@@ -46,7 +53,7 @@ export const cosenseSiteConfigSchema = z.object({
        *   legacy Cloudflare Pages). Requires CLOUDFLARE_API_TOKEN and
        *   CLOUDFLARE_ACCOUNT_ID secrets on the repo.
        */
-      target: z.enum(["cloudflare-workers", "github-pages"]),
+      target: z.enum(DEPLOY_TARGETS),
       schedule: z.string().optional(),
     })
     .optional(),

@@ -1,6 +1,6 @@
 import { access, mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { loadCosenseSiteConfig } from "@cosense-site-kit/core";
+import { DEPLOY_TARGETS, type DeployTarget, loadCosenseSiteConfig } from "@cosense-site-kit/core";
 import pc from "picocolors";
 import { generateGithubActionsWorkflow } from "../generators/github-actions";
 import { generateWranglerJsonc } from "../generators/wrangler";
@@ -8,9 +8,11 @@ import { generateWranglerJsonc } from "../generators/wrangler";
 export interface DeployInitOptions {
   cwd: string;
   configFile?: string;
-  target?: "cloudflare-workers" | "github-pages";
+  target?: DeployTarget;
   schedule?: string;
   force?: boolean;
+  /** Include the pre-publish `cosense-site doctor` gate in the workflow. Default: true. */
+  doctor?: boolean;
   /**
    * Write the workflow to `<repoRoot>/.github/workflows/` with steps scoped
    * to this subdirectory. Useful when the site lives under e.g. /site in a
@@ -33,6 +35,14 @@ export interface DeployInitOptions {
 export async function runDeployInit(opts: DeployInitOptions): Promise<void> {
   const config = await loadCosenseSiteConfig(opts.configFile, opts.cwd);
   const target = opts.target ?? config.deploy?.target ?? "cloudflare-workers";
+  // Defense in depth behind the CLI's --target choices: a target passed
+  // programmatically (or an unexpected config value) must fail loudly here
+  // rather than silently writing a workflow that's incomplete for either target.
+  if (!(DEPLOY_TARGETS as readonly string[]).includes(target)) {
+    throw new Error(
+      `Invalid deploy target "${target}". Valid targets: ${DEPLOY_TARGETS.join(", ")}.`,
+    );
+  }
   const schedule = opts.schedule ?? config.deploy?.schedule;
   const repoRoot = opts.repoRoot ?? opts.cwd;
 
@@ -40,6 +50,7 @@ export async function runDeployInit(opts: DeployInitOptions): Promise<void> {
     target,
     schedule,
     workingDirectory: opts.workingDirectory,
+    doctor: opts.doctor,
     frameworkDev: opts.frameworkDev,
   });
   const workflowPath = resolve(repoRoot, ".github/workflows/build.yml");
