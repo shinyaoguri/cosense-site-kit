@@ -9,8 +9,10 @@
   --color-bg-soft: #f7f6f3; /* Notion's signature off-white */
   --color-bg-hover: #efebe5; /* Hover surface */
   --color-text: #37352f; /* Warm dark, not pure black */
-  --color-text-soft: #6f6e69;
-  --color-text-muted: #9b9a97;
+  --color-text-soft: #6f6e69; /* 5.11:1 on bg — AA */
+  --color-text-muted: #72716c; /* 4.89:1 on bg — AA (was #9b9a97, 2.81:1) */
+  /* Decorative only (underlines, dividers, placeholder bars). Below AA for
+     text — never use as `color:` on real content; use --color-text-muted. */
   --color-text-faint: #cbcac6;
   --color-border: #e9e7e3;
   --color-border-soft: #f1efeb;
@@ -768,7 +770,7 @@ html[data-theme="dark"] .page-content .astro-code span {
 }
 .tag-meta {
   background: transparent;
-  color: var(--color-text-faint);
+  color: var(--color-text-muted);
   font-style: italic;
 }
 
@@ -901,7 +903,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, var(--color-callout-bg) 0%, var(--color-border-soft) 100%);
-  color: var(--color-text-faint);
+  color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: 1.375rem;
   font-weight: 600;
@@ -932,7 +934,7 @@ html[data-theme="dark"] .page-content .astro-code span {
 .tag-page-list .updated {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
-  color: var(--color-text-faint);
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 /* Bound each card element so overflow never changes a card's height: the title
@@ -989,7 +991,7 @@ html[data-theme="dark"] .page-content .astro-code span {
 /* "+N" overflow badge: same chip shape, muted and non-interactive. */
 .recent-pages .entry-tags .more-tags,
 .tag-page-list .entry-tags .more-tags {
-  color: var(--color-text-faint);
+  color: var(--color-text-muted);
   cursor: default;
 }
 
