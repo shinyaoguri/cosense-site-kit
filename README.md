@@ -553,9 +553,15 @@ site: {
 
 見た目はテーマ共通で、`themeDefault()` の CSS 変数や `preset`（配色）がそのまま 404 ページにも反映されます。ヘッダーと検索ボックスも表示されるので、迷った読者はそのまま検索やホームへ戻れます。
 
-### Monorepo（サイトが `<repo>/site/` 等のサブディレクトリ）
+### サイトがサブディレクトリにある場合（`<repo>/site/` など）
 
-`cosense-site deploy init --working-directory site --repo-root ..` で、ワークフローが repo root の `npm ci` + 全パッケージ build を走らせる構成で生成されます（このリポジトリ自身がその構成です）。
+```bash
+cosense-site deploy init --working-directory site --repo-root ..
+```
+
+`--working-directory <dir>` を付けると、各ステップを `<dir>` にスコープしたワークフローが生成されます（`npm install` / `npx cosense-site fetch` / `npx astro build` はすべて `<dir>` で実行、キャッシュと `dist` のパスも `<dir>` 配下）。フレームワークは通常どおり npm から入るので、追加の設定は不要です。
+
+> **注**: `--working-directory` は「サイトの場所」を指定するだけで、フレームワークをソースからビルドする挙動は含みません（両者は独立です）。このリポジトリ自身のように、フレームワークとサイトを 1 つの npm workspace に同居させてソースからビルドする構成は、内部用の `--framework-dev` フラグ（`--help` には非表示）で生成します。一般の利用者が使う必要はありません。
 
 ## fetch キャッシュの仕組み
 
