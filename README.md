@@ -173,6 +173,7 @@ WordPress のテンプレート階層と同じ発想で、**ページごとに�
 |---|---|
 | `page` | 通常ページ（デフォルト）。タイトル + タグチップ + 本文 + backlinks |
 | `profile` | プロフィール系。中央寄せヒーロー + 本文。タグチップなし |
+| `collection` | データ駆動のリストページ（CV・業績一覧・作品集・リンク集など）。本文の最初の YAML コードブロックをセクション分けした一覧として描画し、項目がタグを持てば自動でフィルタチップが付く |
 
 ### ページごとの切り替え例
 
@@ -522,9 +523,11 @@ export default defineCosenseSite({
 
 ### GitHub Pages 用の追加設定
 
-リポジトリの **Settings → Pages → Source** を **"GitHub Actions"** に切り替えます。
+リポジトリの **Settings → Pages → Source** を **"GitHub Actions"** に切り替えます。これだけで OK です。
 
-サブパス（`<user>.github.io/<repo>/` 形式の project pages）に配信する場合は `cosense.config.ts` の `site.base` を設定:
+**base は自動検出されます**: 生成される workflow は `actions/configure-pages` が検出した base path / origin を `PAGES_BASE_PATH` / `PAGES_ORIGIN` としてビルドに渡し、`cosense.config.ts` がそれを `site.base` / `site.baseUrl` に取り込みます。そのため `<user>.github.io/<repo>/` 形式の project pages でも、**config を手で編集しなくても**サブパスが正しく効きます（フォークやリポジトリ改名で URL が変わっても追従。「改名したら CSS が当たらない」の典型原因を回避）。
+
+明示したい場合（カスタムドメインなど、自動検出に任せたくないとき）だけ `cosense.config.ts` の `site.base` / `site.baseUrl` を設定します:
 
 ```ts
 site: {
