@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { renderInlineMath, renderMath } from "../src/math";
 
@@ -36,5 +39,23 @@ describe("renderMath display mode", () => {
 
   it("stays inline (no display wrapper) by default", () => {
     expect(renderMath("E = mc^2")).not.toContain("katex-display");
+  });
+});
+
+describe("KaTeXLink stylesheet", () => {
+  const source = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "../src/components/KaTeXLink.astro"),
+    "utf8",
+  );
+
+  it("self-hosts the CSS from the installed katex package (version can't drift)", () => {
+    expect(source).toContain('import "katex/dist/katex.min.css"');
+  });
+
+  it("does not hardcode a pinned CDN katex URL", () => {
+    // A hardcoded `katex@<version>` CDN URL drifts from the installed katex on
+    // every dependabot bump; the markup and CSS must be the same version.
+    expect(source).not.toMatch(/katex@\d+\.\d+\.\d+/);
+    expect(source).not.toContain("cdn.jsdelivr.net");
   });
 });
