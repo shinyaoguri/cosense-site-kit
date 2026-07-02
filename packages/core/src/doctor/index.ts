@@ -38,6 +38,14 @@ export interface RunDoctorOptions {
 export async function runDoctor(opts: RunDoctorOptions): Promise<DoctorReport> {
   const checks: DoctorCheck[] = [];
 
+  // Capture the site-config event so the check below can see the actual parse
+  // outcome (found / no block / hard error), not just whether the page existed.
+  let siteConfigEvent: Extract<ProgressEvent, { kind: "site-config" }> | null = null;
+  const onProgress = (e: ProgressEvent) => {
+    if (e.kind === "site-config") siteConfigEvent = e;
+    opts.onProgress?.(e);
+  };
+
   let data: IntermediateData;
   try {
     data = await buildIntermediate({
@@ -45,7 +53,7 @@ export async function runDoctor(opts: RunDoctorOptions): Promise<DoctorReport> {
       cacheDir: opts.cacheDir,
       force: opts.force,
       source: opts.source,
-      onProgress: opts.onProgress,
+      onProgress,
     });
   } catch (err) {
     return {
@@ -57,7 +65,7 @@ export async function runDoctor(opts: RunDoctorOptions): Promise<DoctorReport> {
 
   checks.push(checkPipelineWarnings(data));
   checks.push(checkPublishOutcome(data));
-  checks.push(checkSiteConfigPage(opts.config, data));
+  checks.push(checkSiteConfigPage(opts.config, data, siteConfigEvent));
   checks.push(checkNavReferences(data));
   checks.push(checkHomeReference(data));
   checks.push(checkFeaturedReferences(data));
@@ -104,29 +112,36 @@ function checkPublishOutcome(data: IntermediateData): DoctorCheck {
   };
 }
 
-function checkSiteConfigPage(config: CosenseSiteConfig, data: IntermediateData): DoctorCheck {
+function checkSiteConfigPage(
+  config: CosenseSiteConfig,
+  data: IntermediateData,
+  event: Extract<ProgressEvent, { kind: "site-config" }> | null,
+): DoctorCheck {
+  const name = "Site-config page";
   if (config.siteConfig.page === null) {
-    return {
-      name: "Site-config page",
-      status: "pass",
-      message: "disabled (siteConfig.page = null)",
-    };
+    return { name, status: "pass", message: "disabled (siteConfig.page = null)" };
   }
   const pageTitle = config.siteConfig.page;
-  const isExcluded = data.excluded.some(
+  const pageExists = data.excluded.some(
     (e) => e.title === pageTitle && e.reason === "site-config page",
   );
-  if (!isExcluded) {
-    return {
-      name: "Site-config page",
-      status: "warn",
-      message: `"${pageTitle}" not found. Using default empty structure.`,
-    };
+
+  // A hard parse error means the site built with an empty fallback structure
+  // (no nav / home / redirects) — exactly what a pre-publish gate must fail on,
+  // rather than the old "✓ parsed successfully".
+  if (event?.error) {
+    return { name, status: "fail", message: `"${pageTitle}" failed to parse: ${event.error}` };
   }
+  if (event?.found) {
+    return { name, status: "pass", message: `"${pageTitle}" parsed successfully` };
+  }
+  // Not parsed: distinguish a missing page from a page lacking a site.yaml block
+  // (both fall back to empty structure, so both are warnings, not passes).
+  const reason = pageExists ? "has no code:site.yaml block" : "not found";
   return {
-    name: "Site-config page",
-    status: "pass",
-    message: `"${pageTitle}" parsed successfully`,
+    name,
+    status: "warn",
+    message: `"${pageTitle}" ${reason}. Using default empty structure.`,
   };
 }
 
@@ -251,6 +266,10 @@ function checkRedirectDestinations(data: IntermediateData): DoctorCheck {
   const slugs = new Set(data.pages.map((p) => p.slug));
   const broken: string[] = [];
   for (const [from, to] of entries) {
+    // Site-relative paths (/posts, /tags/foo, injected routes) are valid
+    // destinations the schema allows; they don't map to a page slug, so don't
+    // flag them. Only bare-slug destinations are checked against published pages.
+    if (to.startsWith("/")) continue;
     if (!slugs.has(to)) broken.push(`${from} → ${to}`);
   }
   if (broken.length === 0) {

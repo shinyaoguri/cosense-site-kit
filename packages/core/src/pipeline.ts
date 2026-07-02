@@ -41,7 +41,7 @@ export type ProgressEvent =
   | { kind: "fetch"; current: number; total: number; title: string }
   | { kind: "normalize"; total: number }
   | { kind: "publish"; kept: number; excluded: number }
-  | { kind: "site-config"; found: boolean; warnings: string[] }
+  | { kind: "site-config"; found: boolean; warnings: string[]; error?: string }
   | { kind: "warn"; message: string };
 
 // Collapse refs sharing an id to one entry, keeping the newest `updated`.
@@ -240,6 +240,9 @@ function extractStructure(
   } catch (err) {
     if (err instanceof SiteConfigParseError) {
       const message = err.message;
+      // Emit a site-config event (not just a warn) so doctor can fail its
+      // pre-publish gate — a broken .site silently falls back to empty structure.
+      onProgress?.({ kind: "site-config", found: false, warnings: [message], error: message });
       onProgress?.({ kind: "warn", message });
       return {
         structure: emptySiteStructure(),

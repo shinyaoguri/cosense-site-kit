@@ -172,6 +172,46 @@ describe("runDoctor", () => {
     expect(check.details?.join(" ")).toContain("Ghost");
   });
 
+  it("fails the site-config check when the .site YAML is broken (not a silent pass)", async () => {
+    // Malformed YAML → the pipeline falls back to an empty structure. The gate
+    // must fail rather than report "✓ parsed successfully".
+    const siteYaml = [".site", "code:site.yaml", " nav: [unclosed"].join("\n");
+    const config = baseConfig();
+    const source = stubSource([
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      rawPage({ id: "h", title: "Home", text: "Home\n#publish" }),
+    ]);
+    const report = await runDoctor({ config, source });
+    const check = find(report, "Site-config page");
+    expect(check.status).toBe("fail");
+    expect(report.ok).toBe(false);
+  });
+
+  it("warns (not passes) when the .site page has no site.yaml block", async () => {
+    const config = baseConfig();
+    const source = stubSource([
+      rawPage({ id: "s", title: ".site", text: ".site\njust prose, no code block" }),
+      rawPage({ id: "h", title: "Home", text: "Home\n#publish" }),
+    ]);
+    const report = await runDoctor({ config, source });
+    const check = find(report, "Site-config page");
+    expect(check.status).toBe("warn");
+    expect(check.message).toMatch(/no code:site\.yaml block/);
+  });
+
+  it("does not warn on a site-relative redirect destination (/posts)", async () => {
+    // The schema allows site-relative paths; they don't map to a page slug, so
+    // the redirect check must not flag them as missing.
+    const siteYaml = [".site", "code:site.yaml", " redirects:", "   old-top: /posts"].join("\n");
+    const config = baseConfig();
+    const source = stubSource([
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      rawPage({ id: "h", title: "Home", text: "Home\n#publish" }),
+    ]);
+    const report = await runDoctor({ config, source });
+    expect(find(report, "Redirect destinations exist").status).toBe("pass");
+  });
+
   it("warns when a redirect destination is missing", async () => {
     const siteYaml = [
       ".site",
