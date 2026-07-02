@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { Command, InvalidArgumentError } from "commander";
+import { Command, InvalidArgumentError, Option } from "commander";
 import pc from "picocolors";
 import { runDeployInit } from "./commands/deploy";
 import { runDoctorCmd } from "./commands/doctor";
@@ -104,9 +104,16 @@ deploy
     "cloudflare-workers (Workers Static Assets) | github-pages — overrides config",
   )
   .option("--schedule <cron>", "Cron schedule for the build job")
-  .option("--working-directory <dir>", "Subdirectory of repoRoot where the site lives (monorepo)")
+  .option(
+    "--working-directory <dir>",
+    "Subdirectory where the site lives; scopes the run steps (e.g. site)",
+  )
   .option("--repo-root <dir>", "Root of the repo to write .github/workflows into (default: cwd)")
   .option("--force", "Overwrite existing files")
+  // Internal: build the framework from source instead of installing from npm.
+  // Only for this repo's own dogfooding site — hidden from --help so consumers
+  // don't reach for it and generate a workflow referencing nonexistent paths.
+  .addOption(new Option("--framework-dev", "Build the framework from source (internal)").hideHelp())
   .action(
     async (opts: {
       config?: string;
@@ -115,6 +122,7 @@ deploy
       workingDirectory?: string;
       repoRoot?: string;
       force?: boolean;
+      frameworkDev?: boolean;
     }) => {
       await runDeployInit({
         cwd: process.cwd(),
@@ -124,6 +132,7 @@ deploy
         workingDirectory: opts.workingDirectory,
         repoRoot: opts.repoRoot,
         force: opts.force,
+        frameworkDev: opts.frameworkDev,
       });
     },
   );

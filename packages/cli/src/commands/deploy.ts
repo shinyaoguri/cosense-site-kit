@@ -17,6 +17,12 @@ export interface DeployInitOptions {
    * monorepo. The path is relative to repoRoot.
    */
   workingDirectory?: string;
+  /**
+   * Build the framework from source and call the CLI via its local dist entry.
+   * Internal: only for this repo's own dogfooding site. npm consumers must not
+   * set it (the generated workflow would reference paths that don't exist).
+   */
+  frameworkDev?: boolean;
   /** Override repoRoot. Default: opts.cwd. */
   repoRoot?: string;
 }
@@ -34,6 +40,7 @@ export async function runDeployInit(opts: DeployInitOptions): Promise<void> {
     target,
     schedule,
     workingDirectory: opts.workingDirectory,
+    frameworkDev: opts.frameworkDev,
   });
   const workflowPath = resolve(repoRoot, ".github/workflows/build.yml");
   await writeIfAbsent(workflowPath, workflow, opts.force);

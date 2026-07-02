@@ -7,20 +7,33 @@ export interface GithubActionsOptions {
   nodeVersion?: number;
   /**
    * Working directory inside the repo where the Astro project lives.
-   * Set to "site" when the docs site is at /site, or omit for repo root.
-   * Default: "." (repo root).
+   * Set to "site" when the site is at /site, or omit for repo root.
+   * Default: "." (repo root). This only scopes the run steps and cache/dist
+   * paths — it does NOT imply the framework is built from source (see
+   * frameworkDev). A normal npm consumer whose site lives in a subdirectory
+   * installs the framework from npm and runs `npx cosense-site fetch`.
    */
   workingDirectory?: string;
+  /**
+   * Build the @cosense-site-kit/* workspace packages from source before the
+   * fetch step, and invoke the CLI through its local dist entry rather than the
+   * npm bin. This is ONLY for this repository's own dogfooding site (the
+   * framework and the site live in one workspace); npm consumers must leave it
+   * off or the generated workflow references paths (packages/cli/dist) that
+   * don't exist in their repo. Default: false.
+   */
+  frameworkDev?: boolean;
 }
 
 export function generateGithubActionsWorkflow(opts: GithubActionsOptions): string {
   const schedule = opts.schedule ?? "17 1,13 * * *";
   const nodeVersion = opts.nodeVersion ?? 24;
   const wd = opts.workingDirectory && opts.workingDirectory !== "." ? opts.workingDirectory : null;
-  // Build local workspace packages before fetch only inside a monorepo (i.e.
-  // when the site lives in a subdirectory); single-package consumers install
-  // the framework from npm with dist/ already present.
-  const buildWorkspaces = wd !== null;
+  // "Site in a subdirectory" and "framework built from source" are independent:
+  // only this repo's own workspace needs the source build. Deriving it from wd
+  // (the old behavior) generated a workflow that referenced packages/cli/dist
+  // for every consumer whose site lived in a subdir — which always failed.
+  const buildWorkspaces = opts.frameworkDev === true;
 
   if (opts.target === "github-pages") {
     return renderPagesWorkflow({
@@ -51,6 +64,21 @@ function buildStep(a: RenderArgs): string {
       - name: Build framework packages
         run: npm run build
         working-directory: \${{ github.workspace }}`;
+}
+
+// Install dependencies. In the source-build (dogfooding) case the whole npm
+// workspace must be installed, so pin the step to the repo root regardless of
+// the job's working-directory. A normal consumer installs where their
+// package.json (with the @cosense-site-kit/* deps) lives — the job's
+// working-directory, which the job-level `defaults.run` already sets — so no
+// override is emitted, and a subdir site with its own package.json installs
+// correctly instead of failing at a scriptless repo root.
+function installStep(a: RenderArgs): string {
+  if (a.buildWorkspaces) {
+    return `      - run: npm install
+        working-directory: \${{ github.workspace }}`;
+  }
+  return `      - run: npm install`;
 }
 
 // In a monorepo, the workspace cli is locally linked, but its bin target
@@ -125,10 +153,7 @@ jobs:
           restore-keys: |
             cosense-cache-
 
-      # Install at the repo root (not the job's working-directory) so the whole
-      # npm workspace is installed in a monorepo — matches the Pages workflow.
-      - run: npm install
-        working-directory: \${{ github.workspace }}
+${installStep(a)}
 ${buildStep(a)}
 ${a.buildWorkspaces ? renderMonorepoRunSteps() : renderRunSteps()}
 
@@ -197,8 +222,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
-      - run: npm install
-        working-directory: \${{ github.workspace }}
+${installStep(a)}
 ${buildStep(a)}
 ${a.buildWorkspaces ? renderMonorepoRunSteps(true) : renderRunSteps(true)}
 

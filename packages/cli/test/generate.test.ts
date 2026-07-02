@@ -14,10 +14,23 @@ describe("generateGithubActionsWorkflow", () => {
     expect(yml).toContain("npx astro build");
   });
 
-  it("uses direct node for the local cli but npx for astro in monorepo mode", () => {
+  it("a subdirectory site (npm consumer) fetches via the npm bin, not local dist", () => {
+    // Regression: workingDirectory alone must NOT imply this repo's source-build
+    // monorepo. A normal consumer whose site lives in a subdir installs the
+    // framework from npm, so the workflow must never reference packages/cli/dist.
+    for (const target of ["cloudflare-workers", "github-pages"] as const) {
+      const yml = generateGithubActionsWorkflow({ target, workingDirectory: "site" });
+      expect(yml).toContain("npx cosense-site fetch");
+      expect(yml).not.toContain("packages/cli/dist");
+      expect(yml).not.toContain("Build framework packages");
+    }
+  });
+
+  it("uses direct node for the local cli but npx for astro in framework-dev mode", () => {
     const yml = generateGithubActionsWorkflow({
       target: "github-pages",
       workingDirectory: "site",
+      frameworkDev: true,
     });
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions ${{ }} expression, not a JS template string
     expect(yml).toContain("node ${{ github.workspace }}/packages/cli/dist/index.js fetch");
@@ -27,16 +40,30 @@ describe("generateGithubActionsWorkflow", () => {
     expect(yml).not.toContain("node_modules/astro/astro.js");
   });
 
-  it("installs at the workspace root in a monorepo so all packages install", () => {
-    // The job's working-directory points at the subdir; npm install must opt
-    // back out to github.workspace so the whole workspace installs (matches the
-    // Pages workflow).
+  it("installs at the workspace root only in framework-dev mode", () => {
+    // Source build needs the whole workspace, so pin install to github.workspace.
     for (const target of ["cloudflare-workers", "github-pages"] as const) {
-      const yml = generateGithubActionsWorkflow({ target, workingDirectory: "site" });
+      const yml = generateGithubActionsWorkflow({
+        target,
+        workingDirectory: "site",
+        frameworkDev: true,
+      });
       expect(yml).toMatch(
         /- run: npm install\n\s+working-directory: \$\{\{ github\.workspace \}\}/,
       );
     }
+  });
+
+  it("installs in the working-directory for a subdirectory npm consumer", () => {
+    // A subdir consumer's package.json (with @cosense-site-kit/* deps) lives in
+    // the site dir; the job-level default working-directory already points there,
+    // so no github.workspace override is emitted (which would install a
+    // scriptless repo root and fail).
+    const yml = generateGithubActionsWorkflow({ target: "github-pages", workingDirectory: "site" });
+    expect(yml).toContain("- run: npm install");
+    expect(yml).not.toMatch(
+      /- run: npm install\n\s+working-directory: \$\{\{ github\.workspace \}\}/,
+    );
   });
 
   it("emits a github-pages workflow with build/deploy jobs and env binding", () => {
@@ -105,18 +132,21 @@ describe("generateGithubActionsWorkflow", () => {
     expect(yml).toContain("path: ./site/dist");
   });
 
-  it("auto-builds workspace packages when workingDirectory implies a monorepo", () => {
+  it("builds workspace packages only in framework-dev mode", () => {
     const yml = generateGithubActionsWorkflow({
       target: "github-pages",
       workingDirectory: "site",
+      frameworkDev: true,
     });
     expect(yml).toContain("Build framework packages");
     expect(yml).toContain("npm run build");
   });
 
-  it("omits the workspace build step for a single-package site", () => {
-    const yml = generateGithubActionsWorkflow({ target: "github-pages" });
-    expect(yml).not.toContain("Build framework packages");
+  it("omits the workspace build step for an npm consumer (with or without a subdir)", () => {
+    for (const workingDirectory of [undefined, "site"]) {
+      const yml = generateGithubActionsWorkflow({ target: "github-pages", workingDirectory });
+      expect(yml).not.toContain("Build framework packages");
+    }
   });
 
   it("defaults to a twice-daily off-the-hour schedule", () => {
