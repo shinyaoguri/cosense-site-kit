@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SAFE_HREF } from "../../url";
 
 export type InlineNode =
   | { type: "text"; value: string }
@@ -23,7 +24,10 @@ export const inlineNodeSchema: z.ZodType<InlineNode> = z.lazy(() =>
     z.object({ type: z.literal("formula"), value: z.string() }),
     z.object({
       type: z.literal("link"),
-      href: z.string(),
+      // Enforce the safe-href invariant the parser is meant to guarantee, so a
+      // future parser/source regression that let `javascript:` through is caught
+      // at the model boundary instead of reaching `<a href>` in a theme.
+      href: z.string().regex(SAFE_HREF),
       children: z.array(inlineNodeSchema),
     }),
     z.object({
@@ -44,7 +48,10 @@ export const inlineNodeSchema: z.ZodType<InlineNode> = z.lazy(() =>
     z.object({
       type: z.literal("image"),
       src: z.string(),
-      href: z.string().optional(),
+      // The optional link target wrapping the image — same safe-href invariant
+      // as `link`. `src` is left unconstrained (image hosts vary; it's not an
+      // <a href> and can't execute script).
+      href: z.string().regex(SAFE_HREF).optional(),
       alt: z.string().optional(),
     }),
   ]),

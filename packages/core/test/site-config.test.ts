@@ -274,14 +274,30 @@ posts:
   });
 
   it("rejects external-URL redirect destinations (no open redirects)", () => {
-    for (const to of ["https://evil.example/", "//evil.example/x", "javascript:alert(1)"]) {
+    const bad = [
+      "https://evil.example/",
+      "//evil.example/x",
+      "javascript:alert(1)",
+      // Whitespace/control-prefixed bypasses: browsers strip leading tab/space
+      // before parsing, so these resolve externally despite a naive check.
+      "\t//evil.example/x",
+      " //evil.example/x",
+      "\tjavascript:alert(1)",
+      "java\tscript:alert(1)",
+    ];
+    for (const to of bad) {
       const yaml = `redirects:\n  old: "${to}"\n`;
       expect(() => parseSitePage(pageWith([codeBlock("site.yaml", yaml)]))).toThrowError(
         SiteConfigParseError,
       );
     }
-    const ok = parseSitePage(pageWith([codeBlock("site.yaml", "redirects:\n  old: new-slug\n")]));
-    expect(ok?.structure.redirects).toEqual({ old: "new-slug" });
+    // Valid: a bare slug and a site-relative path; surrounding space is trimmed.
+    const ok = parseSitePage(
+      pageWith([
+        codeBlock("site.yaml", 'redirects:\n  a: new-slug\n  b: /blog\n  c: "  spaced  "\n'),
+      ]),
+    );
+    expect(ok?.structure.redirects).toEqual({ a: "new-slug", b: "/blog", c: "spaced" });
   });
 });
 

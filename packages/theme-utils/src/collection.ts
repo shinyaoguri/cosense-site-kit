@@ -1,15 +1,11 @@
+import { isSafeHref, safeHref } from "@cosense-site-kit/core";
 import { parse as parseYaml } from "yaml";
 
-// Allow only schemes that can't execute script (http/https/mailto/relative/
-// fragment); anything else (javascript:, data:, …) is dropped. Defense in
-// depth — Cosense authors are trusted, but a citation `url:` flows straight
-// into an <a href>, so sanitize it the same way inline markdown links are.
-const SAFE_HREF = /^(https?:\/\/|mailto:|\/|#)/i;
-
-/** Return `href` when it uses a safe scheme, otherwise `undefined`. */
-export function safeHref(href: string | undefined): string | undefined {
-  return href && SAFE_HREF.test(href) ? href : undefined;
-}
+// Re-export core's safe-href helper so existing imports (structure.ts, index.ts)
+// keep working while the definition lives in one place. Previously this file
+// kept its own SAFE_HREF that drifted from core's — it dropped `tel:` and
+// allowed protocol-relative `//host`.
+export { safeHref };
 
 // A data-driven "collection" page: the `collection` theme template reads the
 // first YAML code block off a Cosense page and renders it as a set of list
@@ -242,7 +238,7 @@ export function renderInlineLinks(text: string): string {
     const label = text.slice(open + 1, close);
     const href = text.slice(hrefStart, k);
     out += esc(text.slice(last, open));
-    if (SAFE_HREF.test(href)) {
+    if (isSafeHref(href)) {
       out += `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
     } else {
       out += esc(label);

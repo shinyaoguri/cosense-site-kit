@@ -29,6 +29,28 @@ describe("inline node schema", () => {
   it("rejects an unknown inline type", () => {
     expect(() => inlineNodeSchema.parse({ type: "blink", value: "x" })).toThrow();
   });
+
+  it("enforces the safe-href invariant on link and image nodes", () => {
+    // The parser guarantees safe hrefs today; the schema now enforces it so a
+    // future parser/source regression can't smuggle javascript: to <a href>.
+    expect(() =>
+      inlineNodeSchema.parse({ type: "link", href: "javascript:alert(1)", children: [] }),
+    ).toThrow();
+    expect(() =>
+      inlineNodeSchema.parse({
+        type: "image",
+        src: "https://x/y.png",
+        href: "javascript:alert(1)",
+      }),
+    ).toThrow();
+    // Safe shapes still pass.
+    expect(
+      inlineNodeSchema.parse({ type: "link", href: "https://ok.example", children: [] }),
+    ).toBeTruthy();
+    expect(
+      inlineNodeSchema.parse({ type: "image", src: "https://x/y.png", href: "/local" }),
+    ).toBeTruthy();
+  });
 });
 
 describe("block schema", () => {
