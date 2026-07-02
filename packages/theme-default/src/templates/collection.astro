@@ -56,6 +56,7 @@ const afterBlocks = dataIndex === -1 ? [] : page.blocks.slice(dataIndex + 1);
                     type="button"
                     class:list={["c-filter", { "is-active": i === 0 }]}
                     data-filter={f}
+                    aria-pressed={i === 0 ? "true" : "false"}
                   >
                     {f}
                   </button>
@@ -128,7 +129,12 @@ const afterBlocks = dataIndex === -1 ? [] : page.blocks.slice(dataIndex + 1);
     buttons.forEach((btn) => {
       btn.addEventListener("click", () => {
         const filter = btn.dataset.filter ?? "All";
-        buttons.forEach((b) => b.classList.toggle("is-active", b === btn));
+        buttons.forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle("is-active", on);
+          // Convey the selected filter to screen readers, not just visually.
+          b.setAttribute("aria-pressed", String(on));
+        });
         items.forEach((item) => {
           const tags = item.dataset.tags ?? "";
           const show = filter === "All" || tags.includes(`|${filter}|`);
