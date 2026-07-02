@@ -72,6 +72,8 @@ const isActive = (href: string): boolean => {
 </header>
 
 <script>
+  import { trapFocus } from "../scripts/focus-trap";
+
   // Header behaviour, progressively enhanced. `has-js` gates the collapsed
   // layouts so without JS the nav stays visible (wrapped) and the search icon
   // is hidden (search needs JS + a built index anyway). The search UI itself is
@@ -96,8 +98,11 @@ const isActive = (href: string): boolean => {
     };
     const focusInput = () =>
       requestAnimationFrame(() => overlay?.querySelector("input")?.focus());
+    // Focus trap so Tab stays inside the open dialog; released on close.
+    let releaseTrap: (() => void) | null = null;
     const setSearch = (open: boolean) => {
       if (!overlay) return;
+      const wasOpen = overlay.classList.contains("is-open");
       if (open && box && searchTrigger) {
         // Pin the box over the icon so it grows out of the button.
         const r = searchTrigger.getBoundingClientRect();
@@ -109,6 +114,15 @@ const isActive = (href: string): boolean => {
       if (open) {
         loadSearch();
         focusInput();
+        if (box) releaseTrap = trapFocus(box);
+      } else {
+        releaseTrap?.();
+        releaseTrap = null;
+        // Return focus to the trigger only if we actually closed an open
+        // overlay; otherwise a stray Escape (e.g. closing the nav) would yank
+        // focus to the search icon. Without this, focus falls to <body> because
+        // the overlay becomes visibility:hidden.
+        if (wasOpen) searchTrigger?.focus();
       }
     };
 
@@ -158,6 +172,10 @@ const isActive = (href: string): boolean => {
       if ((e.target as HTMLElement).closest("a")) setNav(false);
     });
     document.addEventListener("keydown", (e) => {
+      // Ignore Escape fired to cancel an IME conversion — otherwise typing
+      // Japanese in the search box and pressing Esc to undo a conversion would
+      // close the whole overlay and discard the query.
+      if (e.isComposing || e.keyCode === 229) return;
       if (e.key === "Escape") {
         setNav(false);
         setSearch(false);

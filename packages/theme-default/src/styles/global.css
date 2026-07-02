@@ -639,7 +639,9 @@ html[data-theme="dark"] .page-content .astro-code span {
     opacity 0.15s var(--ease),
     background 0.15s var(--ease);
 }
-.page-content pre:hover .code-block-copy {
+.page-content pre:hover .code-block-copy,
+/* Reveal on keyboard focus too — otherwise Tab lands on an invisible button. */
+.code-block-copy:focus-visible {
   opacity: 1;
 }
 .code-block-copy:hover {
@@ -1204,6 +1206,34 @@ html[data-theme="dark"] .page-content .astro-code span {
 }
 .lightbox.is-open .lightbox__img {
   transform: scale(1);
+}
+/* Visible close affordance (keyboard/SR users can't rely on click-anywhere). */
+.lightbox__close {
+  position: absolute;
+  top: clamp(0.5rem, 2vw, 1rem);
+  right: clamp(0.5rem, 2vw, 1rem);
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  color: #fff;
+  background: rgb(0 0 0 / 0.4);
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.lightbox__close:hover {
+  background: rgb(0 0 0 / 0.7);
+}
+.lightbox__close:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+/* Content images are focusable (role="button") for keyboard zoom — show it. */
+.page-content img[role="button"]:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
 }
 /* Stop the page behind the overlay from scrolling while it's open. */
 html.lightbox-open {
