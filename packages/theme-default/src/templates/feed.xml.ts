@@ -1,7 +1,13 @@
 import { getCollection } from "astro:content";
 import site from "virtual:cosense-site-kit/site";
 import type { CosenseSitePage } from "@cosense-site-kit/core";
-import { buildRssFeed, type FeedItem, loadStructure, path } from "@cosense-site-kit/theme-utils";
+import {
+  buildRssFeed,
+  type FeedItem,
+  hasTag,
+  loadStructure,
+  path,
+} from "@cosense-site-kit/theme-utils";
 import type { APIContext } from "astro";
 
 // /feed.xml — RSS 2.0 of the posts (the `.site` posts tag), newest first. When
@@ -17,7 +23,7 @@ export async function GET(context: APIContext): Promise<Response> {
   const pages = (await getCollection("pages")) as { data: CosenseSitePage }[];
   const posts = postTag
     ? pages
-        .filter((e) => e.data.tags.includes(postTag))
+        .filter((e) => hasTag(e.data.tags, postTag))
         .sort((a, b) => (b.data.publishedAt ?? "").localeCompare(a.data.publishedAt ?? ""))
     : [];
 

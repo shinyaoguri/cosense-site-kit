@@ -1,4 +1,5 @@
 import type { CosenseSiteConfig } from "../config";
+import { normalizeKey } from "../keys";
 import type { CosenseSitePage } from "../schema/v1/page";
 
 export interface ExcludedPage {
@@ -25,8 +26,11 @@ export function applyPublishRules(
   const excluded: ExcludedPage[] = [];
 
   for (const page of pages) {
-    const tags = new Set(page.tags);
-    const excluded_tag = publish.excludeTags.find((t) => tags.has(t));
+    // Match case-insensitively: Cosense collapses `#Draft` and `#draft` onto one
+    // tag page, so a case-variant excludeTag must still exclude — otherwise the
+    // safety rule "exclude always wins" fails open and leaks the page.
+    const tags = new Set(page.tags.map(normalizeKey));
+    const excluded_tag = publish.excludeTags.find((t) => tags.has(normalizeKey(t)));
     if (excluded_tag) {
       excluded.push({
         title: page.title,
@@ -35,7 +39,7 @@ export function applyPublishRules(
       });
       continue;
     }
-    const included_tag = publish.includeTags.find((t) => tags.has(t));
+    const included_tag = publish.includeTags.find((t) => tags.has(normalizeKey(t)));
     if (included_tag) {
       kept.push(page);
       continue;

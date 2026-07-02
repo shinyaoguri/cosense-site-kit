@@ -74,6 +74,24 @@ describe("applyPublishRules", () => {
     expect(kept).toHaveLength(0);
     expect(excluded[0]?.reason).toMatch(/draft/);
   });
+
+  // Cosense collapses `#Draft` and `#draft` onto one tag page, so a case-variant
+  // excludeTag must still exclude — a case-sensitive check would fail open and
+  // publish a page the author meant to keep private.
+  it("excludes case-variant excludeTags (#Draft matches excludeTags 'draft')", () => {
+    const pages = [
+      normalizePage(rawPage({ id: "a", title: "A", text: "A\n#publish #Draft" }), "p"),
+    ];
+    const { kept, excluded } = applyPublishRules(pages, config.publish);
+    expect(kept).toHaveLength(0);
+    expect(excluded[0]?.reason).toMatch(/draft/i);
+  });
+
+  it("includes case-variant includeTags (#Publish matches includeTags 'publish')", () => {
+    const pages = [normalizePage(rawPage({ id: "a", title: "A", text: "A\n#Publish" }), "p")];
+    const { kept } = applyPublishRules(pages, config.publish);
+    expect(kept.map((p) => p.title)).toEqual(["A"]);
+  });
 });
 
 describe("slug + link + backlink resolution", () => {
@@ -109,6 +127,15 @@ describe("slug + link + backlink resolution", () => {
         rawPage({ id: "1", title: "研究テーマ", text: "研究テーマ\n#publish\n#slug/research" }),
         "p",
       ),
+    ];
+    const [slugged] = assignSlugs(pages, { slug: "metadata-or-encoded-title" });
+    expect(slugged?.slug).toBe("research");
+  });
+
+  it("recognizes a case-variant #Slug/ tag", () => {
+    // Cosense collapses `#Slug/...` and `#slug/...`; the declared slug must win.
+    const pages = [
+      normalizePage(rawPage({ id: "1", title: "T", text: "T\n#publish\n#Slug/research" }), "p"),
     ];
     const [slugged] = assignSlugs(pages, { slug: "metadata-or-encoded-title" });
     expect(slugged?.slug).toBe("research");
@@ -269,6 +296,42 @@ describe("buildIntermediate", () => {
     const data = await buildIntermediate({ config, source: stubSource(raws) });
     // Logo wins despite Alpha sorting first in the auto-pick fallback.
     expect(data.site.icon).toBe("https://i/logo.png");
+  });
+
+  it("resolves a `.site` favicon page title case-insensitively", async () => {
+    // Cosense resolves titles case-insensitively, so `favicon: logo` must find
+    // the page "Logo" instead of silently falling through to the auto-pick.
+    const siteYaml = [".site", "code:site.yaml", " favicon: logo"].join("\n");
+    const raws = [
+      rawPage({ id: "s", title: ".site", text: siteYaml }),
+      {
+        ...rawPage({ id: "l", title: "Logo", text: "Logo\n#publish" }),
+        image: "https://i/logo.png",
+      },
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    expect(data.site.icon).toBe("https://i/logo.png");
+  });
+
+  it("consumes a case-variant `.site` page title instead of publishing it", async () => {
+    // siteConfig.page defaults to ".site"; a page titled ".Site" must still be
+    // read as config and excluded from the published set, not leaked as a page.
+    const siteYaml = [".Site", "code:site.yaml", " favicon: https://cdn/x.png"].join("\n");
+    const raws = [
+      rawPage({ id: "s", title: ".Site", text: siteYaml }),
+      rawPage({ id: "a", title: "Alpha", text: "Alpha\n#publish" }),
+    ];
+    const config = defineCosenseSite({
+      site: { title: "T", baseUrl: "https://e.com" },
+      source: { type: "cosense", project: "p" },
+    });
+    const data = await buildIntermediate({ config, source: stubSource(raws) });
+    expect(data.pages.map((p) => p.title)).toEqual(["Alpha"]);
+    expect(data.site.icon).toBe("https://cdn/x.png");
   });
 
   it("never lets a non-URL favicon string reach the icon as a raw href", async () => {

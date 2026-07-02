@@ -53,6 +53,20 @@ describe("resolveTemplate", () => {
     const p = page({ tags: ["template/lab/member"] });
     expect(resolveTemplate(p, structureWith())).toBe("lab/member");
   });
+
+  it("matches a case-variant #Template/<name> tag", () => {
+    const p = page({ tags: ["publish", "Template/Profile"] });
+    // Prefix matches case-insensitively; the value after the prefix is kept raw.
+    expect(resolveTemplate(p, structureWith())).toBe("Profile");
+  });
+
+  it("matches the .site mapping case-insensitively", () => {
+    // Cosense titles are case-insensitive, so `templates: { Home: ... }` must
+    // still hit the page "home".
+    const p = page({ title: "home", tags: ["publish"] });
+    const s = structureWith({ Home: "landing" });
+    expect(resolveTemplate(p, s)).toBe("landing");
+  });
 });
 
 describe("assignTemplates", () => {

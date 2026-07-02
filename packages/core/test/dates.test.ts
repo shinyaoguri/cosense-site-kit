@@ -62,6 +62,17 @@ describe("assignDates", () => {
     expect(pages[0]?.publishedAt).toBe("2025-03-04T00:00:00.000Z");
   });
 
+  it("resolves case-variant date tags (#Published/... sets the date)", () => {
+    // Cosense sees `#Published/...` and `#published/...` as one tag, so a
+    // case-variant must set the date instead of being silently ignored.
+    const { pages, warnings } = assignDates([
+      page({ title: "A", tags: ["Published/2025-03-04", "Updated/2025-09-10"] }),
+    ]);
+    expect(pages[0]?.publishedAt).toBe("2025-03-04T00:00:00.000Z");
+    expect(pages[0]?.modifiedAt).toBe("2025-09-10T00:00:00.000Z");
+    expect(warnings).toEqual([]);
+  });
+
   it("falls back and warns when a date tag is invalid", () => {
     const { pages, warnings } = assignDates([
       page({ title: "Bad", tags: ["published/2026-02-30"] }),

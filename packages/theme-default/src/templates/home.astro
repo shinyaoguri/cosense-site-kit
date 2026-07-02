@@ -4,6 +4,7 @@ import site from "virtual:cosense-site-kit/site";
 import options from "virtual:cosense-theme-default/options";
 import {
   formatDate,
+  hasTag,
   hidesDates,
   isPublicTag,
   loadStructure,
@@ -33,7 +34,7 @@ const featured = structure.featured
 
 const postTag = structure.posts?.tag;
 const recent = postTag
-  ? allPages.filter((e) => e.data.tags.includes(postTag)).slice(0, structure.posts?.limit ?? 10)
+  ? allPages.filter((e) => hasTag(e.data.tags, postTag)).slice(0, structure.posts?.limit ?? 10)
   : allPages.slice(0, 20);
 const recentHeading = postTag ? "Recent posts" : "Recent pages";
 

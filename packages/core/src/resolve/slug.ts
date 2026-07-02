@@ -1,4 +1,5 @@
 import type { CosenseSiteConfig } from "../config";
+import { normalizeKey } from "../keys";
 import type { CosenseSitePage } from "../schema/v1/page";
 
 const SLUG_TAG_PREFIX = "slug/";
@@ -16,7 +17,7 @@ export function computeSlug(
       return encodeTitle(page.title);
     case "metadata-or-encoded-title": {
       const declared = page.tags
-        .find((t) => t.startsWith(SLUG_TAG_PREFIX))
+        .find((t) => normalizeKey(t).startsWith(SLUG_TAG_PREFIX))
         ?.slice(SLUG_TAG_PREFIX.length);
       if (declared) return slugifyAscii(declared);
       return encodeTitle(page.title);

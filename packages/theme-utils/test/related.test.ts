@@ -66,4 +66,17 @@ describe("relatedPages", () => {
     const related = relatedPages(["A"], [c("Dup", ["A", "A", "A"])]);
     expect(related[0]?.shared).toBe(1);
   });
+
+  it("treats case-variant link targets as shared (Cosense resolves case-insensitively)", () => {
+    const related = relatedPages(["Deep Learning"], [c("Other", ["deep learning"])]);
+    expect(related.map((r) => r.title)).toEqual(["Other"]);
+    expect(related[0]?.shared).toBe(1);
+  });
+
+  it("excludes titles case-insensitively", () => {
+    const related = relatedPages(["A"], [c("Self", ["A"]), c("Other", ["A"])], {
+      exclude: ["self"],
+    });
+    expect(related.map((r) => r.title)).toEqual(["Other"]);
+  });
 });

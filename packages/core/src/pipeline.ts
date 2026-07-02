@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { CosenseSiteConfig } from "./config";
+import { normalizeKey } from "./keys";
 import { parseSitePage, SiteConfigParseError } from "./parse/site-config";
 import { applyPublishRules } from "./publish/filter";
 import { resolveLinkData } from "./resolve/backlinks";
@@ -173,7 +174,10 @@ function pickFavicon(
   const { favicon, sourceIcon, homePage, onWarn } = opts;
   if (favicon) {
     if (/^https?:\/\//i.test(favicon)) return favicon;
-    const named = pages.find((p) => p.title === favicon);
+    // `favicon:` names a Cosense page title — match it the same case-insensitive
+    // way Cosense resolves titles, so `favicon: logo` finds the page "Logo".
+    const faviconKey = normalizeKey(favicon);
+    const named = pages.find((p) => normalizeKey(p.title) === faviconKey);
     if (named?.image) return named.image;
     // Explicit but unresolvable: warn and fall through to the auto-pick so the
     // site still gets a sensible icon rather than silently none.
@@ -183,7 +187,8 @@ function pickFavicon(
   }
   if (sourceIcon) return sourceIcon;
   if (homePage) {
-    const home = pages.find((p) => p.title === homePage);
+    const homeKey = normalizeKey(homePage);
+    const home = pages.find((p) => normalizeKey(p.title) === homeKey);
     if (home?.image) return home.image;
   }
   const fallback = [...pages].sort((a, b) => a.title.localeCompare(b.title)).find((p) => p.image);
@@ -198,7 +203,12 @@ function extractStructure(
   if (!sitePage) {
     return { structure: emptySiteStructure(), warnings: [], sitePageTitle: null };
   }
-  const page = normalized.find((p) => p.title === sitePage);
+  // Match the `.site` page title case-insensitively (Cosense treats titles that
+  // way). Downstream exclusion filters compare against sitePageTitle with `===`,
+  // so return the page's *actual* title when found — otherwise a case-variant
+  // config page would leak into the published set instead of being consumed.
+  const sitePageKey = normalizeKey(sitePage);
+  const page = normalized.find((p) => normalizeKey(p.title) === sitePageKey);
   if (!page) {
     onProgress?.({ kind: "site-config", found: false, warnings: [] });
     return { structure: emptySiteStructure(), warnings: [], sitePageTitle: sitePage };
@@ -209,7 +219,7 @@ function extractStructure(
     const warnings = result?.warnings ?? [];
     onProgress?.({ kind: "site-config", found: result !== null, warnings });
     for (const w of warnings) onProgress?.({ kind: "warn", message: w });
-    return { structure, warnings, sitePageTitle: sitePage };
+    return { structure, warnings, sitePageTitle: page.title };
   } catch (err) {
     if (err instanceof SiteConfigParseError) {
       const message = err.message;
@@ -217,7 +227,7 @@ function extractStructure(
       return {
         structure: emptySiteStructure(),
         warnings: [message],
-        sitePageTitle: sitePage,
+        sitePageTitle: page.title,
       };
     }
     throw err;
