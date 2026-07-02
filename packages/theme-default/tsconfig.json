@@ -2,9 +2,12 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
     "jsx": "preserve",
     "types": ["astro/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"]
+  // Type-check tests too — they were previously excluded, which hid real type
+  // errors (e.g. a required option missing in a test fixture). rootDir is left
+  // unset so test/** can be included; tsup infers its own output layout from the
+  // src entry, and typecheck runs with --noEmit.
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "test/**/*.ts"]
 }

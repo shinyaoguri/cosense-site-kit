@@ -142,7 +142,7 @@ describe("vendorIcons", () => {
         children: { src: string }[];
       }
     ).children[0];
-    expect(secondIcon.src).toBe(firstIcon.src);
+    expect(secondIcon?.src).toBe(firstIcon?.src);
   });
 
   it("vendors icons inside table cells", async () => {

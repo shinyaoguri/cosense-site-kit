@@ -61,11 +61,16 @@ function channel(c: number): number {
 }
 function luminance(hex: string): number {
   const m = hex.replace("#", "");
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2), 16));
+  const r = parseInt(m.slice(0, 2), 16);
+  const g = parseInt(m.slice(2, 4), 16);
+  const b = parseInt(m.slice(4, 6), 16);
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 }
 function contrastRatio(a: string, b: string): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  const la = luminance(a);
+  const lb = luminance(b);
+  const hi = Math.max(la, lb);
+  const lo = Math.min(la, lb);
   return (hi + 0.05) / (lo + 0.05);
 }
 // Parse the hex custom properties from global.css `:root` so the test tracks the
@@ -75,7 +80,10 @@ function lightTokens(): Record<string, string> {
   const css = readFileSync(cssPath, "utf8");
   const block = css.slice(css.indexOf(":root"), css.indexOf("}", css.indexOf(":root")));
   const tokens: Record<string, string> = {};
-  for (const m of block.matchAll(/(--[\w-]+):\s*(#[0-9a-fA-F]{6})\b/g)) tokens[m[1]] = m[2];
+  for (const m of block.matchAll(/(--[\w-]+):\s*(#[0-9a-fA-F]{6})\b/g)) {
+    const [, key, value] = m;
+    if (key && value) tokens[key] = value;
+  }
   return tokens;
 }
 
@@ -95,8 +103,7 @@ describe("WCAG AA text contrast", () => {
         it(`${scheme}: ${text} on ${bg} clears 4.5:1`, () => {
           const fg = tokens[text];
           const surface = tokens[bg];
-          expect(fg, `${text} missing`).toBeDefined();
-          expect(surface, `${bg} missing`).toBeDefined();
+          if (!fg || !surface) throw new Error(`missing token: ${text} or ${bg}`);
           expect(contrastRatio(fg, surface)).toBeGreaterThanOrEqual(4.5);
         });
       }

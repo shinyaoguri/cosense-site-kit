@@ -81,7 +81,7 @@ describe("createCosenseSource cache freshness", () => {
       updated: 1_700_000_000,
       sourceUrl: "https://scrapbox.io/p/A",
     });
-    expect(page.text).toContain("v1");
+    expect(page?.text).toContain("v1");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(await source.cache.get("a")).not.toBeNull();
   });
@@ -102,7 +102,7 @@ describe("createCosenseSource cache freshness", () => {
       updated: 1_700_000_000,
       sourceUrl: "u",
     });
-    expect(page.text).toContain("v1");
+    expect(page?.text).toContain("v1");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -123,7 +123,7 @@ describe("createCosenseSource cache freshness", () => {
       updated: 1_700_000_500,
       sourceUrl: "u",
     });
-    expect(page.text).toContain("v2");
+    expect(page?.text).toContain("v2");
     expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect((await source.cache.get("a"))?.text).toContain("v2");
   });
@@ -145,7 +145,7 @@ describe("createCosenseSource cache freshness", () => {
       updated: 1_700_000_000,
       sourceUrl: "u",
     });
-    expect(page.text).toContain("refetched");
+    expect(page?.text).toContain("refetched");
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 

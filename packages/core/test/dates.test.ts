@@ -6,7 +6,6 @@ function page(overrides: Partial<CosenseSitePage> & { title: string }): CosenseS
   return {
     schemaVersion: "1",
     id: overrides.id ?? "1",
-    title: overrides.title,
     slug: overrides.slug ?? "p",
     sourceUrl: "https://scrapbox.io/p/P",
     template: "page",

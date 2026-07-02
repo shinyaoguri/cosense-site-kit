@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { ThemeDefaultRuntimeOptions } from "../src/index";
 import { resolveActiveSkin } from "../src/presets";
 
-const lightOptions: ThemeDefaultRuntimeOptions = { nav: [], tokens: {} };
+const lightOptions: ThemeDefaultRuntimeOptions = { nav: [], tokens: {}, search: true };
 const darkOptions: ThemeDefaultRuntimeOptions = {
   nav: [],
   tokens: { "--color-bg": "#191919" },
   colorScheme: "dark",
+  search: true,
 };
 
 describe("resolveActiveSkin", () => {
