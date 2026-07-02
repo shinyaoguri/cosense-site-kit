@@ -33,4 +33,15 @@ describe("resolveActiveSkin", () => {
     const skin = resolveActiveSkin("neon", darkOptions);
     expect(skin.colorScheme).toBe("dark");
   });
+
+  it("treats Object.prototype keys as unknown skins, not truthy hits", () => {
+    // A bare `PRESETS[name]` resolves "constructor"/"toString"/"__proto__" to
+    // inherited members (truthy), which would silently apply an empty-token skin
+    // instead of falling back to the astro.config preset.
+    for (const name of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+      const skin = resolveActiveSkin(name, darkOptions);
+      expect(skin.colorScheme).toBe("dark");
+      expect(skin.tokens["--color-bg"]).toBe("#191919");
+    }
+  });
 });
