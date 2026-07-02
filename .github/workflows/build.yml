@@ -51,6 +51,8 @@ jobs:
         run: npm run build
         working-directory: ${{ github.workspace }}
       - run: node ${{ github.workspace }}/packages/cli/dist/index.js fetch
+      # Pre-publish gate: doctor exits 1 only on fail checks (warnings exit 0).
+      - run: node ${{ github.workspace }}/packages/cli/dist/index.js doctor
       - run: npx astro build
 
       - name: Upload Pages artifact

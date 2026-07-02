@@ -13,7 +13,12 @@ export const VERSION = "0.0.0";
 // via Cross-Origin-Resource-Policy).
 export { type VendorIconsOptions, vendorIcons, vendorImage } from "./assets/icons";
 // ── Configuration ────────────────────────────────────────────────────────
-export { type CosenseSiteConfig, defineCosenseSite } from "./config";
+export {
+  type CosenseSiteConfig,
+  DEPLOY_TARGETS,
+  type DeployTarget,
+  defineCosenseSite,
+} from "./config";
 // ── Diagnostics (consumed by the CLI) ────────────────────────────────────
 export { type DoctorCheck, runDoctor } from "./doctor";
 // ── Name matching ─────────────────────────────────────────────────────────

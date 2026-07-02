@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import { DEPLOY_TARGETS, type DeployTarget } from "@cosense-site-kit/core";
 import { Command, InvalidArgumentError, Option } from "commander";
 import pc from "picocolors";
 import { runDeployInit } from "./commands/deploy";
@@ -99,9 +100,12 @@ deploy
   .command("init")
   .description("Generate CI workflow and (for Workers) wrangler.jsonc")
   .option("--config <file>", "Path to cosense.config.{ts,js,mjs}")
-  .option(
-    "--target <target>",
-    "cloudflare-workers (Workers Static Assets) | github-pages — overrides config",
+  // .choices rejects a typo (e.g. `github-page`) with a clear error and exit 1,
+  // instead of writing a workflow that's incomplete for either target.
+  .addOption(
+    new Option("--target <target>", "Deploy target — overrides config").choices([
+      ...DEPLOY_TARGETS,
+    ]),
   )
   .option("--schedule <cron>", "Cron schedule for the build job")
   .option(
@@ -110,6 +114,9 @@ deploy
   )
   .option("--repo-root <dir>", "Root of the repo to write .github/workflows into (default: cwd)")
   .option("--force", "Overwrite existing files")
+  // Runs `cosense-site doctor` between fetch and build as a pre-publish gate
+  // (fail → exit 1 stops the deploy; warnings don't). --no-doctor opts out.
+  .option("--no-doctor", "Omit the pre-publish doctor gate from the workflow")
   // Internal: build the framework from source instead of installing from npm.
   // Only for this repo's own dogfooding site — hidden from --help so consumers
   // don't reach for it and generate a workflow referencing nonexistent paths.
@@ -117,11 +124,12 @@ deploy
   .action(
     async (opts: {
       config?: string;
-      target?: "cloudflare-workers" | "github-pages";
+      target?: DeployTarget;
       schedule?: string;
       workingDirectory?: string;
       repoRoot?: string;
       force?: boolean;
+      doctor?: boolean;
       frameworkDev?: boolean;
     }) => {
       await runDeployInit({
@@ -132,6 +140,7 @@ deploy
         workingDirectory: opts.workingDirectory,
         repoRoot: opts.repoRoot,
         force: opts.force,
+        doctor: opts.doctor,
         frameworkDev: opts.frameworkDev,
       });
     },

@@ -23,6 +23,12 @@ export interface GithubActionsOptions {
    * don't exist in their repo. Default: false.
    */
   frameworkDev?: boolean;
+  /**
+   * Insert a `cosense-site doctor` step between fetch and build as a pre-publish
+   * gate: doctor exits 1 only on `fail` checks (warnings exit 0), so it stops a
+   * broken deploy without over-blocking cron on mere warnings. Default: true.
+   */
+  doctor?: boolean;
 }
 
 export function generateGithubActionsWorkflow(opts: GithubActionsOptions): string {
@@ -34,6 +40,7 @@ export function generateGithubActionsWorkflow(opts: GithubActionsOptions): strin
   // (the old behavior) generated a workflow that referenced packages/cli/dist
   // for every consumer whose site lived in a subdir — which always failed.
   const buildWorkspaces = opts.frameworkDev === true;
+  const doctor = opts.doctor !== false;
 
   if (opts.target === "github-pages") {
     return renderPagesWorkflow({
@@ -41,6 +48,7 @@ export function generateGithubActionsWorkflow(opts: GithubActionsOptions): strin
       nodeVersion,
       workingDirectory: wd,
       buildWorkspaces,
+      doctor,
     });
   }
   return renderCloudflareWorkflow({
@@ -48,6 +56,7 @@ export function generateGithubActionsWorkflow(opts: GithubActionsOptions): strin
     nodeVersion,
     workingDirectory: wd,
     buildWorkspaces,
+    doctor,
   });
 }
 
@@ -56,6 +65,7 @@ interface RenderArgs {
   nodeVersion: number;
   workingDirectory: string | null;
   buildWorkspaces: boolean;
+  doctor: boolean;
 }
 
 function buildStep(a: RenderArgs): string {
@@ -81,21 +91,26 @@ function installStep(a: RenderArgs): string {
   return `      - run: npm install`;
 }
 
-// In a monorepo, the workspace cli is locally linked, but its bin target
+// How the workflow invokes the cosense-site CLI. In source-build (dogfooding)
+// mode the workspace cli is locally linked but its bin target
 // (packages/cli/dist/index.js) doesn't exist when npm install runs, so npm skips
-// creating the bin symlink. Calling the file directly through node sidesteps
-// that race entirely. astro is a normal published dependency, so its bin link
-// is created reliably — `npx astro build` resolves the version-correct entry
-// (the internal path moved between Astro 5 and 6) and runs in working-directory.
-function renderMonorepoRunSteps(pagesEnv = false): string {
-  return `      - run: node \${{ github.workspace }}/packages/cli/dist/index.js fetch
-      - run: npx astro build${pagesBuildEnv(pagesEnv)}`;
+// the bin symlink — call the file directly through node. npm consumers install
+// @cosense-site-kit/cli from npm where dist/ is present, so `npx cosense-site`
+// resolves a working bin.
+function cliInvocation(a: RenderArgs): string {
+  return a.buildWorkspaces
+    ? // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions ${{ }} expression, not a JS template
+      "node ${{ github.workspace }}/packages/cli/dist/index.js"
+    : "npx cosense-site";
 }
 
-// Single-package consumers install @cosense-site-kit/cli from npm where the
-// dist/ is already present, so npm creates a working bin link. npx is fine.
-function renderRunSteps(pagesEnv = false): string {
-  return `      - run: npx cosense-site fetch
+// fetch → (doctor) → astro build. astro is a normal published dependency, so
+// `npx astro build` resolves the version-correct entry (its internal path moved
+// between Astro 5 and 6) and runs in the job's working-directory.
+function renderRunSteps(a: RenderArgs, pagesEnv = false): string {
+  const cli = cliInvocation(a);
+  const doctorStep = a.doctor ? `\n      - run: ${cli} doctor` : "";
+  return `      - run: ${cli} fetch${doctorStep}
       - run: npx astro build${pagesBuildEnv(pagesEnv)}`;
 }
 
@@ -155,7 +170,7 @@ jobs:
 
 ${installStep(a)}
 ${buildStep(a)}
-${a.buildWorkspaces ? renderMonorepoRunSteps() : renderRunSteps()}
+${renderRunSteps(a)}
 
       - name: Deploy to Cloudflare Workers (Static Assets)
         uses: cloudflare/wrangler-action@v4
@@ -224,7 +239,7 @@ jobs:
 
 ${installStep(a)}
 ${buildStep(a)}
-${a.buildWorkspaces ? renderMonorepoRunSteps(true) : renderRunSteps(true)}
+${renderRunSteps(a, true)}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
