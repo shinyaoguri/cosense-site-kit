@@ -20,6 +20,13 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props as { entry: CollectionEntry<"pages"> };
-const Template = TEMPLATES[entry.data.template] ?? Page;
+// Object.hasOwn (not `?? Page`): `??` only catches undefined/null, so an
+// inherited key like `#template/constructor` would resolve to Object.prototype's
+// property instead of falling back — rendering a non-component and crashing the
+// whole `astro build`. Guarding on own keys keeps the "bad tag never 500s"
+// contract that the registry comment above promises.
+const Template = Object.hasOwn(TEMPLATES, entry.data.template)
+  ? TEMPLATES[entry.data.template]
+  : Page;
 ---
 <Template entry={entry} />

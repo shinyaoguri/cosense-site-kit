@@ -25,7 +25,11 @@ export function resolveActiveSkin(
   options: ThemeDefaultRuntimeOptions,
 ): ActiveSkin {
   if (siteSkinName) {
-    const named = PRESETS[siteSkinName];
+    // Object.hasOwn guard: a bare `PRESETS[siteSkinName]` resolves inherited
+    // keys like "constructor"/"toString" to Object.prototype members, which are
+    // truthy and would silently apply an empty-token skin instead of warning and
+    // falling back to the configured preset.
+    const named = Object.hasOwn(PRESETS, siteSkinName) ? PRESETS[siteSkinName] : undefined;
     if (named) {
       return {
         tokens: named.tokens ?? {},

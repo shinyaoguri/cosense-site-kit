@@ -67,6 +67,25 @@ describe("resolveTemplate", () => {
     const s = structureWith({ Home: "landing" });
     expect(resolveTemplate(p, s)).toBe("landing");
   });
+
+  it("does not resolve a prototype-key title to an inherited member", () => {
+    // `structure.templates[title]` would return Object.prototype.constructor (a
+    // function) for a page titled "constructor", breaking the string contract.
+    // Object.entries-based matching only sees own keys, so it falls back.
+    for (const title of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+      const p = page({ title, tags: ["publish"] });
+      expect(resolveTemplate(p, structureWith())).toBe(DEFAULT_TEMPLATE);
+    }
+  });
+
+  it("returns a prototype-name #template tag verbatim as a plain string", () => {
+    // The name is data, not a lookup, so it stays a string; the theme dispatcher
+    // is responsible for guarding its own registry lookup.
+    const p = page({ tags: ["publish", "template/constructor"] });
+    const t = resolveTemplate(p, structureWith());
+    expect(t).toBe("constructor");
+    expect(typeof t).toBe("string");
+  });
 });
 
 describe("assignTemplates", () => {
