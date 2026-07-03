@@ -1,6 +1,7 @@
 import type { SiteSource, SourcePageRaw, SourcePageRef } from "../types";
 import { CosenseApi, CosenseApiError } from "./api";
 import { createPageCache, type PageCache } from "./cache";
+import { normalizePage } from "./normalize";
 
 export interface CosenseSourceOptions {
   project: string;
@@ -23,6 +24,12 @@ export function createCosenseSource(opts: CosenseSourceOptions): SiteSource & {
   return {
     name: "cosense",
     cache,
+
+    // Scrapbox body → intermediate model. Lives here (not in the pipeline) so
+    // the Scrapbox parser stays contained in source/cosense/.
+    normalize(raw: SourcePageRaw) {
+      return normalizePage(raw, project);
+    },
 
     async list({ signal } = {}) {
       const refs: SourcePageRef[] = [];
