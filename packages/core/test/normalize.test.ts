@@ -33,6 +33,15 @@ describe("normalizePage", () => {
     expect(page.tags).toContain("publish");
   });
 
+  it("does not crash on an out-of-range epoch (clamps instead of RangeError)", () => {
+    // z.number() only rejects NaN, so garbage API data like created: 1e20 would
+    // make `new Date(sec*1000).toISOString()` throw and crash the build.
+    const page = normalizePage({ ...sample, created: 1e20, updated: -1e20 }, "my-proj");
+    expect(typeof page.createdAt).toBe("string");
+    expect(Number.isNaN(new Date(page.createdAt ?? "").getTime())).toBe(false);
+    expect(Number.isNaN(new Date(page.updatedAt ?? "").getTime())).toBe(false);
+  });
+
   it("keeps backlinks empty until the pipeline computes them", () => {
     expect(normalizePage(sample, "my-proj").backlinks).toEqual([]);
   });
