@@ -83,6 +83,21 @@ describe("generateGithubActionsWorkflow", () => {
     expect(yml).toContain("concurrency:");
   });
 
+  it("scopes Pages permissions to jobs (build read-only, deploy gets pages/OIDC)", () => {
+    const yml = generateGithubActionsWorkflow({ target: "github-pages" });
+    // No workflow-level permissions block granting pages:write to every job.
+    const beforeJobs = yml.slice(0, yml.indexOf("jobs:"));
+    expect(beforeJobs).not.toContain("permissions:");
+    // The build job is read-only; pages:write / id-token live under deploy.
+    const build = yml.slice(yml.indexOf("build:"), yml.indexOf("deploy:"));
+    expect(build).toContain("permissions:");
+    expect(build).toContain("contents: read");
+    expect(build).not.toContain("pages: write");
+    const deploy = yml.slice(yml.indexOf("deploy:"));
+    expect(deploy).toContain("pages: write");
+    expect(deploy).toContain("id-token: write");
+  });
+
   it("wires configure-pages base_path/origin into the Pages build (auto base)", () => {
     for (const wd of [undefined, "site"]) {
       const yml = generateGithubActionsWorkflow({ target: "github-pages", workingDirectory: wd });
