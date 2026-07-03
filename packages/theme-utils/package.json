@@ -30,7 +30,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "astro check && tsc --noEmit"
   },
   "peerDependencies": {
     "astro": "^5.0.0 || ^6.0.0"
@@ -41,6 +41,7 @@
     "yaml": "^2.6.1"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "astro": "^6.4.7",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"

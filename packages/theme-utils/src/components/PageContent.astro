@@ -1,6 +1,7 @@
 ---
 import { Code } from "astro:components";
 import type { CosenseBlock, InlineNode } from "@cosense-site-kit/core";
+import type { CodeLanguage } from "astro";
 import { type EmbedProvider, resolveEmbed } from "../embeds";
 import { assignHeadingIds } from "../headings";
 import { buildListTree } from "../lists";
@@ -54,9 +55,11 @@ const SHIKI_LANGS = new Set([
   "plaintext",
   "text",
 ]);
-function safeLang(lang: string | undefined): string {
+function safeLang(lang: string | undefined): CodeLanguage {
   const l = lang?.toLowerCase();
-  return l && SHIKI_LANGS.has(l) ? l : "plaintext";
+  // The cast is sound: every SHIKI_LANGS entry is a Shiki bundled-language id
+  // or special language ("plaintext"/"text").
+  return l && SHIKI_LANGS.has(l) ? (l as CodeLanguage) : "plaintext";
 }
 
 interface Props {
