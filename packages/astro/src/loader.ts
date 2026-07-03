@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import {
   type CosenseSiteConfig,
   loadCosenseSiteConfig,
@@ -8,6 +7,7 @@ import {
 } from "@cosense-site-kit/core";
 import type { Loader } from "astro/loaders";
 import { DEV_TTL_MS, getSharedIntermediate } from "./intermediate-cache";
+import { iconVendorDir } from "./paths";
 
 export interface CosenseLoaderOptions {
   /** Path to cosense.config.{ts,js,mjs}. Default: ./cosense.config */
@@ -42,7 +42,7 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
   return {
     name: "cosense-site-kit/pages",
     schema: pageSchema,
-    async load({ store, logger, generateDigest, parseData, watcher }) {
+    async load({ store, logger, generateDigest, parseData, watcher, config: astroConfig }) {
       // Astro only passes a `watcher` in dev, so it's a reliable dev signal:
       // show drafts locally by default, never in a production build.
       const isDev = Boolean(watcher);
@@ -65,8 +65,10 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
       // shared with this loader.)
       const config = opts.config ?? (await loadCosenseSiteConfig(opts.configFile));
       const base = normalizeBase(config.site.base).replace(/\/$/, "");
+      // Write into Astro's configured publicDir (honours `publicDir`/`root` and
+      // running from a different cwd), not a hardcoded `process.cwd()/public`.
       const data = await vendorIcons(built, {
-        dir: join(process.cwd(), "public", "cosense-icons"),
+        dir: iconVendorDir(astroConfig.publicDir),
         baseUrl: `${base}/cosense-icons`,
         onWarn: (m) => logger.warn(m),
       });
