@@ -18,13 +18,18 @@ export function headingText(nodes: InlineNode[]): string {
 // numbers (Japanese headings stay readable), lowercases, and collapses
 // whitespace/punctuation to single hyphens.
 export function slugifyHeading(text: string): string {
-  return text
+  const collapsed = text
     .trim()
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^\p{L}\p{N}_-]+/gu, "")
-    .replace(/-{2,}/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/-{2,}/g, "-");
+  // Trim a single leading/trailing hyphen by index — runs are already collapsed
+  // above, so at most one can sit at each end. Avoids the anchored `/^-+|-+$/`
+  // alternation, which CodeQL flags as polynomial-ReDoS-prone.
+  const start = collapsed.startsWith("-") ? 1 : 0;
+  const end = collapsed.endsWith("-") ? collapsed.length - 1 : collapsed.length;
+  return start >= end ? "" : collapsed.slice(start, end);
 }
 
 // Assign a stable, unique id to each heading in document order. Duplicate slugs
