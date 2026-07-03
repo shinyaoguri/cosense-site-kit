@@ -4,5 +4,10 @@
  * so themes render dates consistently instead of each re-deriving the slice.
  */
 export function formatDate(iso: string | undefined): string | undefined {
-  return iso ? new Date(iso).toISOString().slice(0, 10) : undefined;
+  if (!iso) return undefined;
+  const d = new Date(iso);
+  // Guard like feed.ts's rfc822: an unparseable string would otherwise throw
+  // RangeError from toISOString() and crash the build. Return undefined so the
+  // template's `&&` guard hides the date.
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString().slice(0, 10);
 }

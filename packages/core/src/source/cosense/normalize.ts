@@ -11,6 +11,18 @@ import type { SourcePageRaw } from "../types";
 // during parse. Slug, backlinks, and pageLink.slug/exists are filled in later
 // by the pipeline once the full set of published pages is known.
 
+// JS Date spans ±8.64e15 ms from the epoch; a wildly out-of-range Unix-seconds
+// value (bad/garbage API data — z.number() only rejects NaN) would make
+// toISOString() throw RangeError and crash the whole build. Clamp to the valid
+// range (and treat non-finite as the epoch) so one bad timestamp degrades
+// gracefully instead of failing an unattended build.
+const MAX_TIME_MS = 8.64e15;
+function epochSecondsToISO(seconds: number): string {
+  const ms = seconds * 1000;
+  const safe = Number.isFinite(ms) ? Math.max(-MAX_TIME_MS, Math.min(MAX_TIME_MS, ms)) : 0;
+  return new Date(safe).toISOString();
+}
+
 export function normalizePage(raw: SourcePageRaw, project: string): CosenseSitePage {
   const parsed = parseScrapboxText(raw.text, project);
   const links = dedupe([...raw.links, ...parsed.pageLinks]);
@@ -22,8 +34,8 @@ export function normalizePage(raw: SourcePageRaw, project: string): CosenseSiteP
     slug: "",
     sourceUrl: raw.sourceUrl,
     template: DEFAULT_TEMPLATE,
-    createdAt: new Date(raw.created * 1000).toISOString(),
-    updatedAt: new Date(raw.updated * 1000).toISOString(),
+    createdAt: epochSecondsToISO(raw.created),
+    updatedAt: epochSecondsToISO(raw.updated),
     summary: extractSummary(parsed.blocks) ?? cleanDescription(raw.descriptions),
     // First image in the body becomes the OG/Twitter card image. raw.image
     // (the Cosense-provided thumbnail) is a fallback for pages whose images
