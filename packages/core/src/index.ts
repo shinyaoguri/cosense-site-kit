@@ -5,8 +5,6 @@
 // parser internals, source adapters) intentionally don't appear and are
 // only reachable via deep imports — those are not stable.
 
-export const VERSION = "0.0.0";
-
 // ── Asset vendoring (consumed by the Astro integration) ──────────────────
 // Downloads `[name.icon]` images at build time so the site serves its own
 // copies instead of hot-linking scrapbox.io (which blocks cross-origin <img>
@@ -51,3 +49,4 @@ export { emptySiteStructure, pageSchema, SCHEMA_VERSION } from "./schema";
 // One definition of "safe href", shared with theme-utils so the schema and the
 // theme layer validate the same shapes.
 export { isSafeHref, safeHref } from "./url";
+export { VERSION } from "./version";
