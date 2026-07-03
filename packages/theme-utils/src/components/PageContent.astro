@@ -2,6 +2,7 @@
 import { Code } from "astro:components";
 import type { CosenseBlock, InlineNode } from "@cosense-site-kit/core";
 import { type EmbedProvider, resolveEmbed } from "../embeds";
+import { assignHeadingIds } from "../headings";
 import { buildListTree } from "../lists";
 import { renderMath } from "../math";
 import Inline from "./Inline.astro";
@@ -118,6 +119,13 @@ for (const block of visible) {
     groups.push({ kind: "block", block });
   }
 }
+
+// Stable, text-derived heading ids assigned server-side. Anchors then exist in
+// the HTML (shareable before JS runs) and don't shift when a heading is added
+// or removed — unlike the TOC's old runtime "heading-N" numbering.
+const headingIds = assignHeadingIds(
+  visible.filter((b): b is Extract<CosenseBlock, { type: "heading" }> => b.type === "heading"),
+);
 ---
 <div class={wrapperClass}>
   {groups.map((group) => {
@@ -142,10 +150,12 @@ for (const block of visible) {
         }
         return <p><Inline nodes={block.children} /></p>;
       }
-      case "heading":
-        if (block.depth === 1) return <h2><Inline nodes={block.children} /></h2>;
-        if (block.depth === 2) return <h3><Inline nodes={block.children} /></h3>;
-        return <h4><Inline nodes={block.children} /></h4>;
+      case "heading": {
+        const id = headingIds.get(block);
+        if (block.depth === 1) return <h2 id={id}><Inline nodes={block.children} /></h2>;
+        if (block.depth === 2) return <h3 id={id}><Inline nodes={block.children} /></h3>;
+        return <h4 id={id}><Inline nodes={block.children} /></h4>;
+      }
       case "code": {
         // Build-time syntax highlighting via Astro's bundled Shiki. Dual theme
         // (light/dark) so a theme can switch by skin in CSS. <Code> sets

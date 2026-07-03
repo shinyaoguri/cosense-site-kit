@@ -18,6 +18,7 @@ export {
   youtubeEmbedSrc,
 } from "./embeds";
 export { buildRssFeed, type FeedItem, type FeedOptions } from "./feed";
+export { assignHeadingIds, headingText, slugifyHeading } from "./headings";
 export { buildListTree, type FlatListItem, type ListTreeItem } from "./lists";
 export { renderInlineMath, renderMath } from "./math";
 export { buildPreviewData, type PagePreview, type PreviewSource } from "./preview-data";
