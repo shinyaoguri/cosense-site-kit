@@ -1,16 +1,8 @@
 ---
 import { getCollection } from "astro:content";
-import {
-  formatDate,
-  hasTag,
-  hidesDates,
-  isPublicTag,
-  loadStructure,
-  path,
-  vtName,
-} from "@cosense-site-kit/theme-utils";
+import { hasTag, loadStructure } from "@cosense-site-kit/theme-utils";
 import type { GetStaticPaths, PaginateFunction } from "astro";
-import EntryTags from "../components/EntryTags.astro";
+import EntryCard from "../components/EntryCard.astro";
 import Layout from "../components/Layout.astro";
 import Pagination from "../components/Pagination.astro";
 import { POSTS_PER_PAGE } from "../constants";
@@ -68,33 +60,7 @@ const { entries, pageInfo, configured } = Astro.props as {
     <section class="recent-pages">
       <ul>
         {entries.map((entry) => (
-          <li>
-            <a
-              class="thumb"
-              href={path(entry.data.slug)}
-              aria-hidden="true"
-              tabindex="-1"
-              style={entry.data.image ? `view-transition-name:${vtName(entry.data.slug)}` : undefined}
-            >
-              {entry.data.image
-                ? <img src={entry.data.image} alt="" loading="lazy" decoding="async" />
-                : <span class="thumb-placeholder">{Array.from(entry.data.title.trim())[0] ?? "·"}</span>}
-            </a>
-            <div class="entry-body">
-              <a href={path(entry.data.slug)}>{entry.data.title}</a>
-              {entry.data.summary && <p class="summary">{entry.data.summary}</p>}
-              {((!hidesDates(entry.data.tags) && entry.data.publishedAt) || entry.data.tags.some(isPublicTag)) && (
-                <div class="entry-meta">
-                  {!hidesDates(entry.data.tags) && entry.data.publishedAt && (
-                    <time class="updated" datetime={entry.data.publishedAt}>
-                      {formatDate(entry.data.publishedAt)}
-                    </time>
-                  )}
-                  <EntryTags tags={entry.data.tags} />
-                </div>
-              )}
-            </div>
-          </li>
+          <EntryCard entry={entry} />
         ))}
       </ul>
       {pageInfo && <Pagination {...pageInfo} />}
