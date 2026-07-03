@@ -1,5 +1,52 @@
 # @cosense-site-kit/astro
 
+## 0.1.6
+
+### Patch Changes
+
+- 2e91f86: fix(astro): dev freshness + symmetric options for the shared pipeline memo
+
+  The process-level `getSharedIntermediate` memo had three problems:
+
+  - **Rejected runs were memoized.** If Cosense was unreachable when the dev
+    server started, every later request replayed the same error until the process
+    was restarted. The memo now evicts a rejected promise so the next call retries.
+  - **No dev freshness.** The memo never expired, so a Cosense edit (or a
+    `cosense.config.ts` change) never showed up in `astro dev` without a restart.
+    Dev now applies a 30s TTL (re-fetch is differential, so cheap), watches the
+    config file to restart on config changes, and invalidates the memo on restart.
+    Build keeps a single, never-expiring run.
+  - **Asymmetric options double-ran the pipeline.** The integration didn't accept
+    `cacheDir`/`force` while the loader did, so a non-default setup keyed the memo
+    differently and ran the full fetch/parse/normalize twice. `cacheDir`/`force`
+    are now on `CosenseIntegrationOptions` too, and both sides build the memo key
+    through one normalizer (undefined-stripped, key-sorted, order-independent for
+    config objects).
+
+  Adds the astro package's first tests (key normalization, single-flight,
+  reject-eviction, TTL) and documents dev freshness in the README.
+
+- 6fa6808: fix(astro): vendor icons into Astro's configured publicDir
+
+  Icon/favicon vendoring wrote to a hardcoded `process.cwd()/public`, ignoring
+  Astro's `publicDir`/`root`. With a custom `publicDir` (or when `astro build` runs
+  from a directory other than the project root), the rewritten `src` pointed at a
+  directory Astro doesn't serve, 404-ing the images. Both the loader and the
+  integration now derive the target from `config.publicDir`.
+
+- Updated dependencies [3e1f929]
+- Updated dependencies [14972c8]
+- Updated dependencies [3b3a561]
+- Updated dependencies [2de33fe]
+- Updated dependencies [ed190c2]
+- Updated dependencies [e9ac3c9]
+- Updated dependencies [0c67e12]
+- Updated dependencies [e0b1b5a]
+- Updated dependencies [53a1ae2]
+- Updated dependencies [e7c30d0]
+- Updated dependencies [280561b]
+  - @cosense-site-kit/core@0.4.2
+
 ## 0.1.5
 
 ### Patch Changes
