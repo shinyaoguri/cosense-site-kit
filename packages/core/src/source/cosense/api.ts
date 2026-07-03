@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { withRetry } from "../../util/retry";
+import { VERSION } from "../../version";
 import {
   type CosenseListResponse,
   type CosensePageResponse,
@@ -27,7 +28,7 @@ export class CosenseApi {
   constructor(opts: CosenseApiOptions = {}) {
     this.baseUrl = opts.baseUrl ?? DEFAULT_BASE;
     this.timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    this.userAgent = opts.userAgent ?? "cosense-site-kit/0.0.0";
+    this.userAgent = opts.userAgent ?? `cosense-site-kit/${VERSION}`;
   }
 
   async listPagesPage(
