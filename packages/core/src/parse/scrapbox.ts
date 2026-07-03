@@ -106,7 +106,10 @@ function appendLineBlock(
 
   // A line whose only meaningful content is `[*-N text]` becomes a heading
   // (N>=2). Smaller bold sizes (N=1) stay as strong inside a paragraph.
-  const heading = detectHeading(nodes);
+  // Only unindented lines can be headings: an indented `[** big]` is a big-bold
+  // *list item* on Cosense, and promoting it to a heading here would split the
+  // surrounding list in two.
+  const heading = line.indent === 0 ? detectHeading(nodes) : null;
   if (heading) {
     out.push({
       type: "heading",
@@ -167,7 +170,11 @@ function appendLineBlock(
 
   const children = nodes.flatMap((n) => convertInline(n, ctx));
   if (line.indent > 0) {
-    out.push({ type: "list", depth: line.indent, children });
+    // depth = indent + 1 to match ordered items (above), so a bullet and a
+    // numbered sibling at the same indent land at the same depth instead of the
+    // numbered one nesting a level deeper. buildListTree uses relative depths,
+    // so this uniform shift leaves homogeneous lists rendering identically.
+    out.push({ type: "list", depth: line.indent + 1, children });
   } else {
     out.push({ type: "paragraph", children });
   }
