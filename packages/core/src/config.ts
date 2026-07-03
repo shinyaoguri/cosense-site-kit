@@ -34,6 +34,11 @@ export const cosenseSiteConfigSchema = z.object({
       slug: z
         .enum(["title", "encoded-title", "metadata-or-encoded-title"])
         .default("metadata-or-encoded-title"),
+      // Slugs a theme reserves for its own injected routes (e.g. "posts",
+      // "tags"). A page whose slug would collide with one is given a numeric
+      // suffix (and a warning) instead, so the page stays reachable and doesn't
+      // fight the theme route for the same URL. Default: none.
+      reservedSlugs: z.array(z.string()).default([]),
     })
     .prefault({}),
   siteConfig: z

@@ -34,7 +34,9 @@ export function computeSlug(
 // would silently swap the two pages' public URLs whenever either was edited.
 export function assignSlugs(
   pages: CosenseSitePage[],
-  routing: CosenseSiteConfig["routing"],
+  // reservedSlugs is optional here so callers with a partial routing (tests) can
+  // omit it; the parsed config always supplies it (default []).
+  routing: Omit<CosenseSiteConfig["routing"], "reservedSlugs"> & { reservedSlugs?: string[] },
   onWarn?: (message: string) => void,
 ): CosenseSitePage[] {
   const withBase = pages.map((page) => ({
@@ -51,7 +53,11 @@ export function assignSlugs(
       a.page.id.localeCompare(b.page.id),
   );
 
-  const used = new Set<string>();
+  // Seed `used` with theme-reserved slugs so a page whose slug would take a
+  // reserved route's URL (e.g. "posts") is suffixed instead of silently fighting
+  // that route for the path.
+  const reserved = new Set(routing.reservedSlugs ?? []);
+  const used = new Set<string>(reserved);
   const assigned = new Map<string, string>(); // page id → slug
   for (const { page, base } of order) {
     let slug = base;
@@ -60,9 +66,10 @@ export function assignSlugs(
       slug = `${base}-${i++}`;
     }
     if (slug !== base) {
-      onWarn?.(
-        `slug collision: "${page.title}" also maps to "${base}"; assigned "${slug}" instead`,
-      );
+      const why = reserved.has(base)
+        ? `"${base}" is a reserved theme route`
+        : `also maps to "${base}"`;
+      onWarn?.(`slug collision: "${page.title}" ${why}; assigned "${slug}" instead`);
     }
     used.add(slug);
     assigned.set(page.id, slug);
