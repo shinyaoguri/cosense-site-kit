@@ -264,6 +264,18 @@ import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro"
 
 `here()` のパス計算が必要なのは、`tsup` が `.astro` / `.css` ファイルをバンドルしないためです (テーマパッケージは `dist/index.js` だけがコンパイル対象で、`.astro` は **生のまま** `src/` から配布する規約)。`dist/index.js` 起点で `../src/...` と書くのが正解。
 
+### 予約 slug との衝突を避ける
+
+`injectRoute()` で確保した固定ルート(例: `/posts`, `/tags`)と、Cosense ページの slug が一致すると URL がぶつかります(「Posts」というタイトルのページが slug `posts` を取り、`/posts` の一覧ルートと競合)。これを防ぐには、そのルート名を `cosense.config.ts` の `routing.reservedSlugs` に列挙します。予約 slug に一致するページは自動でサフィックス(`posts-2`)+ 警告になり、テーマのルートが URL を保持します。
+
+```ts
+routing: {
+  reservedSlugs: ["posts", "tags"],   // theme-default が確保するルート
+}
+```
+
+**theme-default が確保するルート**: `posts`, `tags`(および `sitemap.xml` / `robots.txt` / `feed.xml` / `404` — これらは拡張子付き/固定名なので通常の slug とは衝突しにくい)。theme-default を使う場合は上記 2 つを `reservedSlugs` に入れておくのが安全です。
+
 ---
 
 ## テンプレートディスパッチ

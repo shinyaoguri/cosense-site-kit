@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildIntermediate, defineCosenseSite } from "../src";
+import { buildIntermediate, type CosenseSiteConfig, defineCosenseSite } from "../src";
 import { dedupeRefs } from "../src/pipeline";
 import { applyPublishRules } from "../src/publish/filter";
 import { resolveLinkData } from "../src/resolve/backlinks";
@@ -181,7 +181,10 @@ describe("slug + link + backlink resolution", () => {
 });
 
 describe("assignSlugs collision handling", () => {
-  const routing = { slug: "metadata-or-encoded-title" } as const;
+  const routing = {
+    slug: "metadata-or-encoded-title",
+    reservedSlugs: [],
+  } satisfies CosenseSiteConfig["routing"];
   const mk = (id: string, title: string, createdAt: string) => ({
     ...normalizePage(rawPage({ id, title, text: `${title}\nbody` }), "p"),
     createdAt,
@@ -216,6 +219,26 @@ describe("assignSlugs collision handling", () => {
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain("slug collision");
     expect(warnings[0]).toContain("Foo_Bar-2");
+  });
+
+  it("suffixes a page whose slug would take a reserved theme route", () => {
+    const warnings: string[] = [];
+    const routingWithReserved = {
+      slug: "metadata-or-encoded-title",
+      reservedSlugs: ["posts", "tags"],
+    } satisfies CosenseSiteConfig["routing"];
+    const out = assignSlugs(
+      [mk("a", "posts", "2020-01-01T00:00:00.000Z")],
+      routingWithReserved,
+      (m) => warnings.push(m),
+    );
+    expect(out[0]?.slug).toBe("posts-2");
+    expect(warnings[0]).toContain("reserved theme route");
+  });
+
+  it("leaves slugs untouched when no slugs are reserved", () => {
+    const out = assignSlugs([mk("a", "posts", "2020-01-01T00:00:00.000Z")], routing);
+    expect(out[0]?.slug).toBe("posts");
   });
 });
 
