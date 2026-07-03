@@ -17,6 +17,9 @@ const endpoint = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/link-previews.j
     let pop = null;
     let openTimer = 0;
     let closeTimer = 0;
+    // The link the pointer/focus is currently on. show() re-checks this after
+    // its await so a slow fetch can't pop a card for a link already left.
+    let currentLink = null;
 
     const load = () => {
       if (cache) return Promise.resolve(cache);
@@ -66,6 +69,9 @@ const endpoint = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/link-previews.j
       const slug = link.getAttribute(ATTR);
       if (!slug) return;
       const data = await load();
+      // The pointer/focus may have left (or moved to another link) while the
+      // first fetch was in flight — don't show a stale card.
+      if (currentLink !== link) return;
       const entry = data[slug];
       if (!entry) return;
       const el = ensurePopover();
@@ -98,21 +104,29 @@ const endpoint = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/link-previews.j
     document.addEventListener("pointerover", (e) => {
       const link = linkFrom(e);
       if (!link) return;
+      currentLink = link;
       clearTimeout(closeTimer);
       clearTimeout(openTimer);
       openTimer = window.setTimeout(() => show(link), OPEN_DELAY);
     });
     document.addEventListener("pointerout", (e) => {
       if (!linkFrom(e)) return;
+      currentLink = null;
       clearTimeout(openTimer);
       scheduleHide();
     });
     document.addEventListener("focusin", (e) => {
       const link = linkFrom(e);
-      if (link) show(link);
+      if (link) {
+        currentLink = link;
+        show(link);
+      }
     });
     document.addEventListener("focusout", (e) => {
-      if (linkFrom(e)) scheduleHide();
+      if (linkFrom(e)) {
+        currentLink = null;
+        scheduleHide();
+      }
     });
     // Dismiss on scroll/escape so a stale card doesn't linger.
     window.addEventListener("scroll", hide, { passive: true });
