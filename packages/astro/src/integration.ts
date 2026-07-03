@@ -1,4 +1,4 @@
-import { isAbsolute, join, resolve } from "node:path";
+import { isAbsolute, resolve } from "node:path";
 import {
   type CosenseSiteConfig,
   emptySiteStructure,
@@ -14,6 +14,7 @@ import {
   getSharedIntermediate,
   invalidateSharedIntermediate,
 } from "./intermediate-cache";
+import { iconVendorDir } from "./paths";
 
 export interface CosenseIntegrationOptions {
   /** Path to cosense.config.{ts,js,mjs}. Default: ./cosense.config */
@@ -99,7 +100,13 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
   return {
     name: "@cosense-site-kit/astro",
     hooks: {
-      "astro:config:setup": async ({ updateConfig, logger, command, addWatchFile }) => {
+      "astro:config:setup": async ({
+        updateConfig,
+        logger,
+        command,
+        addWatchFile,
+        config: astroConfig,
+      }) => {
         const config = opts.config ?? (await loadCosenseSiteConfig(opts.configFile));
         const normalized = normalizeBase(config.site.base);
         const isDev = command === "dev";
@@ -149,7 +156,7 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
         if (icon) {
           const assetBase = normalized.replace(/\/$/, "");
           icon = await vendorImage(icon, {
-            dir: join(process.cwd(), "public", "cosense-icons"),
+            dir: iconVendorDir(astroConfig.publicDir),
             baseUrl: `${assetBase}/cosense-icons`,
             onWarn: (m) => logger.warn(m),
           });
