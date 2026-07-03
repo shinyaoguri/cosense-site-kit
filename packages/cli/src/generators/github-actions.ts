@@ -1,3 +1,18 @@
+// Pinned GitHub Action versions. Single source of truth so the generated
+// workflow can't quietly drift from this repo's own .github/workflows/build.yml
+// (dependabot bumps that file but not string literals in this generator). A test
+// asserts these match the dogfood workflow, so a bump there fails CI until this
+// table follows.
+export const ACTION_VERSIONS = {
+  checkout: "actions/checkout@v7",
+  setupNode: "actions/setup-node@v6",
+  cache: "actions/cache@v6",
+  configurePages: "actions/configure-pages@v6",
+  uploadPagesArtifact: "actions/upload-pages-artifact@v5",
+  deployPages: "actions/deploy-pages@v5",
+  wranglerAction: "cloudflare/wrangler-action@v4",
+} as const;
+
 export interface GithubActionsOptions {
   /** Cron schedule. Default: "17 1,13 * * *" (twice daily, off-the-hour). */
   schedule?: string;
@@ -31,8 +46,35 @@ export interface GithubActionsOptions {
   doctor?: boolean;
 }
 
+// A cron string is interpolated into the workflow; a malformed one produces a
+// workflow that never fires (GitHub reports no error). Require the standard 5
+// space-separated fields of cron-safe characters.
+function assertValidCron(schedule: string): void {
+  const fields = schedule.trim().split(/\s+/);
+  const ok = fields.length === 5 && fields.every((f) => /^[0-9*/,-]+$/.test(f));
+  if (!ok) {
+    throw new Error(
+      `Invalid --schedule "${schedule}". Expected 5 cron fields, e.g. "17 1,13 * * *".`,
+    );
+  }
+}
+
+// workingDirectory is interpolated (mostly unquoted) into YAML; a value with
+// spaces, quotes or colons would produce invalid YAML. Restrict it to a plain
+// relative path rather than trying to quote it in every interpolation site.
+function assertValidWorkingDirectory(dir: string): void {
+  if (!/^[A-Za-z0-9._/-]+$/.test(dir) || dir.includes("..")) {
+    throw new Error(`Invalid --working-directory "${dir}". Use a plain relative path like "site".`);
+  }
+}
+
 export function generateGithubActionsWorkflow(opts: GithubActionsOptions): string {
   const schedule = opts.schedule ?? "17 1,13 * * *";
+  // Validate up front so a bad value fails generation loudly, not silently at CI
+  // time (an unquoted odd directory → invalid YAML; a malformed cron → a
+  // workflow that never fires, with no error).
+  assertValidCron(schedule);
+  if (opts.workingDirectory) assertValidWorkingDirectory(opts.workingDirectory);
   const nodeVersion = opts.nodeVersion ?? 24;
   const wd = opts.workingDirectory && opts.workingDirectory !== "." ? opts.workingDirectory : null;
   // "Site in a subdirectory" and "framework built from source" are independent:
@@ -151,9 +193,9 @@ jobs:
     permissions:
       contents: read${wd}
     steps:
-      - uses: actions/checkout@v6
+      - uses: ${ACTION_VERSIONS.checkout}
 
-      - uses: actions/setup-node@v6
+      - uses: ${ACTION_VERSIONS.setupNode}
         with:
           node-version: ${a.nodeVersion}
 
@@ -161,7 +203,7 @@ jobs:
       # hit, so a fixed key would freeze the cache at its first-run contents
       # and the differential fetch would re-download everything ever after.
       - name: Restore Cosense cache
-        uses: actions/cache@v5
+        uses: ${ACTION_VERSIONS.cache}
         with:
           path: ${cachePath}
           key: cosense-cache-\${{ github.run_id }}
@@ -173,7 +215,7 @@ ${buildStep(a)}
 ${renderRunSteps(a)}
 
       - name: Deploy to Cloudflare Workers (Static Assets)
-        uses: cloudflare/wrangler-action@v4
+        uses: ${ACTION_VERSIONS.wranglerAction}
         with:
           apiToken: \${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -216,9 +258,9 @@ jobs:
   build:
     runs-on: ubuntu-latest${wd}
     steps:
-      - uses: actions/checkout@v6
+      - uses: ${ACTION_VERSIONS.checkout}
 
-      - uses: actions/setup-node@v6
+      - uses: ${ACTION_VERSIONS.setupNode}
         with:
           node-version: ${a.nodeVersion}
 
@@ -226,7 +268,7 @@ jobs:
       # hit, so a fixed key would freeze the cache at its first-run contents
       # and the differential fetch would re-download everything ever after.
       - name: Restore Cosense cache
-        uses: actions/cache@v5
+        uses: ${ACTION_VERSIONS.cache}
         with:
           path: ${cachePath}
           key: cosense-cache-\${{ github.run_id }}
@@ -235,14 +277,14 @@ jobs:
 
       - name: Configure Pages
         id: pages
-        uses: actions/configure-pages@v6
+        uses: ${ACTION_VERSIONS.configurePages}
 
 ${installStep(a)}
 ${buildStep(a)}
 ${renderRunSteps(a, true)}
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: ${ACTION_VERSIONS.uploadPagesArtifact}
         with:
           path: ${distPath}
 
@@ -254,6 +296,6 @@ ${renderRunSteps(a, true)}
       url: \${{ steps.deploy.outputs.page_url }}
     steps:
       - id: deploy
-        uses: actions/deploy-pages@v5
+        uses: ${ACTION_VERSIONS.deployPages}
 `;
 }

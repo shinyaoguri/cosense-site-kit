@@ -89,9 +89,17 @@ export function workerName(siteTitle: string, project: string): string {
 }
 
 function sanitize(s: string): string {
-  return s
+  const cut = s
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-")
     .slice(0, 63);
+  // Trim leading/trailing hyphens by index — AFTER the 63-char cut, so a hyphen
+  // landing on the boundary doesn't survive (wrangler rejects a trailing "-").
+  // Index trim also avoids the `/^-+|-+$/` anchored regex CodeQL flags.
+  let start = 0;
+  let end = cut.length;
+  while (start < end && cut[start] === "-") start++;
+  while (end > start && cut[end - 1] === "-") end--;
+  return cut.slice(start, end);
 }

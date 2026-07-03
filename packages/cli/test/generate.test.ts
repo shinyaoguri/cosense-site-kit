@@ -1,9 +1,11 @@
+import { readFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { runDeployInit } from "../src/commands/deploy";
-import { generateGithubActionsWorkflow } from "../src/generators/github-actions";
+import { runDeployInit, workerName } from "../src/commands/deploy";
+import { ACTION_VERSIONS, generateGithubActionsWorkflow } from "../src/generators/github-actions";
 import { generateWranglerJsonc } from "../src/generators/wrangler";
 
 describe("generateGithubActionsWorkflow", () => {
@@ -98,12 +100,48 @@ describe("generateGithubActionsWorkflow", () => {
     expect(yml).not.toContain("steps.pages.outputs");
   });
 
-  it("worker name falls back when the site title sanitizes to nothing", async () => {
-    const { workerName } = await import("../src/commands/deploy");
+  it("worker name falls back when the site title sanitizes to nothing", () => {
     expect(workerName("My Site", "my-proj")).toBe("my-site");
     // A fully Japanese title sanitizes to "" — wrangler rejects an empty name.
     expect(workerName("私のサイト", "my-proj")).toBe("my-proj");
     expect(workerName("私のサイト", "")).toBe("cosense-site");
+  });
+
+  it("never leaves a trailing hyphen in the worker name (invalid for wrangler)", () => {
+    expect(workerName("Hello!", "p")).toBe("hello");
+    // A hyphen landing exactly on the 63-char cut must be trimmed too.
+    expect(workerName(`${"a".repeat(62)}!!`, "p")).toBe("a".repeat(62));
+  });
+
+  it("rejects a malformed --schedule instead of emitting a silent-no-fire cron", () => {
+    expect(() =>
+      generateGithubActionsWorkflow({ target: "github-pages", schedule: "bad" }),
+    ).toThrow(/Invalid --schedule/);
+  });
+
+  it("rejects a working-directory that would break YAML", () => {
+    expect(() =>
+      generateGithubActionsWorkflow({ target: "github-pages", workingDirectory: "a b:c" }),
+    ).toThrow(/Invalid --working-directory/);
+  });
+
+  it("keeps generated action versions in sync with the dogfood build.yml", () => {
+    // dependabot bumps .github/workflows/build.yml but not this generator's
+    // constants; assert they match so a bump there fails CI until ACTION_VERSIONS
+    // follows.
+    const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
+    const buildYml = readFileSync(join(repoRoot, ".github/workflows/build.yml"), "utf8");
+    const dogfood = new Map<string, string>();
+    for (const m of buildYml.matchAll(/uses:\s*(actions\/[\w-]+)@(v\d+)/g)) {
+      dogfood.set(m[1] as string, m[2] as string);
+    }
+    expect(dogfood.size).toBeGreaterThan(0);
+    for (const pinned of Object.values(ACTION_VERSIONS)) {
+      const [name, version] = pinned.split("@");
+      const dogfoodVersion = dogfood.get(name as string);
+      // Only actions the dogfood workflow also uses (it's Pages, so no wrangler).
+      if (dogfoodVersion) expect(`${name}@${dogfoodVersion}`).toBe(`${name}@${version}`);
+    }
   });
 
   it("uses a per-run cache key so the cache is re-saved after every run", () => {
