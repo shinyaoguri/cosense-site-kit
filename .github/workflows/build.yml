@@ -5,12 +5,6 @@ on:
   schedule:
     - cron: "17 1,13 * * *"
 
-# Required by actions/deploy-pages.
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 # Avoid concurrent deploys racing each other.
 concurrency:
   group: pages
@@ -19,6 +13,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Least privilege: the build job only reads the repo. pages:write / id-token
+    # (Pages OIDC) are granted to the deploy job alone.
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: site
@@ -63,6 +61,10 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # Only the deploy job needs Pages write + the OIDC token.
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
