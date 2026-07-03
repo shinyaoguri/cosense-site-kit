@@ -8,6 +8,13 @@ describe("escapeXml", () => {
   it("escapes the five predefined entities without double-encoding", () => {
     expect(escapeXml(`a & b < c > d " e ' f`)).toBe("a &amp; b &lt; c &gt; d &quot; e &apos; f");
   });
+
+  it("strips XML-1.0-invalid control chars but keeps tab/newline/cr", () => {
+    // A stray control char (e.g. pasted \x00) would make feed/sitemap non-well-
+    // formed; TAB/LF/CR are valid and must survive.
+    expect(escapeXml("a\u0000b\u0008c\u001Fd")).toBe("abcd");
+    expect(escapeXml("keep\tt\nn\rr")).toBe("keep\tt\nn\rr");
+  });
 });
 
 describe("buildSitemap", () => {
