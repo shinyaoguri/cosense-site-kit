@@ -1,5 +1,165 @@
 # @cosense-site-kit/core
 
+## 0.4.2
+
+### Patch Changes
+
+- 3e1f929: fix(core): harden the local cache against path traversal and truncated icons
+
+  Two defense-in-depth gaps in the cache layer — the data CI carries across runs:
+
+  - **Page-id path traversal**: the page cache joined the raw id into a file path,
+    so a spoofed API id like `../../escaped` could write/read outside cacheDir.
+    Ids are now validated (`[A-Za-z0-9_-]+`); an unsafe id is a cache miss on read
+    and a no-op on write.
+  - **Truncated icons reused forever**: icon writes were non-atomic and reuse was
+    unconditional, so a build killed mid-write left a 0-byte icon that every later
+    build (and CI via actions/cache) reused. Icon writes now use write-then-rename
+    (like the page cache), and reuse skips empty files.
+
+- 14972c8: fix: match tags and titles case-insensitively, like Cosense does
+
+  Cosense collapses case-variant tags, links, and titles onto one entity, so
+  authors have no way to tell `#Draft` from `#draft`. Several matchers compared
+  raw strings, which broke that expectation — most seriously the publish filter,
+  where a page tagged `#publish #Draft` slipped past `excludeTags: ["draft"]` and
+  was published (the safety rule "exclude always wins" failed _open_).
+
+  All author-supplied tag/title matching now normalizes through a single
+  `normalizeKey` helper (shared with internal-link resolution): the publish
+  filter, `#published/`/`#updated/`/`#slug/`/`#template/` tag prefixes, the
+  `.site` `templates:` and `favicon:` title lookups, the `.site` config page
+  detection, the doctor draft-leak and posts-tag checks, theme tag classification
+  (`isHiddenTag`/`isPublicTag`/`hidesDates`), 2-hop related-page scoring, and the
+  `/posts` feed membership across home/archive/RSS. Display strings keep their
+  original case; only matching is normalized.
+
+- 3b3a561: refactor(core): complete the SiteSource abstraction (normalization moves onto the source)
+
+  `source/types.ts` advertised that a new source (esa, Notion, …) could plug in
+  without touching the pipeline, but the pipeline imported Cosense's `normalizePage`
+  directly and mapped it over every fetched page — so the abstraction didn't hold
+  and `SourcePageRaw.text` was implicitly "Scrapbox syntax". `SiteSource` now
+  carries a `normalize(raw)` method; the Cosense source implements it (delegating
+  to the Scrapbox parser), and the pipeline calls `source.normalize(...)` instead
+  of importing source-specific parse code. This makes the abstraction real and
+  tightens the isolation rule (Cosense knowledge stays inside `source/cosense/` and
+  `parse/scrapbox`). No behavior change.
+
+- 2de33fe: fix(core,theme-utils): harden date conversion against invalid input
+
+  Two date conversions could throw `RangeError: Invalid time value` and crash the
+  whole build:
+
+  - **core**: `new Date(raw.created * 1000).toISOString()` in normalize. The wire
+    schema's `z.number()` only rejects NaN, so garbage API data (e.g.
+    `created: 1e20`) reached `toISOString()` and threw. Epoch→ISO now clamps to the
+    valid JS Date range (and treats non-finite as the epoch), so one bad timestamp
+    degrades gracefully instead of failing an unattended build.
+  - **theme-utils**: `formatDate` called `toISOString()` with no NaN guard, unlike
+    the sibling `rfc822` in feed.ts. It's a public helper, so a theme passing any
+    string would crash the build. It now returns `undefined` for unparseable input
+    (templates already guard with `&&`).
+
+- ed190c2: fix(core): dedupe source list refs by id so a pagination race can't break slugs
+
+  `source.list()` results flowed straight into fetch and slug assignment without
+  deduping. Cosense's list API paginates over an updated-desc window, so a page
+  edited mid-fetch can appear in two windows. The duplicate was then fetched twice
+  and, because `assignSlugs` keys its output by id, collapsed to a single
+  collision-suffixed slug (`A-2`) — deleting the canonical `/A`, reshuffling the
+  sitemap/feed to the wrong URL, and failing doctor's "No slug collisions" check
+  until the next build. `buildIntermediate` now dedupes refs by id (keeping the
+  newest `updated`) before fetching.
+
+- e9ac3c9: fix(cli): validate `deploy init --target` and add a pre-publish doctor gate
+
+  Two `deploy init` gaps:
+
+  - `--target` was an unchecked free string. A typo like `--target github-page`
+    exited 0 and wrote a workflow that matched neither branch (Cloudflare steps,
+    but no wrangler.jsonc) — the failure only surfaced at CI time. It now uses
+    commander `.choices()` (clear error + exit 1), backed by a runtime guard in
+    `runDeployInit` for programmatic/config callers. Targets come from a single
+    `DEPLOY_TARGETS` constant now exported from core and reused by the config
+    schema.
+  - The generated workflow ran fetch → build → deploy with no `doctor` step, so
+    the documented pre-publish gate never ran on the default path — broken nav
+    refs / dead links / draft leaks could publish unnoticed. A
+    `cosense-site doctor` step is now inserted between fetch and build by default
+    (doctor exits 1 only on fail checks, so warnings don't over-block cron);
+    `deploy init --no-doctor` opts out. This repo's own build.yml gained the same
+    step, and the README documents the gate and the `--force` re-generate path.
+
+- 0c67e12: fix(core): doctor accuracy for site-config and redirect checks
+
+  Two doctor checks misreported, undermining its "pre-publish gate" role:
+
+  - **Site-config false negative**: a broken `.site` YAML (or a page with no
+    `code:site.yaml` block) still reported `✓ parsed successfully`, because the
+    check only looked at whether the page landed in the excluded list — not the
+    parse outcome. The pipeline now emits the parse error on its `site-config`
+    progress event, and doctor uses it: a hard parse error fails, a missing
+    page/block warns (distinguished in the message), a real parse passes.
+  - **Redirect false positive**: the schema allows site-relative redirect
+    destinations (`/posts`), but the check compared every destination against the
+    page-slug set, so a valid `/posts` redirect warned on every run. Site-relative
+    (`/`-prefixed) destinations are now skipped.
+
+- e0b1b5a: fix(core): correct list boundaries in the Scrapbox parser
+
+  Two list-boundary behaviors diverged from how Cosense renders:
+
+  - An indented `[** big]` line was promoted to a top-level heading (heading
+    detection ran before the indent check), splitting the surrounding list. Heading
+    detection is now limited to unindented lines, so a big-bold _list item_ stays
+    in its list.
+  - Unordered items used `depth = indent` while ordered items used `depth =
+indent + 1`, so a numbered item nested one level deeper than a bullet sibling
+    at the same indent. Unordered now uses `indent + 1` too. buildListTree keys off
+    relative depth, so homogeneous lists render identically while mixed
+    bullet/numbered siblings now sit at the same level.
+
+- 53a1ae2: feat(core): `routing.reservedSlugs` to avoid theme-route collisions
+
+  A Cosense page titled e.g. "Posts" gets slug `posts`, which collides with a
+  theme's injected `/posts` route — the page can end up unreachable. `assignSlugs`
+  now treats any configured `routing.reservedSlugs` like an existing slug: a page
+  that would take one is given a numeric suffix (`posts-2`) with a warning, so the
+  theme route keeps the URL and the page stays reachable. Opt-in (default `[]`), so
+  no behavior change unless set. THEMES.md documents theme-default's reserved
+  routes (`posts`, `tags`).
+
+- e7c30d0: fix(core,theme-utils): unify URL validation and close a redirect open-redirect
+
+  URL safety was validated in three places that had drifted, and the redirect
+  check was bypassable:
+
+  - **Open redirect via `.site` redirects (#63)**: `SAFE_REDIRECT` was a
+    leading-anchor denylist, so a leading tab/space (`"\t//evil"`) slipped a
+    protocol-relative or scheme value through — browsers strip those before
+    parsing, resolving it externally. Redirect destinations are now trimmed and
+    checked against an allowlist that rejects control chars, protocol-relative
+    `//host`, and any scheme.
+  - **Divergent SAFE_HREF (#68)**: core allowed `tel:` and rejected `//host`;
+    theme-utils' separate copy dropped `tel:` (so a valid `.site` nav `tel:` link
+    silently became `#`) and allowed `//host`. Both now use one `safeHref` /
+    `isSafeHref` exported from core.
+  - **Unenforced inline href invariant (#68c)**: `link`/`image` `href` in the
+    schema were bare strings relying on a parser guarantee. They now carry the
+    `SAFE_HREF` regex, so a future parser/source regression that let `javascript:`
+    through is caught at the model boundary instead of reaching `<a href>`.
+
+- 280561b: fix(core): resolve VERSION from package.json instead of a hardcoded "0.0.0"
+
+  The exported `VERSION` was pinned to `"0.0.0"` while the package shipped 0.4.x,
+  and the default Cosense `User-Agent` (`cosense-site-kit/0.0.0`) inherited it — so
+  every client reported 0.0.0 to Cosense, defeating identification for rate-limit
+  or block analysis. `VERSION` is now read from `package.json` at runtime (same
+  approach the CLI uses; resolves from src and bundled dist), and the API's default
+  User-Agent uses it. A regression test asserts `VERSION === package.json.version`
+  so changesets releases keep it in sync.
+
 ## 0.4.1
 
 ### Patch Changes

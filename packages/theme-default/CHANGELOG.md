@@ -1,5 +1,121 @@
 # @cosense-site-kit/theme-default
 
+## 0.7.5
+
+### Patch Changes
+
+- b7c7247: fix(theme-default): keyboard/focus a11y for search, lightbox, copy, filters + IME-safe Esc
+
+  - **IME-safe Escape**: the header and lightbox keydown handlers now ignore
+    Escape fired during IME composition (`isComposing` / `keyCode === 229`), so
+    cancelling a Japanese conversion no longer closes the search overlay and
+    discards the query.
+  - **Search overlay**: the box is now `role="dialog" aria-modal="true"`, focus is
+    trapped inside while open, and closing returns focus to the search trigger
+    instead of dropping it to `<body>`.
+  - **Lightbox**: content images are now keyboard-operable (focusable,
+    `role="button"`, Enter/Space to open — WCAG 2.1.1), the dialog has a visible
+    close button that receives focus on open, focus is trapped, and closing
+    restores the previously focused element.
+  - **Code copy button**: reveals on `:focus-visible`, so Tab no longer lands on
+    an invisible control.
+  - **Collection filter chips**: expose `aria-pressed` and keep it in sync, so the
+    active filter is announced to screen readers.
+
+  Adds a shared `focus-trap` helper used by the search overlay and lightbox.
+
+- 14972c8: fix: match tags and titles case-insensitively, like Cosense does
+
+  Cosense collapses case-variant tags, links, and titles onto one entity, so
+  authors have no way to tell `#Draft` from `#draft`. Several matchers compared
+  raw strings, which broke that expectation — most seriously the publish filter,
+  where a page tagged `#publish #Draft` slipped past `excludeTags: ["draft"]` and
+  was published (the safety rule "exclude always wins" failed _open_).
+
+  All author-supplied tag/title matching now normalizes through a single
+  `normalizeKey` helper (shared with internal-link resolution): the publish
+  filter, `#published/`/`#updated/`/`#slug/`/`#template/` tag prefixes, the
+  `.site` `templates:` and `favicon:` title lookups, the `.site` config page
+  detection, the doctor draft-leak and posts-tag checks, theme tag classification
+  (`isHiddenTag`/`isPublicTag`/`hidesDates`), 2-hop related-page scoring, and the
+  `/posts` feed membership across home/archive/RSS. Display strings keep their
+  original case; only matching is normalized.
+
+- 59d8926: fix(theme-default): meet WCAG AA contrast on text tokens
+
+  `--color-text-muted` (2.81:1 light / 4.21:1 dark) and `--color-text-faint`
+  (1.64:1 / 2.07:1) fell below WCAG 2.x AA (4.5:1) yet were used for real content
+  — list-card dates, page/summary text, the TOC, the 404 code, tag "+N" badges —
+  so dates and summaries were effectively unreadable for low-vision users and in
+  bright sunlight.
+
+  `--color-text-muted` is darkened to clear 4.5:1 on both the base and card
+  backgrounds in light (#72716c) and dark (#8f8e8a). `--color-text-faint` is
+  reclassified as decorative-only (underlines, TOC bars) and its former text uses
+  are repointed to `--color-text-muted`. Adds a contrast regression test that
+  parses the light tokens from global.css, merges presetDark, and asserts every
+  text token clears 4.5:1 against both backgrounds — so future skins are checked
+  automatically.
+
+- aa433d5: refactor(theme-default): extract a shared EntryCard, fixing the missing date on tag pages
+
+  The page-list card markup was copy-pasted across the home, /posts and /tags/<tag>
+  templates and had already drifted: the tag list had silently lost its date row,
+  so the same page looked different on /posts and /tags/<tag>. The card is now a
+  single `EntryCard.astro` used by all three (with a `showDate` prop for explicit
+  opt-out), so they can't drift again and tag pages show dates like the others.
+
+- 9135237: fix(theme-default): don't show a link preview after the pointer has left
+
+  The hover preview fetched `link-previews.json` on first use but never re-checked,
+  after the await, whether the pointer/focus was still on the link. On a slow
+  connection a brief hover could pop a card seconds later with nothing hovered, and
+  it lingered until the next scroll/Esc. `show()` now tracks the current link and
+  bails after the fetch if focus/hover has moved on.
+
+- a4fbc3f: fix(theme-default): guard template/skin registry lookups against prototype keys
+
+  The per-page template registry and the skin preset registry were plain-object
+  lookups with a `?? Page` / truthy fallback. Because `??` only catches
+  undefined/null, an inherited key like `#template/constructor` resolved to
+  `Object.prototype.constructor` (a function) instead of falling back — Astro then
+  tried to render a non-component and threw `NoMatchingRenderer`, crashing the
+  entire `astro build`. A single `#template/constructor` tag in Cosense could halt
+  every unattended cron build until the tag was removed, breaking the documented
+  "a bad tag never 500s" guarantee. The skin path had the same hole, silently
+  applying an empty-token skin instead of warning and falling back.
+
+  Both lookups now guard with `Object.hasOwn`, so only own registry keys resolve
+  and unknown/inherited names fall back as promised. (core's `.site templates:`
+  mapping is already prototype-safe via its `Object.entries` matcher.)
+
+- c3fcd52: fix(theme-default,theme-utils): stable heading anchors + English TOC label
+
+  The TOC assigned heading ids client-side as a running counter (`heading-3`), so
+  anchors didn't exist before JS ran and shifted to a different heading whenever one
+  was added or removed — breaking previously shared `#…` links. Headings now get a
+  stable, text-derived id server-side (slugified, unicode-friendly, deduped with
+  `-2` suffixes) in PageContent, and the TOC reads it. The TOC's `aria-label` was
+  also hardcoded Japanese ("目次") while the rest of the UI is English; it's now
+  "Table of contents".
+
+- Updated dependencies [3e1f929]
+- Updated dependencies [14972c8]
+- Updated dependencies [3b3a561]
+- Updated dependencies [2de33fe]
+- Updated dependencies [ed190c2]
+- Updated dependencies [e9ac3c9]
+- Updated dependencies [0c67e12]
+- Updated dependencies [a9e6b8a]
+- Updated dependencies [8452a4e]
+- Updated dependencies [e0b1b5a]
+- Updated dependencies [53a1ae2]
+- Updated dependencies [c3fcd52]
+- Updated dependencies [e7c30d0]
+- Updated dependencies [280561b]
+  - @cosense-site-kit/core@0.4.2
+  - @cosense-site-kit/theme-utils@0.4.8
+
 ## 0.7.4
 
 ### Patch Changes
