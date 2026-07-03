@@ -1,0 +1,42 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { formatDate, hidesDates, isPublicTag, path, vtName } from "@cosense-site-kit/theme-utils";
+import EntryTags from "./EntryTags.astro";
+
+// A single page-list card (thumbnail + title + summary + date/tags). Shared by
+// the home, /posts and /tags/<tag> lists so the three can't drift — they used to
+// be copy-pasted, and the tag list had silently lost its date row. `showDate`
+// lets a caller opt out explicitly rather than by omission.
+interface Props {
+  entry: CollectionEntry<"pages">;
+  showDate?: boolean;
+}
+const { entry, showDate = true } = Astro.props;
+const { slug, image, title, summary, publishedAt, tags } = entry.data;
+const withDate = showDate && !hidesDates(tags) && Boolean(publishedAt);
+---
+<li>
+  <a
+    class="thumb"
+    href={path(slug)}
+    aria-hidden="true"
+    tabindex="-1"
+    style={image ? `view-transition-name:${vtName(slug)}` : undefined}
+  >
+    {image
+      ? <img src={image} alt="" loading="lazy" decoding="async" />
+      : <span class="thumb-placeholder">{Array.from(title.trim())[0] ?? "·"}</span>}
+  </a>
+  <div class="entry-body">
+    <a href={path(slug)}>{title}</a>
+    {summary && <p class="summary">{summary}</p>}
+    {(withDate || tags.some(isPublicTag)) && (
+      <div class="entry-meta">
+        {withDate && publishedAt && (
+          <time class="updated" datetime={publishedAt}>{formatDate(publishedAt)}</time>
+        )}
+        <EntryTags tags={tags} />
+      </div>
+    )}
+  </div>
+</li>
