@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, readFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -143,6 +143,26 @@ describe("vendorIcons", () => {
       }
     ).children[0];
     expect(secondIcon?.src).toBe(firstIcon?.src);
+  });
+
+  it("does not reuse a truncated (0-byte) icon; it refetches", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "icons-"));
+    const fetchImpl = vi.fn(async () => pngResponse());
+    const opts = {
+      dir,
+      baseUrl: "/cosense-icons",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    };
+
+    await vendorIcons(dataWithIcons([ICON_URL]), opts);
+    // Simulate a build killed mid-write before the atomic rename existed.
+    const [name] = await readdir(dir);
+    await writeFile(join(dir, name ?? ""), new Uint8Array([]));
+
+    await vendorIcons(dataWithIcons([ICON_URL]), opts);
+    // Refetched because the cached file was empty (not reused).
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(await readFile(join(dir, name ?? ""))).toHaveLength(4);
   });
 
   it("vendors icons inside table cells", async () => {

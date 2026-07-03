@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { access, mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rename, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { type CosenseBlock, forEachBlockInline, mapBlockInlines } from "../schema/v1/block";
 import type { InlineNode } from "../schema/v1/inline";
@@ -120,7 +120,10 @@ async function downloadIcon(
   // build's file is still valid — this keeps the twice-daily rebuild offline
   // for unchanged icons.
   for (const ext of KNOWN_EXTS) {
-    if (await exists(join(dir, `${hash}.${ext}`))) return `${baseUrl}/${hash}.${ext}`;
+    // Only reuse a non-empty file. A build killed mid-write (before this change
+    // made writes atomic) could leave a 0-byte icon that would otherwise be
+    // reused forever, persisted across CI runs via actions/cache.
+    if (await isNonEmptyFile(join(dir, `${hash}.${ext}`))) return `${baseUrl}/${hash}.${ext}`;
   }
 
   const res = await fetchImpl(src, { redirect: "follow" });
@@ -130,14 +133,18 @@ async function downloadIcon(
   if (!ext) throw new Error(`unsupported content-type "${contentType || "none"}"`);
   const bytes = new Uint8Array(await res.arrayBuffer());
   const name = `${hash}.${ext}`;
-  await writeFile(join(dir, name), bytes);
+  // Write-then-rename (like the page cache) so an interrupted build can't leave
+  // a truncated image behind for every later build to reuse.
+  const dest = join(dir, name);
+  const tmp = `${dest}.tmp-${process.pid}`;
+  await writeFile(tmp, bytes);
+  await rename(tmp, dest);
   return `${baseUrl}/${name}`;
 }
 
-async function exists(path: string): Promise<boolean> {
+async function isNonEmptyFile(path: string): Promise<boolean> {
   try {
-    await access(path);
-    return true;
+    return (await stat(path)).size > 0;
   } catch {
     return false;
   }

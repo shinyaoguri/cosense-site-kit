@@ -39,6 +39,10 @@ export function createPageCache(cacheDir: string): PageCache {
     dir: () => cacheDir,
 
     async get(id) {
+      // Defense in depth: the id is joined into a filesystem path, so a spoofed
+      // API response with id "../../x" could otherwise read outside cacheDir.
+      // Treat an unsafe id as a miss (the page is simply refetched).
+      if (!isSafeId(id)) return null;
       let buf: string;
       try {
         buf = await readFile(pagePath(cacheDir, id), "utf8");
@@ -57,6 +61,8 @@ export function createPageCache(cacheDir: string): PageCache {
     },
 
     async set(page) {
+      // Never write outside cacheDir for a spoofed/garbage id (see get()).
+      if (!isSafeId(page.id)) return;
       const path = pagePath(cacheDir, page.id);
       await mkdir(dirname(path), { recursive: true });
       // Write-then-rename so an interrupted build can't leave a truncated
@@ -66,6 +72,13 @@ export function createPageCache(cacheDir: string): PageCache {
       await rename(tmp, path);
     },
   };
+}
+
+// A page id becomes part of a file path, so it must contain no path separators
+// or `..`. Cosense ids are hex; allow the slightly broader [A-Za-z0-9_-] so a
+// future id format still caches, while rejecting anything path-unsafe.
+function isSafeId(id: string): boolean {
+  return /^[A-Za-z0-9_-]+$/.test(id);
 }
 
 function pagePath(dir: string, id: string): string {

@@ -95,4 +95,14 @@ describe("createPageCache", () => {
     const cache = createPageCache(dir);
     expect(cache.dir()).toBe(dir);
   });
+
+  it("never escapes cacheDir for a path-traversal id (set is a no-op, get misses)", async () => {
+    const cache = createPageCache(dir);
+    const parent = join(dir, "..");
+    const before = await readdir(parent);
+    await cache.set(rawPage("../../escaped", "Evil"));
+    // Nothing written outside cacheDir.
+    expect(await readdir(parent)).toEqual(before);
+    expect(await cache.get("../../escaped")).toBeNull();
+  });
 });
