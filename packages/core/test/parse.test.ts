@@ -141,6 +141,24 @@ describe("parseScrapboxText", () => {
     expect(first.children).toEqual([{ type: "text", value: "first" }]);
   });
 
+  it("keeps a big-bold list item as a list item, not a heading (no list split)", () => {
+    // An indented `[** big]` renders as a big-bold list item on Cosense; it must
+    // not be promoted to a heading and split the surrounding list.
+    const { blocks } = parseScrapboxText("Title\n one\n [** big]\n three", "demo");
+    expect(blocks.map((b) => b.type)).toEqual(["list", "list", "list"]);
+  });
+
+  it("gives a bullet and a numbered sibling the same depth at the same indent", () => {
+    // Previously ordered used indent+1 and unordered used indent, so a numbered
+    // sibling nested one level deeper than its bullet neighbour.
+    const { blocks } = parseScrapboxText("Title\n bullet\n 1. numbered", "demo");
+    const [a, b] = blocks;
+    if (a?.type !== "list" || b?.type !== "list") throw new Error("expected two list items");
+    expect(a.ordered ?? false).toBe(false);
+    expect(b.ordered).toBe(true);
+    expect(a.depth).toBe(b.depth);
+  });
+
   it("turns a bare YouTube URL on its own line into a youtube embed block", () => {
     for (const url of [
       "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
