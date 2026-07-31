@@ -569,7 +569,7 @@ declare module "virtual:my-theme/options" {
     "build": "tsup",
     "typecheck": "tsc --noEmit"
   },
-  "peerDependencies": { "astro": "^5.0.0 || ^6.0.0" },
+  "peerDependencies": { "astro": "^5.0.0 || ^6.0.0 || ^7.0.0" },
   "dependencies": {
     "@cosense-site-kit/core": "latest",
     "@cosense-site-kit/theme-utils": "latest"
