@@ -148,8 +148,12 @@ describe("CosenseApi", () => {
     fetchSpy.mockImplementation(async (_url, init) => {
       // Mimic real fetch: throw when its signal aborts. Use the init signal
       // (which is the merged signal from CosenseApi's getJson).
+      const signal = init?.signal as AbortSignal | undefined;
+      // Fail loudly rather than hanging forever if getJson ever stops merging
+      // the caller's signal into the request init.
+      if (!signal) throw new Error("expected fetch init to carry a merged AbortSignal");
       await new Promise<never>((_, reject) => {
-        (init?.signal as AbortSignal).addEventListener("abort", () => {
+        signal.addEventListener("abort", () => {
           reject(new Error("aborted"));
         });
       });

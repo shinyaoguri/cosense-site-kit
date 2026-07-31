@@ -142,8 +142,10 @@ theme:
 
   it("preserves unknown top-level keys via passthrough", () => {
     const yaml = "profile:\n  name: Shinya\n  affiliation: Lab\n";
-    const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
-    expect((result?.structure as Record<string, unknown>).profile).toEqual({
+    const structure = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]))?.structure as
+      | Record<string, unknown>
+      | undefined;
+    expect(structure?.profile).toEqual({
       name: "Shinya",
       affiliation: "Lab",
     });
@@ -195,7 +197,8 @@ navigation:
     const yaml = "profile:\n  name: Shinya\nmembers:\n  - Alice\n";
     const result = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
     expect(result?.warnings).toEqual([]);
-    expect((result?.structure as Record<string, unknown>).profile).toEqual({ name: "Shinya" });
+    const structure = result?.structure as Record<string, unknown> | undefined;
+    expect(structure?.profile).toEqual({ name: "Shinya" });
   });
 
   it("does not warn on a correct config (no false positives)", () => {
