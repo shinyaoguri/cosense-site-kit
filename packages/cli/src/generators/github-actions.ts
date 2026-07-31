@@ -5,7 +5,7 @@
 // table follows.
 export const ACTION_VERSIONS = {
   checkout: "actions/checkout@v7",
-  setupNode: "actions/setup-node@v6",
+  setupNode: "actions/setup-node@v7",
   cache: "actions/cache@v6",
   configurePages: "actions/configure-pages@v6",
   uploadPagesArtifact: "actions/upload-pages-artifact@v5",
