@@ -25,8 +25,10 @@ const { entry } = Astro.props as { entry: CollectionEntry<"pages"> };
 // property instead of falling back — rendering a non-component and crashing the
 // whole `astro build`. Guarding on own keys keeps the "bad tag never 500s"
 // contract that the registry comment above promises.
+// The inner `?? Page` never fires at runtime (hasOwn guarantees the key);
+// it only narrows away the `undefined` that noUncheckedIndexedAccess adds.
 const Template = Object.hasOwn(TEMPLATES, entry.data.template)
-  ? TEMPLATES[entry.data.template]
+  ? (TEMPLATES[entry.data.template] ?? Page)
   : Page;
 ---
 <Template entry={entry} />

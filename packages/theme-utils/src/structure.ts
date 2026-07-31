@@ -23,7 +23,7 @@ export async function loadStructure(): Promise<SiteStructure> {
 // use this to resolve nav items / featured references (which carry Cosense
 // titles) to actual URLs at render time.
 export async function loadTitleToSlug(): Promise<Map<string, string>> {
-  const pages = await getCollection(PAGES_COLLECTION as never);
+  const pages = await getCollection(PAGES_COLLECTION);
   return new Map(
     (pages as { data: { title: string; slug: string } }[]).map((e) => [e.data.title, e.data.slug]),
   );
@@ -81,7 +81,7 @@ export function vtName(slug: string): string {
 export async function pagePaths(): Promise<
   { params: { slug: string }; props: { entry: { data: { slug: string } } } }[]
 > {
-  const pages = await getCollection(PAGES_COLLECTION as never);
+  const pages = await getCollection(PAGES_COLLECTION);
   return (pages as { data: { slug: string } }[]).map((entry) => ({
     params: { slug: entry.data.slug },
     props: { entry },

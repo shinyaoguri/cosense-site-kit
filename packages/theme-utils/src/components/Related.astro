@@ -20,10 +20,8 @@ interface Props {
 
 const { title, links, exclude = [], limit } = Astro.props;
 
-const all = await getCollection("pages" as never);
-const candidates: RelatedCandidate[] = (
-  all as { data: { title: string; slug: string; links: string[] } }[]
-)
+const all = await getCollection("pages");
+const candidates: RelatedCandidate[] = all
   .filter((e) => e.data.title !== title)
   .map((e) => ({ title: e.data.title, slug: e.data.slug, links: e.data.links }));
 
