@@ -33,3 +33,14 @@ jobs:
       - run: npm run lint
 
       - run: npm run typecheck
+
+  # Squash merge では PR タイトルがそのまま main のコミット要約になるため、
+  # マージ前に Conventional Commits 形式を強制する。
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: ./scripts/check-pr-title.sh
