@@ -1,5 +1,11 @@
 # @cosense-site-kit/astro
 
+## 0.2.0
+
+### Minor Changes
+
+- 88977a6: Support Astro 7. `peerDependencies` now accept `^5.0.0 || ^6.0.0 || ^7.0.0`, and the in-repo dev/CI toolchain runs on Astro 7.1.x. Astro 5/6 consumers are unaffected — no source changes were needed for the major bump (build, tests, `astro check`, and `tsc --noEmit` all pass unchanged).
+
 ## 0.1.6
 
 ### Patch Changes

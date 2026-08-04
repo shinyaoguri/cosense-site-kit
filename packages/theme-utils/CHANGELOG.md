@@ -1,5 +1,16 @@
 # @cosense-site-kit/theme-utils
 
+## 0.5.0
+
+### Minor Changes
+
+- 88977a6: Support Astro 7. `peerDependencies` now accept `^5.0.0 || ^6.0.0 || ^7.0.0`, and the in-repo dev/CI toolchain runs on Astro 7.1.x. Astro 5/6 consumers are unaffected — no source changes were needed for the major bump (build, tests, `astro check`, and `tsc --noEmit` all pass unchanged).
+
+### Patch Changes
+
+- 910b99f: Type-check `.astro` files with `astro check` (issue #74 Part 3). Both theme packages now run `astro check` before `tsc --noEmit` in `typecheck`, with a typecheck-only `src/content.config.ts` so templates are checked against the real page schema instead of `any`. Fixes surfaced by the new check: `<Code lang>` now receives a `CodeLanguage` (was `string`), and the template dispatcher narrows away the `undefined` from indexed access. No runtime behavior changes.
+- 0f0d914: KaTeX を 0.18.1 へ更新。CSS はインストール済みパッケージから self-host しているためバージョン drift は起きない（数式のマークアップ・表示に変更なし）。
+
 ## 0.4.8
 
 ### Patch Changes
