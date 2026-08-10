@@ -21,6 +21,7 @@
     "./styles/*": "./src/styles/*"
   },
   "files": [
+    "CHANGELOG.md",
     "dist",
     "src",
     "!dist/.tsbuildinfo"

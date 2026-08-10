@@ -23,6 +23,7 @@
     "./components/*": "./src/components/*"
   },
   "files": [
+    "CHANGELOG.md",
     "dist",
     "src",
     "!dist/.tsbuildinfo"

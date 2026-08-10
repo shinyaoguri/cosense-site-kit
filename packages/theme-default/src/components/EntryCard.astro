@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { formatDate, hidesDates, isPublicTag, path, vtName } from "@cosense-site-kit/theme-utils";
+import { path, vtName } from "@cosense-site-kit/theme-utils";
+import PageMeta from "@cosense-site-kit/theme-utils/components/PageMeta.astro";
 import EntryTags from "./EntryTags.astro";
 
 // A single page-list card (thumbnail + title + summary + date/tags). Shared by
@@ -13,7 +14,6 @@ interface Props {
 }
 const { entry, showDate = true } = Astro.props;
 const { slug, image, title, summary, publishedAt, tags } = entry.data;
-const withDate = showDate && !hidesDates(tags) && Boolean(publishedAt);
 ---
 <li>
   <a
@@ -30,13 +30,10 @@ const withDate = showDate && !hidesDates(tags) && Boolean(publishedAt);
   <div class="entry-body">
     <a href={path(slug)}>{title}</a>
     {summary && <p class="summary">{summary}</p>}
-    {(withDate || tags.some(isPublicTag)) && (
-      <div class="entry-meta">
-        {withDate && publishedAt && (
-          <time class="updated" datetime={publishedAt}>{formatDate(publishedAt)}</time>
-        )}
-        <EntryTags tags={tags} />
-      </div>
-    )}
+    {/* Cards show the publish date only; the update date belongs on the page
+        itself, so modifiedAt is deliberately not passed. */}
+    <PageMeta tags={tags} publishedAt={publishedAt} show={showDate} class="entry-meta">
+      <EntryTags tags={tags} />
+    </PageMeta>
   </div>
 </li>

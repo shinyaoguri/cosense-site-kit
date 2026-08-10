@@ -1,8 +1,9 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { formatDate, hidesDates, vtName } from "@cosense-site-kit/theme-utils";
+import { vtName } from "@cosense-site-kit/theme-utils";
 import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
+import PageMeta from "@cosense-site-kit/theme-utils/components/PageMeta.astro";
 import Related from "@cosense-site-kit/theme-utils/components/Related.astro";
 import Layout from "../components/Layout.astro";
 
@@ -13,18 +14,10 @@ interface Props {
 const { entry } = Astro.props;
 const page = entry.data;
 
-const publishedDay = formatDate(page.publishedAt);
-const updatedDay = formatDate(page.modifiedAt);
-// Only show the updated date when it actually differs from the publish date,
-// so a page edited the same day it was published shows a single date.
-const showUpdated = updatedDay && updatedDay !== publishedDay;
-// A page tagged `#no-date` opts out of showing its dates (e.g. an About page).
-// The dates still exist in the data (ordering, feed, sitemap); only the header
-// display is suppressed.
-const showDates = !hidesDates(page.tags);
-// Tags are not summarised here: the page's `#tag`s already render inline in the
-// body (PageContent), so a header chip row would just duplicate them.
-const hasMeta = showDates && (publishedDay || showUpdated);
+// The date row (which dates show, and `#no-date` opting out of them) is
+// PageMeta's job. Tags are not summarised here: the page's `#tag`s already
+// render inline in the body (PageContent), so a header chip row would duplicate
+// them — hence no slot content.
 
 // Cross-document morph target. The body's first image (page.image) gets the same
 // view-transition-name as the list card thumbnail that links here, so clicking a
@@ -42,20 +35,11 @@ const morphName = page.image ? vtName(page.slug) : undefined;
           pairs detail page → detail page; list headers ("Posts", "#tag") don't
           carry it, avoiding a flickery text-to-text cross-fade on list → detail. */}
       <h1 style="view-transition-name: page-title">{page.title}</h1>
-      {hasMeta && (
-        <div style="display: flex; flex-wrap: wrap; gap: 0.625rem; align-items: center;">
-          {showDates && publishedDay && (
-            <time class="updated" datetime={page.publishedAt}>
-              {publishedDay}
-            </time>
-          )}
-          {showDates && showUpdated && (
-            <time class="updated" datetime={page.modifiedAt}>
-              Updated {updatedDay}
-            </time>
-          )}
-        </div>
-      )}
+      <PageMeta
+        tags={page.tags}
+        publishedAt={page.publishedAt}
+        modifiedAt={page.modifiedAt}
+      />
     </header>
 
     <PageContent blocks={page.blocks} morphName={morphName} morphImageUrl={page.image} />
