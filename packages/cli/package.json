@@ -1,6 +1,6 @@
 {
   "name": "@cosense-site-kit/cli",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "cosense-site CLI",
   "license": "MIT",
   "repository": {
@@ -25,7 +25,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@cosense-site-kit/core": "^0.4.2",
+    "@cosense-site-kit/core": "^0.4.3",
     "c12": "^3.3.4",
     "commander": "^15.0.0",
     "picocolors": "^1.1.1"
