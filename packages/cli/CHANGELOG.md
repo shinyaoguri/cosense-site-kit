@@ -1,5 +1,11 @@
 # @cosense-site-kit/cli
 
+## 0.1.11
+
+### Patch Changes
+
+- b2ddcad: `deploy init` が生成するワークフローの `actions/setup-node` を v7 に更新（リポジトリ側の CI/build/release ワークフローと同時に追随）。
+
 ## 0.1.10
 
 ### Patch Changes
