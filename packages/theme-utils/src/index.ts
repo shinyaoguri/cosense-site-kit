@@ -9,7 +9,13 @@ export {
   renderInlineLinks,
   safeHref,
 } from "./collection";
-export { formatDate } from "./dates";
+export {
+  formatDate,
+  type PageMetaDate,
+  type PageMetaDates,
+  type PageMetaDatesInput,
+  pageMetaDates,
+} from "./dates";
 export {
   DEFAULT_EMBED_PROVIDERS,
   type EmbedInfo,

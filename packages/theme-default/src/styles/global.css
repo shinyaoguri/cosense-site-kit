@@ -462,6 +462,13 @@ h6 {
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
+/* Meta row under the title (PageMeta's default `page-meta` class). */
+.page-header .page-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  align-items: center;
+}
 .page-header .updated {
   font-size: 0.8125rem;
   color: var(--color-text-muted);

@@ -1,0 +1,57 @@
+---
+import { pageMetaDates } from "../dates";
+
+// The date/meta row of a page or list card. Themes used to assemble this from
+// `formatDate()` + `hidesDates()` + raw `<time>` markup, which meant every fork
+// had to remember to call `hidesDates()` — and forks that missed it kept showing
+// dates on `#no-date` pages. Rendering the row here makes `#no-date` structural:
+// pass the page's tags and the control tag is honoured whether or not the theme
+// knows it exists.
+//
+// Presentation stays with the theme: `class` / `timeClass` name the hooks the
+// theme's CSS already targets, and the default slot shares the row (tag chips,
+// reading time, ...). The row is omitted entirely when there is nothing in it.
+interface Props {
+  /** The page's full tag list — `#no-date` here suppresses both dates. */
+  tags?: string[];
+  publishedAt?: string;
+  modifiedAt?: string;
+  /** Caller-side opt-out, for lists that show no dates at all. */
+  show?: boolean;
+  /** Prefix for the update date. Set to "" to render the bare date. */
+  updatedLabel?: string;
+  /** Class for the row wrapper. */
+  class?: string;
+  /** Class for each `<time>`. */
+  timeClass?: string;
+}
+
+const {
+  tags = [],
+  publishedAt,
+  modifiedAt,
+  show = true,
+  updatedLabel = "Updated",
+  class: className = "page-meta",
+  timeClass = "updated",
+} = Astro.props;
+
+const { published, updated } = pageMetaDates({ tags, publishedAt, modifiedAt, show });
+
+// Render the slot up front so an *empty* one (a tag strip that filtered
+// everything out, say) doesn't leave a stray row behind on a dateless page.
+const extra = Astro.slots.has("default") ? (await Astro.slots.render("default")).trim() : "";
+---
+{(published || updated || extra) && (
+  <div class={className}>
+    {published && (
+      <time class={timeClass} datetime={published.iso}>{published.label}</time>
+    )}
+    {updated && (
+      <time class={timeClass} datetime={updated.iso}>
+        {updatedLabel ? `${updatedLabel} ${updated.label}` : updated.label}
+      </time>
+    )}
+    <Fragment set:html={extra} />
+  </div>
+)}

@@ -222,6 +222,8 @@ import {
   navHref,            // (item, titleToSlug) => string (BASE_URL 自動付与)
   path,               // (slug) => string (BASE_URL を前置)
   formatDate,         // (iso) => "YYYY-MM-DD" | undefined
+  pageMetaDates,      // ({ tags, publishedAt, modifiedAt }) => 表示する日付
+  hasTag,             // (tags, tag) => boolean — 大文字小文字を無視して照合
   isPublicTag,        // (name) => boolean — /tags/<name> に出すべきか
   isHiddenTag,        // (name) => boolean — publish/draft 等の制御タグ
   buildSitemap,       // (urls) => sitemap.xml 本文
@@ -230,6 +232,7 @@ import {
 } from "@cosense-site-kit/theme-utils";
 
 import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
+import PageMeta from "@cosense-site-kit/theme-utils/components/PageMeta.astro";
 ```
 
 | 関数 | 用途 |
@@ -239,10 +242,49 @@ import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro"
 | `navHref(item, titleToSlug)` | `page` 形式と `href` 形式の両方を解決して URL を返す。`/blog` のようなサイト相対パスは `BASE_URL` を自動で前置 |
 | `path(slug)` | `pathFor(slug, BASE_URL)` の thin wrapper。GitHub Pages の subpath デプロイでも壊れない |
 | `formatDate(iso)` | ISO 文字列を `YYYY-MM-DD` (UTC) に整形。`undefined` はそのまま返すので `&&` でガードできる |
+| `pageMetaDates({ tags, publishedAt, modifiedAt, show })` | 日付行に**何を出すか**の判定（`#no-date` の尊重、更新日は公開日と違う日のときだけ）。日付行を自作するときはこれを通す。マークアップごと任せられるなら `<PageMeta>` の方が安全 |
+| `hasTag(tags, tag)` | タグの有無を**大文字小文字を無視して**判定。`.site` の `posts.tag` など著者が設定したタグの照合は必ずこれを使う |
 | `isPublicTag` / `isHiddenTag` | inline rendering で `#publish` 等の制御タグを非表示にし、`template/<name>` 等の名前空間付きタグは tag chip だけ抑制する |
 | `buildSitemap` / `buildRssFeed` / `buildRobotsTxt`（＋ `escapeXml`） | 依存なしの XML/テキスト生成関数。`/sitemap.xml`・`/feed.xml`・`/robots.txt` のエンドポイントを自作テーマに足すのに使う（theme-default の `templates/*.ts` が実装例） |
 
 `Backlinks.astro` はそのまま使える共有コンポーネント (`<Backlinks backlinks={page.backlinks} />`)。本文の YouTube 埋め込み・ネストリスト・リッチなテーブルセルは `PageContent` が内部で処理する（`youtubeEmbedSrc` / `buildListTree` も export されているが、通常は直接呼ぶ必要はない）。
+
+#### 日付・メタ行は `<PageMeta>` に任せる
+
+日付行を `<time>` から自作すると、**`#no-date` の尊重を落としやすい**（実際に fork テーマで起きた: [#126](https://github.com/shinyaoguri/cosense-site-kit/issues/126)）。`<PageMeta>` はページのタグを受け取って制御タグを自分で解釈するので、テーマ側が `#no-date` の存在を知らなくても効きます。
+
+```astro
+---
+import PageMeta from "@cosense-site-kit/theme-utils/components/PageMeta.astro";
+---
+<header class="page-header">
+  <h1>{page.title}</h1>
+  <PageMeta tags={page.tags} publishedAt={page.publishedAt} modifiedAt={page.modifiedAt} />
+</header>
+```
+
+- `#no-date` が付いたページは日付を出さない（データ上の日付は残るので、並び順・feed・sitemap には影響しない）
+- 更新日は公開日と**違う日**のときだけ出る
+- 出すものが何も無ければ行ごと描画しない（空の flex 行が残らない）
+- 見た目はテーマの領分: `class`（既定 `page-meta`）・`timeClass`（既定 `updated`）・`updatedLabel`（既定 `Updated`、`""` で日付のみ）を渡して自分の CSS フックに合わせる
+- 既定スロットは同じ行に並ぶ（タグチップ等）。一覧カードで日付を出さないなら `show={false}`
+
+```astro
+<PageMeta tags={tags} publishedAt={publishedAt} class="entry-meta">
+  <EntryTags tags={tags} />
+</PageMeta>
+```
+
+#### タグの照合は `hasTag()` を使う
+
+Cosense は `#Blog` と `#blog` を同じタグとして扱います。素の `tags.includes("blog")` は大文字小文字を区別するため、**表記揺れでルーティングや一覧から漏れます**。`.site` の `posts.tag` のように著者が設定した値と突き合わせるときは、正規化込みで比較する `hasTag(tags, tag)` を使ってください（`hidesDates(tags)` も内部でこれを使っています）。
+
+```ts
+// ✗ #News と書かれたページが漏れる
+const isNews = page.tags.includes("news");
+// ✓
+const isNews = hasTag(page.tags, "news");
+```
 
 ---
 
@@ -626,6 +668,8 @@ export default defineConfig({
 - [ ] `npm pack --dry-run` で同梱される予定のファイルを確認 — `dist/`, `src/components/`, `src/templates/`, `src/styles/`, `src/virtual/` が入っていること
 - [ ] 別ディレクトリで `npx degit <自テーマ user/repo> test` → `cosense.config.ts` を編集 → `npm install` → `astro build` を一度通す
 - [ ] `peerDependencies` の Astro バージョン範囲が現実的か (狭すぎず広すぎず)
+- [ ] 日付行は `<PageMeta>`（または `pageMetaDates()`）経由か — `#no-date` を付けたページで日付が消えることを実際に確認する
+- [ ] タグの照合に素の `tags.includes()` を使っていないか (`hasTag()` で正規化する)
 - [ ] README にスクリーンショットと最小設定例 (`astro.config.ts` での書き方) を載せる
 - [ ] `.site` YAML で必要なフィールド (`templates:` mapping 等) があればドキュメント化
 
