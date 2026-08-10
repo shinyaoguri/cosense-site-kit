@@ -1,5 +1,13 @@
 # @cosense-site-kit/astro
 
+## 0.2.1
+
+### Patch Changes
+
+- 2aade5f: `CHANGELOG.md` を npm の `files` に含めるようにした。これまで tarball に同梱されておらず、`npm view` やオフラインでは消費側がバージョン間の変更点を追えなかった。
+- Updated dependencies [2aade5f]
+  - @cosense-site-kit/core@0.4.3
+
 ## 0.2.0
 
 ### Minor Changes

@@ -1,5 +1,14 @@
 # @cosense-site-kit/theme-utils
 
+## 0.5.1
+
+### Patch Changes
+
+- 2aade5f: `CHANGELOG.md` を npm の `files` に含めるようにした。これまで tarball に同梱されておらず、`npm view` やオフラインでは消費側がバージョン間の変更点を追えなかった。
+- 2aade5f: 日付/メタ行の高レベルコンポーネント `<PageMeta>` を theme-utils に追加。ページのタグを受け取って `#no-date` を自分で解釈するので、テーマが `hidesDates()` を呼び忘れても制御タグが効く。判定だけ使いたい場合のために純粋関数 `pageMetaDates()` も export。theme-default の `page.astro` / `EntryCard.astro` を移行 (出力の変化なし)。
+- Updated dependencies [2aade5f]
+  - @cosense-site-kit/core@0.4.3
+
 ## 0.5.0
 
 ### Minor Changes
