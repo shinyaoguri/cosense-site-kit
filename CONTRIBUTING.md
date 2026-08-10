@@ -81,7 +81,7 @@ dependabot はマニフェストしか書き換えません。**バンプに手�
 | 落ち方 | ガード |
 |---|---|
 | framework の major で `peerDependencies` が旧レンジのまま残る | `test/dependency-consistency.test.ts`（peer レンジが repo の astro major を含むか） |
-| lint/format ツールの major で config 移行が必要 | 同上（`biome.json` の `$schema` と `package.json` の宣言バージョンの一致） |
+| lint/format ツールの major・minor で config 移行が必要 | 同上（`biome.json` の `$schema` と `package.json` の宣言バージョンが **major.minor で** 一致するか。config の項目は minor 境界で増減するのでそこを見る。patch bump では鳴らない） |
 | 生成ワークフローの action ピンが dogfood 版と乖離 | `packages/cli/test/generate.test.ts`（`ACTION_VERSIONS` と `build.yml`） |
 | ビルドツールが未対応の major（例: tsup の d.ts 生成 × TypeScript 7） | `.github/dependabot.yml` の `ignore`（対応したら外す） |
 

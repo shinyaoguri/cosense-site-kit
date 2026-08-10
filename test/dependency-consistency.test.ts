@@ -81,16 +81,31 @@ describe("biome config schema vs the biome we install", () => {
   // #136 pattern 2: a lint/format tool major bump requires a config migration
   // (`biome migrate`). Without it `biome check` fails on a config deserialize
   // diagnostic, which reads as an unrelated lint failure. Comparing against the
-  // declared range (not the resolved install) means routine patch releases stay
-  // quiet and only a manifest bump demands the migration.
-  it("keeps biome.json $schema on the version package.json declares", () => {
+  // declared range means the check tracks what dependabot actually rewrites.
+  //
+  // Compared at major.minor only. Config options are added and removed on
+  // minor boundaries, so that is where a stale $schema stops describing the
+  // installed biome; a patch bump (2.5.6 -> 2.5.7) changes nothing about the
+  // config surface, and demanding a $schema edit for it would turn every
+  // routine group bump red for no reason (it did — see #145).
+  it("keeps biome.json $schema on the minor package.json declares", () => {
     const declared = readManifest("package.json").devDependencies?.["@biomejs/biome"];
     if (!declared) throw new Error("root package.json no longer devDepends on @biomejs/biome");
-    const installed = declared.replace(/^[\^~]/, "");
 
     const biomeConfig = JSON.parse(readFileSync(join(repoRoot, "biome.json"), "utf8")) as {
       $schema?: string;
     };
-    expect(biomeConfig.$schema).toBe(`https://biomejs.dev/schemas/${installed}/schema.json`);
+    const schemaVersion = /schemas\/([\d.]+)\/schema\.json$/.exec(biomeConfig.$schema ?? "")?.[1];
+    if (!schemaVersion) throw new Error(`unrecognised biome $schema: ${biomeConfig.$schema}`);
+
+    const minor = (version: string) =>
+      version
+        .replace(/^[\^~]/, "")
+        .split(".")
+        .slice(0, 2)
+        .join(".");
+    expect(minor(schemaVersion), `biome.json $schema is ${biomeConfig.$schema}`).toBe(
+      minor(declared),
+    );
   });
 });
