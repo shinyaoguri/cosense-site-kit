@@ -10,7 +10,12 @@ export default defineConfig({
       {
         test: {
           name: "unit",
-          include: ["packages/*/test/**/*.test.ts", "packages/*/src/**/*.test.ts"],
+          include: [
+            "packages/*/test/**/*.test.ts",
+            "packages/*/src/**/*.test.ts",
+            // Repo-level guards (manifest/config consistency), owned by no package.
+            "test/**/*.test.ts",
+          ],
           environment: "node",
         },
       },
