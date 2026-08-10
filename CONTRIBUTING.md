@@ -71,6 +71,24 @@ npm run build && npm run preview  # 本番出力（全文検索もここで動�
   - changeset がある状態で push → 「**chore: version packages**」PR を自動で開く/更新（`changeset version`：バージョン上げ＋CHANGELOG 更新＋changeset 消費）。
   - その PR をマージ → changeset が無くなった次の実行で `npm run release`（= `build && changeset publish`）→ npm 公開＋ git タグ。
 
+## dependabot PR の扱い
+
+dependabot はマニフェストしか書き換えません。**バンプに手で追随すべきファイル**（公開パッケージの
+`peerDependencies`、ツールの設定スキーマ、生成ワークフローのピン）は取り残されるので、
+過去に何度も同じ形で PR が滞留しました（[#136](https://github.com/shinyaoguri/cosense-site-kit/issues/136)）。
+追随漏れは文書ルールではなく**テストで落とす**方針です。
+
+| 落ち方 | ガード |
+|---|---|
+| framework の major で `peerDependencies` が旧レンジのまま残る | `test/dependency-consistency.test.ts`（peer レンジが repo の astro major を含むか） |
+| lint/format ツールの major で config 移行が必要 | 同上（`biome.json` の `$schema` と `package.json` の宣言バージョンの一致） |
+| 生成ワークフローの action ピンが dogfood 版と乖離 | `packages/cli/test/generate.test.ts`（`ACTION_VERSIONS` と `build.yml`） |
+| ビルドツールが未対応の major（例: tsup の d.ts 生成 × TypeScript 7） | `.github/dependabot.yml` の `ignore`（対応したら外す） |
+
+security update だけは例外で、`npm_and_yarn group across N directories` として各 `package.json` を
+個別に書き換えルートの単一 lockfile を更新しないため、`npm ci` が sync エラーで落ちます。この形の PR は
+個別に直さず**まとめてクローズし、ローカルで `npm audit fix` を流した 1 本の PR に置き換えて**ください。
+
 ## リリース / npm 公開フロー（changesets）
 
 公開は **`npm publish` を手で叩きません**。`changeset を書く → main に push → 自動 PR をマージ` の3手で CI が公開します。
