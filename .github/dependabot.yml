@@ -13,6 +13,14 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # tsup の d.ts 生成は同梱の rollup-plugin-dts に依存しており、これが
+      # TypeScript 7 の API 変更に追随していない。全パッケージが dts: true
+      # なので major を上げると build が丸ごと落ちる (#138)。tsup 側が
+      # TypeScript 7 に対応したらこの ignore を外す。
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
 
   # Keep the GitHub Actions used by the workflows current.
   - package-ecosystem: github-actions
