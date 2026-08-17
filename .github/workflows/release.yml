@@ -47,7 +47,7 @@ jobs:
         # SHA-pinned (not the movable `v1` tag): this job can publish to npm, so
         # a hijacked tag must not be able to run arbitrary code here. Bump the
         # SHA (and the version comment) deliberately; dependabot updates SHA pins.
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@198f833dd7d863100ea6e28967bc9a9fdefadb0a # v2.1.0
         with:
           version: npx changeset version
           publish: npm run release
