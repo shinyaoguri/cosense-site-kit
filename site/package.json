@@ -16,6 +16,6 @@
     "@cosense-site-kit/cli": "*",
     "@cosense-site-kit/core": "*",
     "@cosense-site-kit/theme-default": "*",
-    "astro": "^7.2.0"
+    "astro": "^7.2.2"
   }
 }
