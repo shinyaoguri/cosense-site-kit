@@ -1,6 +1,6 @@
 {
   "name": "@cosense-site-kit/theme-utils",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Shared runtime helpers for cosense-site-kit themes",
   "license": "MIT",
   "repository": {
@@ -37,7 +37,7 @@
     "astro": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "dependencies": {
-    "@cosense-site-kit/core": "^0.4.2",
+    "@cosense-site-kit/core": "^0.4.3",
     "katex": "^0.18.4",
     "yaml": "^2.6.1"
   },

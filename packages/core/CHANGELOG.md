@@ -1,5 +1,11 @@
 # @cosense-site-kit/core
 
+## 0.4.3
+
+### Patch Changes
+
+- 2aade5f: `CHANGELOG.md` を npm の `files` に含めるようにした。これまで tarball に同梱されておらず、`npm view` やオフラインでは消費側がバージョン間の変更点を追えなかった。
+
 ## 0.4.2
 
 ### Patch Changes
