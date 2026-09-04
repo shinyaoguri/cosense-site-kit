@@ -19,7 +19,10 @@
 - `release.yml` が main への push で changesets/action を実行し、changeset があれば
   「chore: version packages」PR を開く／更新、無ければ `npm run release`（= `build && changeset publish`）
 - 認証は **npm trusted publishing (OIDC)**。`NODE_AUTH_TOKEN` は使わず `id-token: write` で都度取得する
-- changesets/action は SHA で pin する（publish 権限を持つジョブが可動タグを引かないため）
+- changesets/action は SHA で pin する（publish 権限を持つジョブが可動タグを引かないため）。
+  **action の major と `@changesets/cli` の major は同時にしか動かせない**（action v2 は CLI v3 を要求し、
+  v2 のままなら action v1 を使えと言って落ちる）。action v2 は入力名も全面改名しているため、
+  SHA だけの bump は「未知入力は警告のみ」で黙って無効化される
 - `.changeset/config.json` の `updateInternalDependencies: "patch"` でパッケージ間レンジを自動更新
 - **pre-1.0 では新機能でも patch bump を基本にする**。0.x の caret（`^0.2.x`）は `0.3.0` を拾わないため、
   minor を上げると消費側へ自動で届かない
@@ -33,3 +36,7 @@
   （逃げ道は `--no-verify`）。
 - バージョン番号の意味が semver の一般的な期待からずれる（新機能が patch で出る）。1.0 到達時に
   この方針は見直す。
+- `ci.yml` は `release.yml` を実行しないので、リリース経路の破損は CI では緑のまま通る。
+  action の major / CLI の major / `release.yml` の入力名 / `.changeset/config.json` の `$schema` の
+  整合は [`test/dependency-consistency.test.ts`](../../test/dependency-consistency.test.ts) が
+  ユニットテストとして担保する（dependabot の SHA bump 単独では赤くなる）。
