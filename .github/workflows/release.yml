@@ -44,15 +44,23 @@ jobs:
       # consumed, versions bumped — the next run finds no changesets and runs
       # `publish` instead, publishing to npm and tagging the release.
       - name: Version or publish
-        # SHA-pinned (not the movable `v1` tag): this job can publish to npm, so
+        # SHA-pinned (not the movable `v2` tag): this job can publish to npm, so
         # a hijacked tag must not be able to run arbitrary code here. Bump the
         # SHA (and the version comment) deliberately; dependabot updates SHA pins.
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        #
+        # The action major and @changesets/cli major move together — v2 refuses a
+        # CLI v2 project outright — and v2 renamed every input, so a lone SHA bump
+        # breaks releases silently (unknown inputs are only a warning). The guards
+        # in test/dependency-consistency.test.ts fail CI on either drift.
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
-          version: npx changeset version
-          publish: npm run release
-          commit: "chore: version packages"
-          title: "chore: version packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # No NODE_AUTH_TOKEN: auth comes from OIDC trusted publishing.
+          version-script: npx changeset version
+          publish-script: npm run release
+          # v2 defaults both to "Version Packages"; keep them Conventional
+          # Commits because the squash merge turns the title into main's summary.
+          commit-message: "chore: version packages"
+          pr-title: "chore: version packages"
+          # v2 ignores the GITHUB_TOKEN environment variable — the input is the
+          # only channel. No npm token anywhere: auth comes from OIDC trusted
+          # publishing (`id-token: write` above).
+          github-token: ${{ secrets.GITHUB_TOKEN }}
