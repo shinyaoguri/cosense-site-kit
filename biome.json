@@ -13,7 +13,7 @@
       "!**/.astro",
       "!**/node_modules",
       "!**/.cosense-cache",
-      "!**/.claude"
+      "!.claude"
     ]
   },
   "formatter": {
