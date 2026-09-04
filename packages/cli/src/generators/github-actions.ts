@@ -251,10 +251,13 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Least privilege: the build job only reads the repo; Pages write + OIDC are
-    # granted to the deploy job alone.
+    # Least privilege, but configure-pages runs *here* and reads
+    # GET /repos/{owner}/{repo}/pages, so the build job needs Pages read or the
+    # action 403s ("Resource not accessible by integration"). Write + the OIDC
+    # token stay with the deploy job alone.
     permissions:
-      contents: read${wd}
+      contents: read
+      pages: read${wd}
     steps:
       - uses: ${ACTION_VERSIONS.checkout}
 
