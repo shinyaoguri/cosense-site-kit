@@ -8,6 +8,41 @@ import { runDeployInit, workerName } from "../src/commands/deploy";
 import { ACTION_VERSIONS, generateGithubActionsWorkflow } from "../src/generators/github-actions";
 import { generateWranglerJsonc } from "../src/generators/wrangler";
 
+/**
+ * `jobs:` を「ジョブ名 -> そのジョブのブロック」に割る。生成物の形が分かっている
+ * ので、YAML パーサを足さずインデントだけで切る。
+ */
+function splitJobs(yml: string): Map<string, string> {
+  const jobs = new Map<string, string>();
+  const start = yml.search(/^jobs:$/m);
+  if (start < 0) throw new Error("workflow has no jobs: block");
+
+  let name: string | null = null;
+  let buf: string[] = [];
+  for (const line of yml.slice(start).split("\n").slice(1)) {
+    const header = /^ {2}([A-Za-z0-9_-]+):\s*$/.exec(line);
+    if (header) {
+      if (name) jobs.set(name, buf.join("\n"));
+      name = header[1] as string;
+      buf = [];
+    } else if (name) {
+      buf.push(line);
+    }
+  }
+  if (name) jobs.set(name, buf.join("\n"));
+  return jobs;
+}
+
+/**
+ * そのジョブに実際に効く permissions。GitHub はジョブ側の宣言があればワークフロー
+ * レベルを継承せず完全に置き換えるので、宣言が無いときだけ上位を見る。
+ */
+function permissionsFor(yml: string, job: string): string {
+  const own = /^ {4}permissions:\n((?: {6}\S.*\n)+)/m.exec(job);
+  if (own) return own[1] as string;
+  return /^permissions:\n((?: {2}\S.*\n)+)/m.exec(yml)?.[1] ?? "";
+}
+
 describe("generateGithubActionsWorkflow", () => {
   it("emits a cloudflare-workers workflow with the configured schedule", () => {
     const yml = generateGithubActionsWorkflow({
@@ -138,6 +173,37 @@ describe("generateGithubActionsWorkflow", () => {
     expect(() =>
       generateGithubActionsWorkflow({ target: "github-pages", workingDirectory: "a b:c" }),
     ).toThrow(/Invalid --working-directory/);
+  });
+
+  it("grants pages access to whichever job runs configure-pages", () => {
+    // #151: configure-pages runs in the *build* job and reads
+    // GET /repos/{owner}/{repo}/pages, which needs the Pages permission — but
+    // #87 scoped every pages grant to the deploy job, so the build job was left
+    // with contents:read and the action 403s ("Resource not accessible by
+    // integration"). Asserted as an invariant over whichever job holds the step,
+    // rather than as "the build job contains pages: read", so moving the step
+    // between jobs can't slip past this.
+    const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
+    const workflows: [string, string][] = [
+      ["generated (repo root)", generateGithubActionsWorkflow({ target: "github-pages" })],
+      [
+        "generated (subdirectory site)",
+        generateGithubActionsWorkflow({ target: "github-pages", workingDirectory: "site" }),
+      ],
+      // The dogfood workflow is hand-maintained but mirrors the generator, so it
+      // regresses the same way — and it is the copy this repo actually deploys.
+      ["dogfood build.yml", readFileSync(join(repoRoot, ".github/workflows/build.yml"), "utf8")],
+    ];
+
+    for (const [label, yml] of workflows) {
+      for (const [job, block] of splitJobs(yml)) {
+        if (!block.includes("actions/configure-pages@")) continue;
+        expect(
+          permissionsFor(yml, block),
+          `${label}: job "${job}" runs configure-pages without a pages permission`,
+        ).toMatch(/^\s+pages:\s*(read|write)\s*$/m);
+      }
+    }
   });
 
   it("keeps generated action versions in sync with the dogfood build.yml", () => {

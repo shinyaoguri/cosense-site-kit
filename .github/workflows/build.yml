@@ -13,10 +13,12 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Least privilege: the build job only reads the repo. pages:write / id-token
-    # (Pages OIDC) are granted to the deploy job alone.
+    # Least privilege, but Configure Pages runs here and reads
+    # GET /repos/{owner}/{repo}/pages, which needs Pages read (#151).
+    # pages:write / id-token (Pages OIDC) stay with the deploy job alone.
     permissions:
       contents: read
+      pages: read
     defaults:
       run:
         working-directory: site
