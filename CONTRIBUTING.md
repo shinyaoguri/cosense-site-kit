@@ -5,7 +5,7 @@ cosense-site-kit **本体（フレームワーク）の開発手順・CI 構成�
 
 ## 前提
 
-- **Node.js >= 20**（CI は Node 24）
+- **Node.js >= 22.12**（astro と vitest が要求する下限。CI は Node 24）
 - **npm**（このリポジトリは npm workspaces 構成です。pnpm / yarn は使いません）
 
 ## セットアップ
