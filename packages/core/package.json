@@ -35,7 +35,7 @@
     "@progfay/scrapbox-parser": "^10.0.0",
     "c12": "^3.3.4",
     "yaml": "^2.6.1",
-    "zod": "^4.0.0"
+    "zod": "^4.6.2"
   },
   "devDependencies": {
     "tsup": "^8.3.5",
