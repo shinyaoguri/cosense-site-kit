@@ -1,5 +1,13 @@
 # @cosense-site-kit/theme-utils
 
+## 0.5.2
+
+### Patch Changes
+
+- a6c7efe: 実行時依存の下限を更新 (core: yaml ^2.9.1 / zod ^4.6.5、theme-utils: yaml ^2.9.1 / katex ^0.18.7)。いずれも minor/patch の範囲で、公開 API・出力に変更なし。
+- Updated dependencies [a6c7efe]
+  - @cosense-site-kit/core@0.4.4
+
 ## 0.5.1
 
 ### Patch Changes
