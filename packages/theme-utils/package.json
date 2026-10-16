@@ -38,12 +38,12 @@
   },
   "dependencies": {
     "@cosense-site-kit/core": "^0.4.3",
-    "katex": "^0.18.7",
+    "katex": "^0.19.0",
     "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "astro": "^7.3.3",
+    "astro": "^7.3.5",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   },
