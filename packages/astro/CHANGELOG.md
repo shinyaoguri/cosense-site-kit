@@ -1,5 +1,14 @@
 # @cosense-site-kit/astro
 
+## 0.2.2
+
+### Patch Changes
+
+- a23fd82: `.site` の `redirects` のリダイレクト元を検証するようにした。前後の空白と `/` を取り除いたうえで、`.` / `..` / 空のセグメント、`\`、スキーム、制御文字を含むものは設定エラーとして扱う。
+- Updated dependencies [2c0abef]
+- Updated dependencies [a23fd82]
+  - @cosense-site-kit/core@0.4.5
+
 ## 0.2.1
 
 ### Patch Changes
