@@ -67,7 +67,7 @@ export const siteStructureSchema = z
           .trim()
           .refine(
             isSafeRedirect,
-            "redirect destinations must be a slug or site-relative path (no scheme, no //, no control chars)",
+            "redirect destinations must be a slug or site-relative path (no scheme, no //, no \\, no control chars)",
           ),
       )
       .default({}),

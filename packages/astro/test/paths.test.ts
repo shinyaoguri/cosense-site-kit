@@ -26,6 +26,13 @@ describe("buildRedirects", () => {
     });
   });
 
+  it("does not double the slash for site-relative destinations", () => {
+    // "/blog" is a valid destination; prefixing the base verbatim would yield
+    // "//blog", which Astro fails to parse (and a browser reads as a host).
+    expect(buildRedirects({ old: "/blog" }, "/")).toEqual({ "/old": "/blog" });
+    expect(buildRedirects({ old: "/blog" }, "/kit/")).toEqual({ "/old": "/kit/blog" });
+  });
+
   it("skips sources with dot or empty segments instead of writing outside dist", () => {
     const skipped: string[] = [];
     const out = buildRedirects(

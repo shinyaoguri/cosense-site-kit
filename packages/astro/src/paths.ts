@@ -21,7 +21,9 @@ export function iconVendorDir(publicDir: URL): string {
 //
 // Sources are route patterns that Astro prefixes with `base` itself;
 // destinations are emitted verbatim into the meta refresh, so the base must be
-// baked in or subpath deployments redirect to a 404.
+// baked in or subpath deployments redirect to a 404. A site-relative
+// destination ("/blog") has its leading slash stripped first, or prefixing the
+// base would yield "//blog" — unparseable for Astro, and a host to a browser.
 export function buildRedirects(
   redirects: Record<string, string>,
   base: string,
@@ -34,7 +36,7 @@ export function buildRedirects(
       onSkip?.(from);
       continue;
     }
-    out[pathFor(source)] = pathFor(to, base);
+    out[pathFor(source)] = pathFor(to.replace(/^\/+/, ""), base);
   }
   return out;
 }
