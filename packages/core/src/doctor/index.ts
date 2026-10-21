@@ -1,6 +1,7 @@
 import type { CosenseSiteConfig } from "../config";
 import { normalizeKey } from "../keys";
 import { buildIntermediate, type ProgressEvent } from "../pipeline";
+import { excludedBy } from "../publish/filter";
 import { forEachBlockInline } from "../schema/v1/block";
 import type { IntermediateData } from "../schema/v1/page";
 import type { SiteSource } from "../source/types";
@@ -386,13 +387,12 @@ function checkSlugCollisions(data: IntermediateData): DoctorCheck {
 }
 
 function checkDraftLeak(config: CosenseSiteConfig, data: IntermediateData): DoctorCheck {
-  // Match the same case-insensitive way applyPublishRules does, or doctor would
-  // report "no leak" for a `#Draft` page that the filter actually excluded (or
-  // miss a genuine leak) — the check must mirror the real filter.
-  const excludeTags = new Set(config.publish.excludeTags.map(normalizeKey));
+  // Use applyPublishRules' own predicate, or doctor would report "no leak" for
+  // a `#Draft` / `[draft]` page that the filter actually excluded (or miss a
+  // genuine leak) — the check must mirror the real filter.
   const leaked: string[] = [];
   for (const p of data.pages) {
-    if (p.tags.some((t) => excludeTags.has(normalizeKey(t)))) leaked.push(p.title);
+    if (excludedBy(p, config.publish.excludeTags)) leaked.push(p.title);
   }
   if (leaked.length === 0) {
     return { name: "No draft leak", status: "pass", message: "no excluded-tag pages published" };

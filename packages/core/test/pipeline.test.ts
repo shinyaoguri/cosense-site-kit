@@ -89,6 +89,27 @@ describe("applyPublishRules", () => {
     expect(excluded[0]?.reason).toMatch(/draft/i);
   });
 
+  // On Cosense `[draft]` and `#draft` link to the same page, so an author who
+  // writes the bracket form means "draft" just as much. Excluding fails closed.
+  it("excludes pages that link an excludeTag in bracket form ([draft])", () => {
+    const pages = [
+      normalizePage(rawPage({ id: "a", title: "A", text: "A\n#publish [draft]" }), "p"),
+      normalizePage(rawPage({ id: "b", title: "B", text: "B\n#publish", links: ["Private"] }), "p"),
+    ];
+    const { kept, excluded } = applyPublishRules(pages, config.publish);
+    expect(kept).toHaveLength(0);
+    expect(excluded.map((e) => e.title)).toEqual(["A", "B"]);
+    expect(excluded[0]?.reason).toMatch(/\[draft\]/);
+  });
+
+  // The include side stays hashtag-only: treating `[publish]` as a publish
+  // marker would turn an ordinary mention of the tag page into a fail-open.
+  it("does not publish on a bracket-form includeTag ([publish])", () => {
+    const pages = [normalizePage(rawPage({ id: "a", title: "A", text: "A\n[publish]" }), "p")];
+    const { kept } = applyPublishRules(pages, config.publish);
+    expect(kept).toHaveLength(0);
+  });
+
   it("includes case-variant includeTags (#Publish matches includeTags 'publish')", () => {
     const pages = [normalizePage(rawPage({ id: "a", title: "A", text: "A\n#Publish" }), "p")];
     const { kept } = applyPublishRules(pages, config.publish);

@@ -42,8 +42,8 @@ npm run dev           # http://localhost:4321
 
 | タグ | 効果 |
 |---|---|
-| `#publish` | ページがビルド対象に含まれる（`publish.includeTags`） |
-| `#draft` / `#private` / `#internal` | `#publish` があっても除外（`publish.excludeTags`） |
+| `#publish` | ページがビルド対象に含まれる（`publish.includeTags`）。`[publish]` のブラケット形式では公開されない |
+| `#draft` / `#private` / `#internal` | `#publish` があっても除外（`publish.excludeTags`）。`[draft]` のブラケット形式でも除外される |
 | `#slug/research` | URL スラッグを明示指定。無指定の場合はタイトルから生成 |
 | `#post`（変更可） | `/posts` フィードとホームの「Recent posts」に表示。タグ名は `.site` の YAML で指定 |
 | `#template/profile` | このページを `profile` テンプレートで描画。詳細は[テンプレート](#テンプレート) |
