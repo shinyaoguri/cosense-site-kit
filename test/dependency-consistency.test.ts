@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { parse as parseYaml } from "yaml";
 
 // Repo-level guards against the dependabot failure modes catalogued in #136.
 // dependabot only rewrites the manifests it knows about; anything that has to
@@ -227,5 +228,47 @@ describe("changeset config schema vs the @changesets/config npm resolves", () =>
     expect(majorOf(declared), `.changeset/config.json $schema is ${config.$schema}`).toBe(
       majorOf(resolved),
     );
+  });
+});
+
+describe("release.yml keeps third-party code away from publish credentials", () => {
+  // The release job holds `id-token: write` (npm trusted publishing) and
+  // `contents: write`. Anything that runs arbitrary dependency code — install
+  // scripts, the build toolchain, tests — belongs in the read-only `verify`
+  // job, and every action is pinned by SHA so a moved tag can't inject code.
+  type Step = { uses?: string; run?: string; with?: Record<string, string> };
+  type Job = { permissions?: Record<string, string>; steps: Step[] };
+  const workflow = parseYaml(readText(".github/workflows/release.yml")) as {
+    permissions?: Record<string, string>;
+    jobs: Record<string, Job>;
+  };
+  const jobs = Object.entries(workflow.jobs);
+
+  it("is read-only at the workflow level", () => {
+    expect(workflow.permissions).toEqual({ contents: "read" });
+  });
+
+  it("pins every action to a full commit SHA with a version comment", () => {
+    const uses = readText(".github/workflows/release.yml").match(/uses:.*$/gm) ?? [];
+    expect(uses.length).toBeGreaterThan(0);
+    for (const line of uses) {
+      expect(line, line).toMatch(/@[0-9a-f]{40}\s*#\s*v\d+\.\d+\.\d+/);
+    }
+  });
+
+  it("runs no install scripts, build or tests in a job that can publish", () => {
+    const privileged = jobs.filter(([, job]) => job.permissions?.["id-token"] === "write");
+    expect(privileged.length).toBe(1);
+    for (const [name, job] of privileged) {
+      for (const step of job.steps) {
+        if (step.run) {
+          expect(step.run, `${name}: ${step.run}`).toMatch(
+            /^(npm install -g npm@\d+\.\d+\.\d+|npm ci --ignore-scripts)$/,
+          );
+        }
+        const publish = step.with?.["publish-script"];
+        if (publish) expect(publish, `${name} publish-script`).toBe("npx changeset publish");
+      }
+    }
   });
 });

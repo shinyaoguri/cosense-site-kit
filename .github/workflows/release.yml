@@ -7,18 +7,55 @@ on:
 # Don't let two release runs race.
 concurrency: release-${{ github.ref }}
 
+# Read-only by default. Only the `release` job below gets write / OIDC
+# permissions, and it runs no dependency install scripts, builds or tests:
+# third-party code (npm lifecycle scripts, test-time imports) runs in `verify`,
+# which can't publish or push. Every action is SHA-pinned (with the version in a
+# comment) so a moved tag can't inject code; dependabot updates the pins.
 permissions:
-  contents: write # push the "Version Packages" commit + tags
-  pull-requests: write # open/update the Version Packages PR
-  id-token: write # mint the OIDC token for npm trusted publishing
+  contents: read
 
 jobs:
-  release:
+  verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Gate the release on the same checks as ci.yml — nothing should reach
+      # npm without passing build + tests + lint + typecheck.
+      - run: npm run build
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+
+      # Hand the verified build to the publishing job, which must not rebuild.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: packages/*/dist
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the "Version Packages" commit + tags
+      pull-requests: write # open/update the Version Packages PR
+      id-token: write # mint the OIDC token for npm trusted publishing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: npm
@@ -30,14 +67,16 @@ jobs:
       # straight into this publish-capable job. Bump deliberately.
       - run: npm install -g npm@11.5.1
 
-      - run: npm ci
+      # The changesets CLI is needed here, but no dependency may run its install
+      # scripts in a job that holds the OIDC token.
+      - run: npm ci --ignore-scripts
 
-      # Gate the release on the same checks as ci.yml — nothing should reach
-      # npm without passing build + tests + lint + typecheck.
-      - run: npm run build
-      - run: npm test
-      - run: npm run lint
-      - run: npm run typecheck
+      # Unpacks to packages/<name>/dist (upload-artifact roots the archive at
+      # the least common ancestor of the glob, i.e. packages/).
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: packages
 
       # On a push that contains changesets, this opens/updates a "Version
       # Packages" PR (running `version`). When that PR is merged — changesets
@@ -55,7 +94,9 @@ jobs:
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           version-script: npx changeset version
-          publish-script: npm run release
+          # Publish the artifact built and tested in `verify` — `npm run release`
+          # would rebuild here, running the build toolchain with the OIDC token.
+          publish-script: npx changeset publish
           # v2 defaults both to "Version Packages"; keep them Conventional
           # Commits because the squash merge turns the title into main's summary.
           commit-message: "chore: version packages"

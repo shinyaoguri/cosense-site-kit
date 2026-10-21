@@ -67,9 +67,10 @@ npm run build && npm run preview  # 本番出力（全文検索もここで動�
 
 - **トリガ**: `main` への push。
 - [changesets/action](https://github.com/changesets/action) を使用。**npm trusted publishing（OIDC）でトークン不要**（`id-token: write` で OIDC を取得）。
+- **ジョブ構成**: `verify`（読み取り権限のみ）が `npm ci` → build → test → lint → typecheck を流し、`packages/*/dist` を artifact で渡す。書き込み・OIDC 権限を持つ `release` は `npm ci --ignore-scripts` で changesets CLI だけ用意し、受け取った dist をそのまま公開する。**公開権限のあるジョブで依存のスクリプト・ビルド・テストを走らせない**ため（`test/dependency-consistency.test.ts` が検査）。アクションはすべて SHA 固定。
 - **動作**:
   - changeset がある状態で push → 「**chore: version packages**」PR を自動で開く/更新（`changeset version`：バージョン上げ＋CHANGELOG 更新＋changeset 消費）。
-  - その PR をマージ → changeset が無くなった次の実行で `npm run release`（= `build && changeset publish`）→ npm 公開＋ git タグ。
+  - その PR をマージ → changeset が無くなった次の実行で `changeset publish`（`verify` がビルドした dist を公開）→ npm 公開＋ git タグ。
 
 ## dependabot PR の扱い
 
