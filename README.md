@@ -131,7 +131,7 @@ YAML スキーマ:
 | `posts.tag` | string | このタグが付いたページが `/posts` とホームに表示される |
 | `posts.limit` | number | ホームの「Recent posts」の表示件数上限 |
 | `featured[]` | Cosense ページタイトル | ホームの注目ページブロック |
-| `redirects` | `{oldSlug: newSlug}` | 明示的なリダイレクト。**出したいものだけ**書く。Astro の redirects 機構に流し込まれる |
+| `redirects` | `{oldSlug: newSlug}` | 明示的なリダイレクト。**出したいものだけ**書く。Astro の redirects 機構に流し込まれる。旧 slug（キー）に `.` / `..` / 空のセグメント・`\`・スキームは使えない（設定エラー）|
 
 ### リダイレクト（明示・任意）
 

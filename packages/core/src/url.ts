@@ -40,3 +40,28 @@ export function isSafeRedirect(value: string): boolean {
   if (REDIRECT_SCHEME.test(value)) return false; // http:, javascript:, data:, …
   return true;
 }
+
+// Redirect *sources* become build output paths: Astro writes each one to
+// `<outDir>/<source>/index.html`, so a `..` segment would write outside the
+// output directory. Sources are normalized to a slash-trimmed slug path
+// ("/legacy/" → "legacy") and must consist of ordinary segments only.
+
+/** Trim surrounding whitespace and slashes from a redirect source. */
+export function normalizeRedirectSource(value: string): string {
+  const s = value.trim();
+  // Trim "/" by index — /^\/+|\/+$/ backtracks O(n²) on a run of slashes.
+  let start = 0;
+  let end = s.length;
+  while (start < end && s.charCodeAt(start) === 47 /* "/" */) start++;
+  while (end > start && s.charCodeAt(end - 1) === 47) end--;
+  return s.slice(start, end);
+}
+
+/** True when `value` (expected pre-normalized) is a safe redirect source. */
+export function isSafeRedirectSource(value: string): boolean {
+  if (!value) return false;
+  if (CONTROL_CHARS.test(value)) return false;
+  if (value.includes("\\")) return false; // browsers and Windows paths treat "\" as "/"
+  if (REDIRECT_SCHEME.test(value)) return false;
+  return value.split("/").every((seg) => seg !== "" && seg !== "." && seg !== "..");
+}

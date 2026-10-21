@@ -4,7 +4,6 @@ import {
   emptySiteStructure,
   loadCosenseSiteConfig,
   normalizeBase,
-  pathFor,
   type SiteStructure,
   vendorImage,
 } from "@cosense-site-kit/core";
@@ -14,7 +13,7 @@ import {
   getSharedIntermediate,
   invalidateSharedIntermediate,
 } from "./intermediate-cache";
-import { iconVendorDir } from "./paths";
+import { buildRedirects, iconVendorDir } from "./paths";
 
 export interface CosenseIntegrationOptions {
   /** Path to cosense.config.{ts,js,mjs}. Default: ./cosense.config */
@@ -178,14 +177,9 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           updateConfig({ base: normalized.replace(/\/$/, "") });
         }
 
-        // Redirect *sources* are route patterns, so Astro prefixes them with
-        // `base` itself; *destinations* are emitted verbatim into the Location
-        // header / meta refresh, so the base must be baked in here or subpath
-        // deployments (GitHub Pages project sites) redirect to a 404.
-        const redirects: Record<string, string> = {};
-        for (const [from, to] of Object.entries(structure.redirects)) {
-          redirects[pathFor(from)] = pathFor(to, normalized);
-        }
+        const redirects = buildRedirects(structure.redirects, normalized, (from) =>
+          logger.warn(`cosense: skipped unsafe redirect source ${JSON.stringify(from)}`),
+        );
         if (Object.keys(redirects).length > 0) {
           updateConfig({ redirects });
           logger.info(`cosense: ${Object.keys(redirects).length} redirect(s) wired`);

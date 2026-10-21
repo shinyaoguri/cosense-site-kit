@@ -302,6 +302,47 @@ posts:
     );
     expect(ok?.structure.redirects).toEqual({ a: "new-slug", b: "/blog", c: "spaced" });
   });
+
+  it("rejects redirect sources that escape the output directory", () => {
+    // Sources become build output paths (Astro writes <source>/index.html), so
+    // a dot segment would write outside dist.
+    const bad = [
+      "../../pwned",
+      "a/../b",
+      "./x",
+      "..",
+      ".",
+      "a//b",
+      "a\\\\b",
+      "..\\\\x",
+      "\\t../x",
+      "http:x",
+      "javascript:alert(1)",
+      "/",
+      "",
+    ];
+    for (const from of bad) {
+      const yaml = `redirects:\n  "${from}": new-slug\n`;
+      expect(
+        () => parseSitePage(pageWith([codeBlock("site.yaml", yaml)])),
+        `source ${JSON.stringify(from)}`,
+      ).toThrowError(SiteConfigParseError);
+    }
+  });
+
+  it("normalizes valid redirect sources (trim surrounding space and slashes)", () => {
+    const yaml =
+      'redirects:\n  old: a\n  "/legacy/": b\n  "blog/2024": c\n  " spaced ": d\n  "%2e%2e": e\n';
+    const ok = parseSitePage(pageWith([codeBlock("site.yaml", yaml)]));
+    expect(ok?.structure.redirects).toEqual({
+      old: "a",
+      legacy: "b",
+      "blog/2024": "c",
+      spaced: "d",
+      // Percent signs are encoded by pathFor, so this never becomes "..".
+      "%2e%2e": "e",
+    });
+  });
 });
 
 describe("siteStructureSchema defaults", () => {

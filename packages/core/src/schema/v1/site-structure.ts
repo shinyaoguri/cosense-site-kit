@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { isSafeRedirect, SAFE_HREF } from "../../url";
+import {
+  isSafeRedirect,
+  isSafeRedirectSource,
+  normalizeRedirectSource,
+  SAFE_HREF,
+} from "../../url";
 
 // SiteStructure is the typed shape of what authors declare in `.site` (or
 // whatever page they configure as the site-config page) inside a single
@@ -46,7 +51,14 @@ export const siteStructureSchema = z
     // browser without touching the repo.
     redirects: z
       .record(
-        z.string(),
+        // Sources become output paths, so dot segments would escape dist.
+        z
+          .string()
+          .transform(normalizeRedirectSource)
+          .refine(
+            isSafeRedirectSource,
+            "redirect sources must be a slug path (no . or .. segments, no empty segments, no scheme, no \\, no control chars)",
+          ),
         // Trim first, then allowlist-check: a leading tab/space would let a
         // protocol-relative or scheme value slip past a naive leading anchor
         // because browsers strip those before parsing the URL.
