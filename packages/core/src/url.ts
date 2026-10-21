@@ -9,8 +9,9 @@
 // rejected it).
 
 // Allowed hrefs: absolute http(s), mailto:/tel:, a site-relative path (/blog —
-// but NOT protocol-relative //host), or a #fragment.
-export const SAFE_HREF = /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i;
+// but NOT protocol-relative //host, nor /\host, which browsers read the same
+// way since they treat "\" as "/"), or a #fragment.
+export const SAFE_HREF = /^(https?:\/\/|mailto:|tel:|\/(?![/\\])|#)/i;
 
 /** True when `href` uses an allowed, non-executable shape. */
 export function isSafeHref(href: string): boolean {
@@ -37,6 +38,7 @@ export function isSafeRedirect(value: string): boolean {
   if (!value) return false;
   if (CONTROL_CHARS.test(value)) return false; // tab/newline/etc. → parser-differential
   if (value.startsWith("//")) return false; // protocol-relative → external host
+  if (value.includes("\\")) return false; // browsers treat "\" as "/": "/\host" → external host
   if (REDIRECT_SCHEME.test(value)) return false; // http:, javascript:, data:, …
   return true;
 }
