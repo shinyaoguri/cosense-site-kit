@@ -6,10 +6,11 @@ If you believe you have found a security issue in cosense-site-kit, please repor
 
 ## Known advisories in dependencies
 
-The default dependency set — Astro 6, which this repo pins — has a clean
+The default dependency set — Astro 7, which this repo pins — has a clean
 `npm audit` (0 known advisories). The notes below cover advisories you may
-still hit if you pin an **older, peer-allowed** Astro (the framework's peer
-range is `astro@^5 || ^6`), and how cosense-site-kit is exposed in each case.
+still hit if you pin an **older, peer-allowed** Astro or an older lockfile (the
+framework's peer range is `astro@^5 || ^6 || ^7`), and how cosense-site-kit is
+exposed in each case.
 
 ### Astro 5 advisories (moderate; fixed in Astro 6)
 
@@ -38,6 +39,16 @@ pin Astro 5:
   pulls in. If you pin an older toolchain that resolves esbuild < 0.25, avoid
   visiting untrusted sites that might probe `localhost:4321` while `astro dev`
   is running.
+
+### vite / launch-editor dev-server advisories (high; fixed)
+
+- **GHSA-698v-4r3x-3vcv**, **GHSA-r825-w8mm-5pxw**, **GHSA-587h-7wmj-h5pm** —
+  launch-editor (bundled with vite < 8.3, and pulled in directly by
+  `@changesets/cli`) behind the dev server's "open in editor" endpoint.
+  Like the esbuild advisory, this is reachable only while `astro dev` is
+  running; production builds and deployed sites are unaffected. Fixed by
+  vite 8.3.x / launch-editor 2.14.2. If you keep an older lockfile, run
+  `npm audit fix`.
 
 ## Default security posture
 
