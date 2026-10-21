@@ -126,7 +126,7 @@ YAML スキーマ:
 | フィールド | 型 | 説明 |
 |---|---|---|
 | `home.page` | Cosense ページタイトル | ホーム本文として描画。未指定なら "Recent pages" 一覧にフォールバック |
-| `favicon` | Cosense ページタイトル または `https://...` URL | favicon。ページタイトルを書くとそのページの先頭画像、URL を書くとその画像を使う。未指定なら **Cosense プロジェクトのアイコン** → ホームページ画像 → タイトル順で最初に画像を持つページ、の順で自動選択 |
+| `favicon` | Cosense ページタイトル または `https://...` URL | favicon。ページタイトルを書くとそのページの先頭画像、URL を書くとその画像を使う。未指定なら **Cosense プロジェクトのアイコン** → ホームページ画像 → タイトル順で最初に画像を持つページ、の順で自動選択。画像はビルド時にサイトへ取り込まれる（PNG / JPEG / GIF / WebP / AVIF のみ。SVG は取り込まず元の URL を参照する）|
 | `nav[]` | `{label, page}` または `{label, href}` | ヘッダーの項目。`page` は Cosense タイトル、`href` は任意の URL |
 | `posts.tag` | string | このタグが付いたページが `/posts` とホームに表示される |
 | `posts.limit` | number | ホームの「Recent posts」の表示件数上限 |

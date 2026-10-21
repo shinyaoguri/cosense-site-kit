@@ -2,7 +2,7 @@ import { mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { vendorIcons } from "../src/assets/icons";
+import { assertFetchableUrl, vendorIcons, vendorImage } from "../src/assets/icons";
 import type { IntermediateData } from "../src/schema/v1/page";
 
 function dataWithIcons(srcs: string[]): IntermediateData {
@@ -218,5 +218,151 @@ describe("vendorIcons", () => {
 
     expect(out).toBe(data);
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe("vendorImage hardening", () => {
+  const SRC = "https://img.example/favicon";
+  const base = async () => ({
+    dir: await mkdtemp(join(tmpdir(), "icons-")),
+    baseUrl: "/cosense-icons",
+  });
+
+  it("does not vendor SVG (it would run script on the site's origin)", async () => {
+    const opts = await base();
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response("<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>", {
+          headers: { "content-type": "image/svg+xml" },
+        }),
+    );
+    const onWarn = vi.fn();
+    const out = await vendorImage(SRC, {
+      ...opts,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      onWarn,
+    });
+    expect(out).toBe(SRC);
+    expect(onWarn).toHaveBeenCalledOnce();
+    expect(await readdir(opts.dir)).toHaveLength(0);
+  });
+
+  it("removes SVG files vendored by earlier versions", async () => {
+    const opts = await base();
+    await writeFile(join(opts.dir, "0123456789abcdef.svg"), "<svg/>");
+    await writeFile(join(opts.dir, "keep-me.svg"), "<svg/>");
+    const fetchImpl = vi.fn(async () => pngResponse());
+    await vendorImage(SRC, { ...opts, fetchImpl: fetchImpl as unknown as typeof fetch });
+    const names = await readdir(opts.dir);
+    expect(names).not.toContain("0123456789abcdef.svg");
+    expect(names).toContain("keep-me.svg");
+  });
+
+  it("rejects a response whose Content-Length exceeds the cap", async () => {
+    const opts = await base();
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(new Uint8Array([1]), {
+          headers: { "content-type": "image/png", "content-length": String(6 * 1024 * 1024) },
+        }),
+    );
+    const onWarn = vi.fn();
+    const out = await vendorImage(SRC, {
+      ...opts,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      onWarn,
+    });
+    expect(out).toBe(SRC);
+    expect(onWarn.mock.calls[0]?.[0]).toMatch(/too large/);
+  });
+
+  it("stops reading a streamed body once it exceeds the cap", async () => {
+    const opts = await base();
+    const chunk = new Uint8Array(1024 * 1024);
+    let sent = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        sent++;
+        if (sent > 50) controller.close();
+        else controller.enqueue(chunk);
+      },
+    });
+    const fetchImpl = vi.fn(
+      async () => new Response(body, { headers: { "content-type": "image/png" } }),
+    );
+    const onWarn = vi.fn();
+    const out = await vendorImage(SRC, {
+      ...opts,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      onWarn,
+    });
+    expect(out).toBe(SRC);
+    expect(onWarn.mock.calls[0]?.[0]).toMatch(/too large/);
+    expect(sent).toBeLessThan(10);
+  });
+
+  it("refuses local/private hosts without sending a request", async () => {
+    for (const src of [
+      "http://127.0.0.1/x.png",
+      "http://0x7f.1/x.png",
+      "http://localhost:8080/x.png",
+      "http://169.254.169.254/latest/meta-data",
+      "http://10.0.0.1/x.png",
+      "http://192.168.1.1/x.png",
+      "http://[::1]/x.png",
+      "http://[::ffff:127.0.0.1]/x.png",
+      "http://[fd00::1]/x.png",
+      "file:///etc/passwd",
+    ]) {
+      const opts = await base();
+      const fetchImpl = vi.fn(async () => pngResponse());
+      const out = await vendorImage(src, {
+        ...opts,
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      });
+      expect(out, src).toBe(src);
+      expect(fetchImpl, src).not.toHaveBeenCalled();
+    }
+  });
+
+  it("checks each redirect hop before following it", async () => {
+    const opts = await base();
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(null, {
+          status: 302,
+          headers: { location: "http://169.254.169.254/latest/meta-data" },
+        }),
+    );
+    const out = await vendorImage(SRC, {
+      ...opts,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(out).toBe(SRC);
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it("follows a redirect to a public host, with a timeout signal", async () => {
+    const opts = await base();
+    const fetchImpl = vi.fn(async (url: string, _init?: RequestInit) =>
+      url === SRC
+        ? new Response(null, { status: 302, headers: { location: "/real.png" } })
+        : pngResponse(),
+    );
+    const out = await vendorImage(SRC, {
+      ...opts,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(out).toMatch(/^\/cosense-icons\/[0-9a-f]{16}\.png$/);
+    expect(fetchImpl.mock.calls.map((c) => c[0])).toEqual([SRC, "https://img.example/real.png"]);
+    for (const [, init] of fetchImpl.mock.calls) {
+      expect(init?.redirect).toBe("manual");
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+    }
+  });
+
+  it("assertFetchableUrl accepts ordinary public URLs", () => {
+    expect(() => assertFetchableUrl("https://scrapbox.io/api/pages/p/u/icon")).not.toThrow();
+    expect(() => assertFetchableUrl("https://172.32.0.1/x.png")).not.toThrow();
   });
 });
