@@ -1,5 +1,14 @@
 # @cosense-site-kit/astro
 
+## 0.2.3
+
+### Patch Changes
+
+- 4abee40: URL 検証の穴を塞いだ。`/\host` 形式の href（ブラウザは `//host` と同じ外部ホストとして解釈する）とバックスラッシュを含むリダイレクト先を拒否し、`.site` のリダイレクト先 `/blog` が `//blog` に化けてビルドが落ちる問題を直した。
+- Updated dependencies [b0c910a]
+- Updated dependencies [4abee40]
+  - @cosense-site-kit/core@0.4.6
+
 ## 0.2.2
 
 ### Patch Changes
