@@ -1,5 +1,22 @@
 # @cosense-site-kit/cli
 
+## 0.1.14
+
+### Patch Changes
+
+- cab0bd6: Cosense 由来の文字列（ページタイトル、`.site` の YAML エラー、警告）をログに出す前に、改行と制御文字をエスケープするようにしました。複数行の値で CI ログの行頭に `::warning::` などのワークフローコマンドが置かれたり、ANSI エスケープで端末の表示が偽装されたりするのを防ぎます。エスケープには core の `escapeForLog` を使います。
+  
+  astro 統合に `imageRemotePatterns` オプションを追加しました。`<Image>` がビルド時に取得できるリモート画像のホストを絞れます。既定値はこれまでどおりで、https のホストをすべて許可します。
+- bd98cae: `deploy init` が生成するワークフローのサプライチェーン面を強化しました。`--force` で再生成すると、次の 3 点が取り込まれます。
+  
+  - Cloudflare 向けは build と deploy を別ジョブに分けました。依存をインストールするジョブに `CLOUDFLARE_API_TOKEN` を渡さず、deploy ジョブは checkout も依存インストールもしないまま `npx wrangler@4 deploy` を実行します。`cloudflare/wrangler-action` は使わなくなりました。
+  - install は `package-lock.json` があれば `npm ci`、無ければ `npm install` を実行します。
+  - checkout は `persist-credentials: false` にしました。
+- Updated dependencies [3080462]
+- Updated dependencies [cab0bd6]
+- Updated dependencies [3eb17a9]
+  - @cosense-site-kit/core@0.4.7
+
 ## 0.1.13
 
 ### Patch Changes

@@ -1,5 +1,35 @@
 # @cosense-site-kit/astro
 
+## 0.2.4
+
+### Patch Changes
+
+- a4fdfb4: `dist/_headers` の CSP に `script-src 'self' 'wasm-unsafe-eval'` を加えました。Cosense の本文などから HTML に script が紛れ込んでも、実行されなくなります。
+  
+  - この制限を保つため、統合は Astro による小さな script のインライン化を止め、script をすべて別ファイルとして出力します。theme-default の LinkPreview も、`is:inline` をやめて通常の script にしました。
+  - **更新すると止まりうるもの**（Cloudflare Workers で配信しているサイトのみ）:
+    - テーマに足した Google Analytics などの外部 script
+    - Cloudflare Web Analytics の自動挿入
+    - 自作テーマの `is:inline` script やイベントハンドラ属性
+  
+    外部 script は `cosense({ csp: { scriptSrc: ["https://static.cloudflareinsights.com"] } })` のように許可元を足せば実行されます。script の制限そのものは `csp: false` で外せます。
+- cab0bd6: Cosense 由来の文字列（ページタイトル、`.site` の YAML エラー、警告）をログに出す前に、改行と制御文字をエスケープするようにしました。複数行の値で CI ログの行頭に `::warning::` などのワークフローコマンドが置かれたり、ANSI エスケープで端末の表示が偽装されたりするのを防ぎます。エスケープには core の `escapeForLog` を使います。
+  
+  astro 統合に `imageRemotePatterns` オプションを追加しました。`<Image>` がビルド時に取得できるリモート画像のホストを絞れます。既定値はこれまでどおりで、https のホストをすべて許可します。
+- b89705f: `astro dev` 以外（`astro build` など）で `cosense()` / `cosenseLoader()` に `previewDrafts: true` が明示されていたら、エラーで止めるようにした（#153）。これまでは除外対象のページ（draft）が本番ビルドに載った。しかも `doctor` はこのオプションを見られないため、公開前ゲートを通ってしまっていた。draft のプレビューはこれまでどおり `astro dev` で既定で有効。
+- ca5448d: ビルド時に `dist/_headers` を書き出すようにしました。Cloudflare Workers はこのファイルを読み、次のセキュリティヘッダーを全ページに付けます。
+  
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `X-Frame-Options: SAMEORIGIN`
+  - `Content-Security-Policy`: `frame-ancestors` / `base-uri` / `object-src` / `form-action` の 4 つだけを指定します。
+  
+  自前の `public/_headers` があればそちらを優先し、既定のファイルは書きません。出力そのものは `securityHeaders: false` で止められます。
+- Updated dependencies [3080462]
+- Updated dependencies [cab0bd6]
+- Updated dependencies [3eb17a9]
+  - @cosense-site-kit/core@0.4.7
+
 ## 0.2.3
 
 ### Patch Changes
