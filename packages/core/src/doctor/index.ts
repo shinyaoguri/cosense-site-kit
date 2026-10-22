@@ -386,6 +386,12 @@ function checkSlugCollisions(data: IntermediateData): DoctorCheck {
   };
 }
 
+// Regression guard for the publish filter itself (#59: `#Draft` slipped past a
+// case-sensitive match). It shares excludedBy with applyPublishRules, so with a
+// correct filter it always passes — it does NOT cover `previewDrafts`, the one
+// path that puts drafts into a build: doctor runs the pipeline without the
+// Astro config and can't see that option. That path is closed in the build
+// itself instead (@cosense-site-kit/astro refuses previewDrafts outside dev, #153).
 function checkDraftLeak(config: CosenseSiteConfig, data: IntermediateData): DoctorCheck {
   // Use applyPublishRules' own predicate, or doctor would report "no leak" for
   // a `#Draft` / `[draft]` page that the filter actually excluded (or miss a

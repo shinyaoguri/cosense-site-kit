@@ -6,6 +6,7 @@ import {
   vendorIcons,
 } from "@cosense-site-kit/core";
 import type { Loader } from "astro/loaders";
+import { assertDraftPreviewAllowed } from "./drafts";
 import { DEV_TTL_MS, getSharedIntermediate } from "./intermediate-cache";
 import { iconVendorDir } from "./paths";
 
@@ -20,8 +21,8 @@ export interface CosenseLoaderOptions {
   force?: boolean;
   /**
    * Surface excluded pages (drafts) for local preview, flagged `draft: true`.
-   * Defaults to on in `astro dev` and off in `astro build` (drafts never leak
-   * to a production build). Set explicitly to override the auto-detection.
+   * Defaults to on in `astro dev` and off otherwise. Dev-only: `true` outside
+   * `astro dev` throws, so drafts never leak to a production build.
    */
   previewDrafts?: boolean;
 }
@@ -46,6 +47,7 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
       // Astro only passes a `watcher` in dev, so it's a reliable dev signal:
       // show drafts locally by default, never in a production build.
       const isDev = Boolean(watcher);
+      assertDraftPreviewAllowed(opts.previewDrafts, isDev);
       const previewDrafts = opts.previewDrafts ?? isDev;
       // In dev, expire the shared result so a Cosense edit shows up on reload
       // (the fetch is differential, so re-running is cheap). In build, omit the

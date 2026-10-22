@@ -8,6 +8,7 @@ import {
   vendorImage,
 } from "@cosense-site-kit/core";
 import type { AstroIntegration } from "astro";
+import { assertDraftPreviewAllowed } from "./drafts";
 import {
   DEV_TTL_MS,
   getSharedIntermediate,
@@ -30,8 +31,9 @@ export interface CosenseIntegrationOptions {
   force?: boolean;
   /**
    * Surface excluded pages (drafts) for local preview. Defaults to on in
-   * `astro dev`, off in `astro build`. Set explicitly to override. Must match
-   * the loader's setting so both reuse the same shared pipeline result.
+   * `astro dev`, off otherwise. Dev-only: `true` outside `astro dev` throws so
+   * drafts can't reach a production build. Must match the loader's setting so
+   * both reuse the same shared pipeline result.
    */
   previewDrafts?: boolean;
 }
@@ -109,6 +111,7 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
         const config = opts.config ?? (await loadCosenseSiteConfig(opts.configFile));
         const normalized = normalizeBase(config.site.base);
         const isDev = command === "dev";
+        assertDraftPreviewAllowed(opts.previewDrafts, isDev);
         // Match the loader's draft default (on in dev) so both share one
         // pipeline run; structure itself doesn't depend on drafts.
         const previewDrafts = opts.previewDrafts ?? isDev;
