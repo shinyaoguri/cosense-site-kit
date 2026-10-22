@@ -3,6 +3,7 @@
 //   isHiddenTag  → omit entirely (publish/draft/...; framework control bits)
 //   isPublicTag  → render as clickable chip linking to /tags/<name>
 //   otherwise    → render as plain inline text (no chip), e.g. template/foo
+//                  or a name that can't be a URL segment ("..", "100%")
 //
 // Cosense pages tend to carry a few control tags (#publish) and a few real
 // categories (#diary). Themes want to keep the latter visible and clickable
@@ -12,7 +13,7 @@
 // onto one tag, so a control tag written in any case must still be recognized
 // (via normalizeKey, the same normalization core uses for links and titles).
 
-import { normalizeKey } from "@cosense-site-kit/core";
+import { isSafePathSegment, normalizeKey } from "@cosense-site-kit/core";
 
 /** A page tagged `#no-date` renders without its publish/update dates. */
 export const NO_DATE_TAG = "no-date";
@@ -31,8 +32,11 @@ export function isHiddenTag(name: string): boolean {
   );
 }
 
+// A public tag gets a /tags/<name> route, so its name must survive as a single
+// URL segment: a namespaced "a/b", "..", "100%", "a?b" etc. would fail the
+// build or 404. Such tags still render, just as plain text without a chip.
 export function isPublicTag(name: string): boolean {
-  return !name.includes("/") && !HIDDEN_CONTROL_TAGS.has(normalizeKey(name));
+  return isSafePathSegment(name) && !HIDDEN_CONTROL_TAGS.has(normalizeKey(name));
 }
 
 /** Whether a page (by its tag list) opts out of showing publish/update dates. */

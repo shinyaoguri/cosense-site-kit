@@ -244,7 +244,7 @@ import PageMeta from "@cosense-site-kit/theme-utils/components/PageMeta.astro";
 | `formatDate(iso)` | ISO 文字列を `YYYY-MM-DD` (UTC) に整形。`undefined` はそのまま返すので `&&` でガードできる |
 | `pageMetaDates({ tags, publishedAt, modifiedAt, show })` | 日付行に**何を出すか**の判定（`#no-date` の尊重、更新日は公開日と違う日のときだけ）。日付行を自作するときはこれを通す。マークアップごと任せられるなら `<PageMeta>` の方が安全 |
 | `hasTag(tags, tag)` | タグの有無を**大文字小文字を無視して**判定。`.site` の `posts.tag` など著者が設定したタグの照合は必ずこれを使う |
-| `isPublicTag` / `isHiddenTag` | inline rendering で `#publish` 等の制御タグを非表示にし、`template/<name>` 等の名前空間付きタグは tag chip だけ抑制する |
+| `isPublicTag` / `isHiddenTag` | inline rendering で `#publish` 等の制御タグを非表示にし、`template/<name>` 等の名前空間付きタグや、URL の 1 セグメントにできない名前（`..`・`100%`・`a?b` など、core の `isSafePathSegment` で判定）のタグは tag chip だけ抑制する。`/tags/[tag]` のルートを作るときも、このフィルタを通すこと（通さないとビルドが落ちる） |
 | `buildSitemap` / `buildRssFeed` / `buildRobotsTxt`（＋ `escapeXml`） | 依存なしの XML/テキスト生成関数。`/sitemap.xml`・`/feed.xml`・`/robots.txt` のエンドポイントを自作テーマに足すのに使う（theme-default の `templates/*.ts` が実装例） |
 
 `Backlinks.astro` はそのまま使える共有コンポーネント (`<Backlinks backlinks={page.backlinks} />`)。本文の YouTube 埋め込み・ネストリスト・リッチなテーブルセルは `PageContent` が内部で処理する（`youtubeEmbedSrc` / `buildListTree` も export されているが、通常は直接呼ぶ必要はない）。

@@ -59,6 +59,20 @@ export function normalizeRedirectSource(value: string): string {
   return s.slice(start, end);
 }
 
+// Page slugs and tag names become URL path segments — Astro route params that
+// it re-parses as a URL before matching. Anything that parse rewrites makes
+// the generated path miss its own route (the whole build fails) or produces a
+// file the link can't reach: "\" reads as "/", "%XX" is decoded, "?"/"#" end
+// the path, and controls are stripped. Empty and "."/".." segments are dropped
+// by the same parse; leading-dot names also look like dotfiles to static hosts.
+// biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally match C0/DEL controls that URL parsers strip
+export const UNSAFE_PATH_CHARS = /[\\%?#\u0000-\u001F\u007F]/;
+
+/** True when `seg` survives as a single URL path segment unchanged. */
+export function isSafePathSegment(seg: string): boolean {
+  return seg !== "" && !seg.startsWith(".") && !seg.includes("/") && !UNSAFE_PATH_CHARS.test(seg);
+}
+
 /** True when `value` (expected pre-normalized) is a safe redirect source. */
 export function isSafeRedirectSource(value: string): boolean {
   if (!value) return false;

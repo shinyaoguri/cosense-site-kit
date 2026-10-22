@@ -172,6 +172,48 @@ describe("slug + link + backlink resolution", () => {
     expect(slugged?.slug).toBe("site_page");
   });
 
+  // Titles are remote input: a slug must survive Astro's URL normalization
+  // (which drops empty/dot segments, reads "\" as "/" and decodes "%XX") and
+  // never become a protocol-relative "//host" path (#187).
+  it.each([
+    ["../../evil.com", "evil.com"],
+    ["/foo", "foo"],
+    ["foo/", "foo"],
+    ["a/./b", "a/b"],
+    ["a//b", "a/b"],
+    ["a/%2e/b", "a/_2e/b"],
+    ["100%達成", "100_達成"],
+    ["x\\y", "x_y"],
+    ["a?b#c", "a_b_c"],
+    ["日本語のページ", "日本語のページ"],
+    ["C++", "C++"],
+    ["a b", "a_b"],
+  ])("normalizes title %j to a URL-stable slug %j", (title, expected) => {
+    const pages = [normalizePage(rawPage({ id: "1", title, text: `${title}\n#publish` }), "p")];
+    const [slugged] = assignSlugs(pages, { slug: "encoded-title" });
+    expect(slugged?.slug).toBe(expected);
+  });
+
+  it("falls back to the page id when nothing URL-safe is left", () => {
+    const pages = [normalizePage(rawPage({ id: "pg1", title: "..", text: "..\n#publish" }), "p")];
+    const [slugged] = assignSlugs(pages, { slug: "encoded-title" });
+    expect(slugged?.slug).toBe("pg1");
+  });
+
+  it("warns when normalization rewrites a slug, but not for ordinary titles", () => {
+    const warnings: string[] = [];
+    assignSlugs(
+      [
+        normalizePage(rawPage({ id: "1", title: "100%達成", text: "x\n#publish" }), "p"),
+        normalizePage(rawPage({ id: "2", title: "a b", text: "x\n#publish" }), "p"),
+      ],
+      { slug: "encoded-title" },
+      (m) => warnings.push(m),
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("100_達成");
+  });
+
   it("computes backlinks and slug-based link graph in one pass", () => {
     const pages = [
       normalizePage(rawPage({ id: "1", title: "A", text: "A\n#publish\nsee [B]" }), "p"),
@@ -240,6 +282,20 @@ describe("assignSlugs collision handling", () => {
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain("slug collision");
     expect(warnings[0]).toContain("Foo_Bar-2");
+  });
+
+  it("detects collisions between titles that differ only by stray slashes", () => {
+    // "foo", "foo/" and "/foo" used to get distinct slugs that Astro then wrote
+    // to the same path, silently dropping two of the pages.
+    const out = assignSlugs(
+      [
+        mk("a", "foo", "2020-01-01T00:00:00.000Z"),
+        mk("b", "foo/", "2021-01-01T00:00:00.000Z"),
+        mk("c", "/foo", "2022-01-01T00:00:00.000Z"),
+      ],
+      routing,
+    );
+    expect(out.map((p) => p.slug)).toEqual(["foo", "foo-2", "foo-3"]);
   });
 
   it("suffixes a page whose slug would take a reserved theme route", () => {

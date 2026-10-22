@@ -48,5 +48,11 @@ export { emptySiteStructure, pageSchema, SCHEMA_VERSION } from "./schema";
 // ── URL safety ────────────────────────────────────────────────────────────
 // One definition of "safe href", shared with theme-utils so the schema and the
 // theme layer validate the same shapes.
-export { isSafeHref, isSafeRedirectSource, normalizeRedirectSource, safeHref } from "./url";
+export {
+  isSafeHref,
+  isSafePathSegment,
+  isSafeRedirectSource,
+  normalizeRedirectSource,
+  safeHref,
+} from "./url";
 export { VERSION } from "./version";

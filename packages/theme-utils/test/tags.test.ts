@@ -43,6 +43,15 @@ describe("isPublicTag", () => {
     expect(isPublicTag("published/2026-05-20")).toBe(false);
     expect(isPublicTag("template/profile")).toBe(false);
   });
+
+  it("keeps tags that cannot be a /tags/<name> URL as plain text (#187)", () => {
+    // Each of these either fails the Astro build or yields a page the link 404s on.
+    for (const tag of [".", "..", "%2e%2e", ".net", "100%", "a\\b", "a?b", "a#b"]) {
+      expect(isPublicTag(tag)).toBe(false);
+    }
+    expect(isPublicTag("日記")).toBe(true);
+    expect(isPublicTag("C++")).toBe(true);
+  });
 });
 
 describe("hidesDates / #no-date", () => {

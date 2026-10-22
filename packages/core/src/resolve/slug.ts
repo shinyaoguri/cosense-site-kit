@@ -1,6 +1,7 @@
 import type { CosenseSiteConfig } from "../config";
 import { normalizeKey } from "../keys";
 import type { CosenseSitePage } from "../schema/v1/page";
+import { UNSAFE_PATH_CHARS } from "../url";
 
 const SLUG_TAG_PREFIX = "slug/";
 
@@ -39,13 +40,14 @@ export function assignSlugs(
   routing: Omit<CosenseSiteConfig["routing"], "reservedSlugs"> & { reservedSlugs?: string[] },
   onWarn?: (message: string) => void,
 ): CosenseSitePage[] {
-  const withBase = pages.map((page) => ({
-    page,
-    base:
-      hostSafeSlug(computeSlug(page, routing.slug)) ||
-      hostSafeSlug(encodeTitle(page.title)) ||
-      page.id,
-  }));
+  const withBase = pages.map((page) => {
+    const computed = computeSlug(page, routing.slug);
+    const base = sanitizeSlug(computed) || sanitizeSlug(encodeTitle(page.title)) || page.id;
+    if (base !== computed) {
+      onWarn?.(`slug for "${page.title}" is not URL-safe; normalized "${computed}" to "${base}"`);
+    }
+    return { page, base };
+  });
 
   const order = [...withBase].sort(
     (a, b) =>
@@ -103,13 +105,19 @@ export function pathFor(slug: string, base = "/"): string {
   return `${normalizeBase(base)}${encoded}`;
 }
 
-// GitHub Pages (and most static hosts/CDNs) refuse to serve URL segments that
-// begin with a dot — they look like hidden dotfiles — so a page titled ".foo"
-// would 404 despite being generated. Strip leading dots from each path segment.
-function hostSafeSlug(slug: string): string {
+// Make a slug survive as a URL path (see UNSAFE_PATH_CHARS): Astro re-parses
+// each generated path before matching it to its route, so a slug the parse
+// would rewrite fails the whole build, 404s, or (as "//host") links off-site.
+// - "\", "%", "?", "#" and controls become "_" (like spaces in encodeTitle)
+// - leading dots are stripped from each segment: GitHub Pages and most static
+//   hosts refuse dotfile-looking segments, so ".foo" would 404
+// - empty segments ("a//b", "/foo", "foo/") and "."/".." are dropped
+function sanitizeSlug(slug: string): string {
   return slug
+    .replace(new RegExp(UNSAFE_PATH_CHARS.source, "g"), "_")
     .split("/")
     .map((seg) => seg.replace(/^\.+/, ""))
+    .filter((seg) => seg !== "")
     .join("/");
 }
 
