@@ -1,4 +1,5 @@
 import { isAbsolute, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   type CosenseSiteConfig,
   emptySiteStructure,
@@ -9,6 +10,7 @@ import {
 } from "@cosense-site-kit/core";
 import type { AstroIntegration } from "astro";
 import { assertDraftPreviewAllowed } from "./drafts";
+import { writeSecurityHeaders } from "./headers";
 import {
   DEV_TTL_MS,
   getSharedIntermediate,
@@ -36,6 +38,14 @@ export interface CosenseIntegrationOptions {
    * both reuse the same shared pipeline result.
    */
   previewDrafts?: boolean;
+  /**
+   * Write baseline security headers (nosniff, Referrer-Policy, and a CSP with
+   * frame-ancestors/base-uri/object-src/form-action) to `dist/_headers`, which
+   * Cloudflare Workers Static Assets serves. A `public/_headers` of the site's
+   * own takes precedence and is left untouched. GitHub Pages ignores the file
+   * (it can't set headers). Default: true.
+   */
+  securityHeaders?: boolean;
 }
 
 // Astro Integration. Use in astro.config.ts:
@@ -58,6 +68,7 @@ export interface CosenseIntegrationOptions {
 //                                              plus a vendored `icon` (favicon)
 //        virtual:cosense-site-kit/structure  — the parsed .site SiteStructure
 //   4. Wires redirects from .site into Astro's `redirects` config.
+//   5. Writes baseline security headers to dist/_headers (see headers.ts).
 //
 // Pipeline failure does not crash Astro — site/base are still set, structure
 // falls back to empty defaults, and redirects are silently skipped so the dev
@@ -189,6 +200,14 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
         }
 
         logger.info(`cosense: site=${config.site.baseUrl}, project=${config.source.project}`);
+      },
+      "astro:build:done": ({ dir, logger }) => {
+        if (opts.securityHeaders === false) return;
+        if (writeSecurityHeaders(fileURLToPath(dir)) === "kept") {
+          logger.info("cosense: keeping the site's own _headers (security headers not written)");
+        } else {
+          logger.info("cosense: wrote security headers to _headers");
+        }
       },
     },
   };
