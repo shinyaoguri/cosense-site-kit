@@ -503,6 +503,8 @@ import { Image } from "astro:assets";
 <Image src={block.url} alt={block.alt ?? ""} inferSize loading="lazy" widths={[480, 960]} sizes="(max-width: 720px) 100vw, 720px" />
 ```
 
+> **script と CSP**: 統合が出力する CSP は `script-src 'self'` なので、テーマの script は Astro が処理する通常の `<script>` にしてください（統合が script のインライン化を止めるので、別ファイルとして出力されます）。`<script is:inline>`・`define:vars`・`onclick=` などのイベントハンドラ属性は、実行されません。ビルド時の値を渡したい場合は、`data-*` 属性に置いて script から読むか、`import.meta.env.BASE_URL` のように script 内で組み立てます。例外は JSON-LD（`type="application/ld+json"`）のようなデータブロックで、実行されないので `is:inline` のままで構いません。同梱テーマはこの約束を `test/no-inline-scripts.test.ts` で検査しています。
+
 > **注意**: `<Image>` を使うと、ビルド機が画像 URL をビルド時に取得します。この URL は Cosense の編集者が書いたものです。https であれば任意のホストへアクセスすることになり、内部ネットワークのアドレスを書かれる可能性や、取得の失敗でビルドが落ちる可能性があります。
 >
 > 許可するホストを絞るには、`cosense({ imageRemotePatterns: [{ protocol: "https", hostname: "gyazo.com" }] })` のように統合のオプションで指定します。`[]` を渡すと、リモート画像をすべて拒否します。`astro.config` の `image.remotePatterns` では絞れません。Astro は統合の設定と astro.config の設定を連結するので、指定しても許可範囲が増えるだけです。

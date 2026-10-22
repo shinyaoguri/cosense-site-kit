@@ -573,10 +573,24 @@ site: {
 | `X-Content-Type-Options` | `nosniff` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 | `X-Frame-Options` | `SAMEORIGIN` |
-| `Content-Security-Policy` | `frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'` |
+| `Content-Security-Policy` | `frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval'` |
 
 - **他サイトからの埋め込み**: `frame-ancestors 'self'` があるので、サイトを他サイトの iframe に埋め込むことはできません。
-- **CSP の範囲**: 埋め込みとナビゲーションの制限に絞っています。script・style・画像の取得元は縛らないので、既存の表示は変わりません。
+- **script の制限**: 実行できる script は、自サイトのファイルだけです（`'wasm-unsafe-eval'` は検索の Pagefind 用）。Cosense の本文などから HTML に script が紛れ込んでも、実行されません。このため、ビルドでは script を HTML に埋め込まず、すべて別ファイルとして出力します。style と画像の取得元は縛りません。
+- **外部の script を使う場合**: Google Analytics などの解析タグや、Cloudflare のダッシュボードで有効にした Web Analytics（Cloudflare が HTML に自動で差し込みます）は、許可元を足すまで実行されません。統合のオプションで足してください:
+
+  ```ts
+  cosense({
+    csp: {
+      scriptSrc: [
+        "https://static.cloudflareinsights.com", // Cloudflare Web Analytics
+        "https://www.googletagmanager.com",      // Google Analytics
+      ],
+    },
+  })
+  ```
+
+  GA の設定用のインライン script（`gtag('config', …)`）も実行されません。別ファイルに移すか、その `'sha256-…'` ハッシュを `scriptSrc` に足してください。script の制限そのものを外すには `csp: false` を指定します（他の 4 項目は残ります）。
 - **カスタマイズ**: 自前の `public/_headers` を置くと、そちらがそのまま使われ、既定のファイルは書かれません。出力そのものを止めるには `cosense({ securityHeaders: false })` を指定します。
 - **GitHub Pages**: レスポンスヘッダーを設定できないため、これらのヘッダーは付きません（`_headers` はただのファイルとして配信されるだけです）。
 
