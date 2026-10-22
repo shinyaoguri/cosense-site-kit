@@ -1,5 +1,15 @@
 # @cosense-site-kit/theme-utils
 
+## 0.5.3
+
+### Patch Changes
+
+- 3eb17a9: タイトル・タグ由来の URL を、Astro の URL 正規化を通しても形が変わらないように正規化した（#187）。これまで `../../evil.com` というタイトルは内部リンクが外部ホストを指し、`a//b`・`x\y`・`100%達成` などのタイトルやタグ `..` が 1 つあるだけでビルド全体が落ちていた。slug では `\` `%` `?` `#` を `_` に置き換え、空・`.`・`..` のセグメントを除く（書き換えたときは警告を出す）。URL の 1 セグメントにできないタグは、`isPublicTag` がタグページを作らない平文扱いにする。判定は新しく公開した `isSafePathSegment` に寄せた。
+- Updated dependencies [3080462]
+- Updated dependencies [cab0bd6]
+- Updated dependencies [3eb17a9]
+  - @cosense-site-kit/core@0.4.7
+
 ## 0.5.2
 
 ### Patch Changes
