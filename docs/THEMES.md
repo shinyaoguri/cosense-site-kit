@@ -503,6 +503,10 @@ import { Image } from "astro:assets";
 <Image src={block.url} alt={block.alt ?? ""} inferSize loading="lazy" widths={[480, 960]} sizes="(max-width: 720px) 100vw, 720px" />
 ```
 
+> **注意**: `<Image>` を使うと、ビルド機が画像 URL をビルド時に取得します。この URL は Cosense の編集者が書いたものです。https であれば任意のホストへアクセスすることになり、内部ネットワークのアドレスを書かれる可能性や、取得の失敗でビルドが落ちる可能性があります。
+>
+> 許可するホストを絞るには、`cosense({ imageRemotePatterns: [{ protocol: "https", hostname: "gyazo.com" }] })` のように統合のオプションで指定します。`[]` を渡すと、リモート画像をすべて拒否します。`astro.config` の `image.remotePatterns` では絞れません。Astro は統合の設定と astro.config の設定を連結するので、指定しても許可範囲が増えるだけです。
+
 **注意**: `inferSize` と最適化はビルド時に各画像を取得します。削除済み・到達不能な画像があるとビルドが失敗します。無人 cron 運用では既定の `<img>`（安全）のままを推奨します。
 
 ---

@@ -1,5 +1,6 @@
 import {
   type CosenseSiteConfig,
+  escapeForLog,
   loadCosenseSiteConfig,
   normalizeBase,
   pageSchema,
@@ -47,6 +48,8 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
       // Astro only passes a `watcher` in dev, so it's a reliable dev signal:
       // show drafts locally by default, never in a production build.
       const isDev = Boolean(watcher);
+      // Warnings carry Cosense-derived text (titles, .site YAML errors).
+      const warn = (m: string) => logger.warn(escapeForLog(m));
       assertDraftPreviewAllowed(opts.previewDrafts, isDev);
       const previewDrafts = opts.previewDrafts ?? isDev;
       // In dev, expire the shared result so a Cosense edit shows up on reload
@@ -55,7 +58,7 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
       const ttlMs = isDev ? DEV_TTL_MS : undefined;
       const built = await getSharedIntermediate({ ...opts, previewDrafts, ttlMs });
       logger.info(`Loaded ${built.pages.length} page(s); excluded ${built.excluded.length}`);
-      for (const w of built.warnings) logger.warn(w);
+      for (const w of built.warnings) warn(w);
 
       // Vendor `[name.icon]` images here, in the loader, because this is the
       // data that actually reaches the rendered pages. scrapbox.io's icon
@@ -72,7 +75,7 @@ export function cosenseLoader(opts: CosenseLoaderOptions = {}): Loader {
       const data = await vendorIcons(built, {
         dir: iconVendorDir(astroConfig.publicDir),
         baseUrl: `${base}/cosense-icons`,
-        onWarn: (m) => logger.warn(m),
+        onWarn: warn,
       });
 
       // Diff against the persisted store instead of clear()-ing it: store.set
