@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isDotSegment } from "../../url";
 import { withRetry } from "../../util/retry";
 import { VERSION } from "../../version";
 import {
@@ -61,9 +62,16 @@ export class CosenseApi {
     title: string,
     signal?: AbortSignal,
   ): Promise<CosensePageResponse> {
-    const url = new URL(
-      `${this.baseUrl}/pages/${encodeURIComponent(project)}/${encodeURIComponent(title)}`,
-    );
+    const encodedTitle = encodeURIComponent(title);
+    // "." / ".." would resolve to the page list or /api/pages/ (#199). There is
+    // no URL that reaches such a page, so answer as Cosense would: not found.
+    if (isDotSegment(encodedTitle)) {
+      throw new CosenseApiError(
+        `page "${title}" can't be requested: its title is a URL dot segment`,
+        404,
+      );
+    }
+    const url = new URL(`${this.baseUrl}/pages/${encodeURIComponent(project)}/${encodedTitle}`);
     const json = await this.getJson<unknown>(url, signal);
     return validateShape(cosensePageResponseSchema, json, url);
   }

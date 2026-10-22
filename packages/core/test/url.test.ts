@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSafeHref, isSafePathSegment, isSafeRedirect } from "../src/url";
+import { isDotSegment, isSafeHref, isSafePathSegment, isSafeRedirect } from "../src/url";
 
 describe("isSafeHref", () => {
   it("accepts http(s), mailto:, tel:, site-relative paths and fragments", () => {
@@ -48,6 +48,23 @@ describe("isSafePathSegment", () => {
     // "?"/"#" end the path, and leading-dot names look like hidden files.
     for (const seg of ["", ".", "..", ".net", "a/b", "a\\b", "100%", "%2e", "a?b", "a#b", "a\tb"]) {
       expect(isSafePathSegment(seg)).toBe(false);
+    }
+  });
+});
+
+describe("isDotSegment", () => {
+  it("matches the segments URL parsing resolves, in any escaped form", () => {
+    // WHATWG URL resolves "%2E" / "%2e%2E" like "." / "..", so escaping can't
+    // keep a dot-only title in a request path (#199).
+    for (const seg of [".", "..", "%2E", "%2e", ".%2E", "%2E%2e"]) {
+      expect(isDotSegment(seg)).toBe(true);
+    }
+    expect(new URL("https://x/api/pages/p/%2E%2E").pathname).toBe("/api/pages/");
+  });
+
+  it("does not match other dotted names", () => {
+    for (const seg of ["...", ".a", "a.", "v1.2", "", "%2E%2E%2E"]) {
+      expect(isDotSegment(seg)).toBe(false);
     }
   });
 });

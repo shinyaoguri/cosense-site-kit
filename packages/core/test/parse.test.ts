@@ -245,6 +245,18 @@ describe("parseScrapboxText", () => {
     expect(icon.src).toBe("https://scrapbox.io/api/pages/other/bar%20baz/icon");
   });
 
+  it("renders a dot-only icon title as text instead of another page's icon", () => {
+    // ".../pages/other/./icon" would resolve to the icon of a page named "icon"
+    // (#199), so no icon URL is built for it.
+    const { blocks } = parseScrapboxText("Title\n[/other/..icon] [..icon]", "myproj");
+    const para = blocks[0];
+    if (!para || para.type !== "paragraph") throw new Error("expected paragraph");
+    expect(para.children.some((c) => c.type === "icon")).toBe(false);
+    const text = para.children.map((c) => (c.type === "text" ? c.value : "")).join("");
+    expect(text).toContain("[/other/..icon]");
+    expect(text).toContain("[..icon]");
+  });
+
   it("flags [[name.icon]] (strongIcon) as a strong icon, plain [name.icon] not", () => {
     const { blocks } = parseScrapboxText("Title\n[foo.icon] [[foo.icon]]", "myproj");
     const para = blocks[0];

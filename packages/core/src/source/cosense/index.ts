@@ -1,3 +1,4 @@
+import { isDotSegment } from "../../url";
 import type { SiteSource, SourcePageRaw, SourcePageRef } from "../types";
 import { CosenseApi, CosenseApiError } from "./api";
 import { createPageCache, type PageCache } from "./cache";
@@ -71,6 +72,12 @@ export function createCosenseSource(opts: CosenseSourceOptions): SiteSource & {
         // A cancelled build must abort, never degrade.
         if (signal?.aborted) throw err;
         if (err instanceof CosenseApiError && err.status === 404) {
+          if (isDotSegment(encodeURIComponent(ref.title))) {
+            onWarn?.(
+              `page "${ref.title}" can't be fetched: a title of "." or ".." is a URL dot segment, so no API URL reaches it; skipped`,
+            );
+            return null;
+          }
           // Deleted between list and fetch. Skip it — serving a stale cached
           // copy here would resurrect a page the author removed.
           onWarn?.(`page "${ref.title}" disappeared between list and fetch (404); skipped`);

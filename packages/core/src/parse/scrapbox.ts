@@ -2,6 +2,7 @@ import type { Block as SbBlock, Node as SbNode } from "@progfay/scrapbox-parser"
 import { parse as scrapboxParse } from "@progfay/scrapbox-parser";
 import type { CosenseBlock } from "../schema/v1/block";
 import type { InlineNode } from "../schema/v1/inline";
+import { isDotSegment } from "../url";
 import { dedupe } from "../util/dedupe";
 
 // Wraps @progfay/scrapbox-parser and converts its AST to the framework's
@@ -386,7 +387,14 @@ function resolveIcon(path: string, defaultProject: string, strong: boolean): Inl
       pageTitle = rest;
     }
   }
-  const src = `https://scrapbox.io/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(pageTitle)}/icon`;
+  const encodedProject = encodeURIComponent(project);
+  const encodedTitle = encodeURIComponent(pageTitle);
+  // A "." / ".." segment would resolve to another page's icon (#199); keep the
+  // notation as text rather than show the wrong image.
+  if (isDotSegment(encodedProject) || isDotSegment(encodedTitle)) {
+    return { type: "text", value: strong ? `[[${path}.icon]]` : `[${path}.icon]` };
+  }
+  const src = `https://scrapbox.io/api/pages/${encodedProject}/${encodedTitle}/icon`;
   return strong
     ? { type: "icon", pageTitle, project, src, strong: true }
     : { type: "icon", pageTitle, project, src };
