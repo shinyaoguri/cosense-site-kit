@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSafeHref, isSafeRedirect } from "../src/url";
+import { isSafeHref, isSafePathSegment, isSafeRedirect } from "../src/url";
 
 describe("isSafeHref", () => {
   it("accepts http(s), mailto:, tel:, site-relative paths and fragments", () => {
@@ -32,6 +32,22 @@ describe("isSafeRedirect", () => {
       "\\\\evil.com",
     ]) {
       expect(isSafeRedirect(to)).toBe(false);
+    }
+  });
+});
+
+describe("isSafePathSegment", () => {
+  it("accepts ordinary single segments, including non-ASCII and symbols", () => {
+    for (const seg of ["diary", "日記", "C++", "a_b", "v1.2"]) {
+      expect(isSafePathSegment(seg)).toBe(true);
+    }
+  });
+
+  it("rejects segments that a URL parser or static host would rewrite", () => {
+    // Empty and dot segments are dropped, "\\" reads as "/", "%XX" is decoded,
+    // "?"/"#" end the path, and leading-dot names look like hidden files.
+    for (const seg of ["", ".", "..", ".net", "a/b", "a\\b", "100%", "%2e", "a?b", "a#b", "a\tb"]) {
+      expect(isSafePathSegment(seg)).toBe(false);
     }
   });
 });
