@@ -564,6 +564,22 @@ site: {
 
 見た目はテーマ共通で、`themeDefault()` の CSS 変数や `preset`（配色）がそのまま 404 ページにも反映されます。ヘッダーと検索ボックスも表示されるので、迷った読者はそのまま検索やホームへ戻れます。
 
+### セキュリティヘッダー
+
+`@cosense-site-kit/astro` は、ビルド時に `dist/_headers` を書き出します。Cloudflare Workers はこのファイルを読み、全ページに次のヘッダーを付けます。
+
+| ヘッダー | 値 |
+|---|---|
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `X-Frame-Options` | `SAMEORIGIN` |
+| `Content-Security-Policy` | `frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'` |
+
+- **他サイトからの埋め込み**: `frame-ancestors 'self'` があるので、サイトを他サイトの iframe に埋め込むことはできません。
+- **CSP の範囲**: 埋め込みとナビゲーションの制限に絞っています。script・style・画像の取得元は縛らないので、既存の表示は変わりません。
+- **カスタマイズ**: 自前の `public/_headers` を置くと、そちらがそのまま使われ、既定のファイルは書かれません。出力そのものを止めるには `cosense({ securityHeaders: false })` を指定します。
+- **GitHub Pages**: レスポンスヘッダーを設定できないため、これらのヘッダーは付きません（`_headers` はただのファイルとして配信されるだけです）。
+
 ### サイトがサブディレクトリにある場合（`<repo>/site/` など）
 
 ```bash
