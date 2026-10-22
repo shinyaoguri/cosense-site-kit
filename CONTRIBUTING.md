@@ -72,6 +72,15 @@ npm run build && npm run preview  # 本番出力（全文検索もここで動�
   - changeset がある状態で push → 「**chore: version packages**」PR を自動で開く/更新（`changeset version`：バージョン上げ＋CHANGELOG 更新＋changeset 消費）。
   - その PR をマージ → changeset が無くなった次の実行で `changeset publish`（`verify` がビルドした dist を公開）→ npm 公開＋ git タグ。
 
+### `release-reminder.yml` — リリース PR の滞留検知
+
+- **トリガ**: 毎日の cron と `workflow_dispatch`。
+- 「chore: version packages」PR は**人がマージするまで公開されません**。開いたまま放置されると、main では直っているのに利用側には npm 上の旧版しか見えず、原因に気付けません（[#140](https://github.com/shinyaoguri/cosense-site-kit/issues/140)）。
+- そこで、この PR が **3 日以上 open** のままなら、`release-reminder` ラベル付きの Issue を 1 件開き、オーナーをアサインします（[#143](https://github.com/shinyaoguri/cosense-site-kit/issues/143)）。
+- PR がマージされると、次の実行でその Issue を自動で閉じます。
+- 判定と開閉の処理は `scripts/check-stale-release-pr.sh` にあります（テストは `test/release-reminder.test.ts`）。
+- 公開は人の判断に残すため、自動マージはしません。
+
 ## dependabot PR の扱い
 
 dependabot はマニフェストしか書き換えません。**バンプに手で追随すべきファイル**（公開パッケージの

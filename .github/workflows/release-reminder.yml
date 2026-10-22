@@ -1,0 +1,27 @@
+name: Release reminder
+
+# changesets のリリース PR (chore: version packages) はマージされるまで npm へ
+# 公開されない。3 日以上 open ならリマインダ Issue を開き、解消したら閉じる
+# (#143)。公開そのものは人の判断に残し、自動マージはしない。
+on:
+  schedule:
+    - cron: "41 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write # リマインダ Issue とラベルの作成・クローズ
+  pull-requests: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: ./scripts/check-stale-release-pr.sh
