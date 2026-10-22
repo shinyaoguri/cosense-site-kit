@@ -43,6 +43,8 @@ function permissionsFor(yml: string, job: string): string {
   return /^permissions:\n((?: {2}\S.*\n)+)/m.exec(yml)?.[1] ?? "";
 }
 
+const INSTALL = "- run: if [ -f package-lock.json ]; then npm ci; else npm install; fi";
+
 describe("generateGithubActionsWorkflow", () => {
   it("emits a cloudflare-workers workflow with the configured schedule", () => {
     const yml = generateGithubActionsWorkflow({
@@ -50,7 +52,7 @@ describe("generateGithubActionsWorkflow", () => {
       schedule: "5 0,12 * * *",
     });
     expect(yml).toContain('cron: "5 0,12 * * *"');
-    expect(yml).toContain("cloudflare/wrangler-action@v4");
+    expect(yml).toContain("npx --yes wrangler@4 deploy");
     expect(yml).toContain("npx cosense-site fetch");
     expect(yml).toContain("npx astro build");
   });
@@ -90,7 +92,7 @@ describe("generateGithubActionsWorkflow", () => {
         frameworkDev: true,
       });
       expect(yml).toMatch(
-        /- run: npm install\n\s+working-directory: \$\{\{ github\.workspace \}\}/,
+        /- run: if \[ -f package-lock\.json \]; then npm ci; else npm install; fi\n\s+working-directory: \$\{\{ github\.workspace \}\}/,
       );
     }
   });
@@ -101,10 +103,8 @@ describe("generateGithubActionsWorkflow", () => {
     // so no github.workspace override is emitted (which would install a
     // scriptless repo root and fail).
     const yml = generateGithubActionsWorkflow({ target: "github-pages", workingDirectory: "site" });
-    expect(yml).toContain("- run: npm install");
-    expect(yml).not.toMatch(
-      /- run: npm install\n\s+working-directory: \$\{\{ github\.workspace \}\}/,
-    );
+    expect(yml).toContain(INSTALL);
+    expect(yml).not.toMatch(/npm install; fi\n\s+working-directory:/);
   });
 
   it("emits a github-pages workflow with build/deploy jobs and env binding", () => {
@@ -303,6 +303,69 @@ describe("generateGithubActionsWorkflow", () => {
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions ${{ }} expression
     expect(yml).toContain("node ${{ github.workspace }}/packages/cli/dist/index.js doctor");
     expect(yml).not.toContain("npx cosense-site");
+  });
+});
+
+describe("generated workflow supply-chain hardening (#185)", () => {
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
+  const variants = (target: "cloudflare-workers" | "github-pages") => [
+    generateGithubActionsWorkflow({ target }),
+    generateGithubActionsWorkflow({ target, workingDirectory: "site" }),
+  ];
+
+  it("installs from the lockfile when one is committed, else tracks the latest", () => {
+    // The starter template gitignores package-lock.json on purpose (cron builds
+    // follow the newest matching framework), so a bare `npm ci` would fail there.
+    for (const target of ["cloudflare-workers", "github-pages"] as const) {
+      for (const yml of variants(target)) {
+        expect(yml).toContain(INSTALL);
+        expect(yml).not.toMatch(/- run: npm install\s*$/m);
+      }
+    }
+  });
+
+  it("never leaves the GITHUB_TOKEN in .git/config after checkout", () => {
+    const workflows = [
+      ...variants("cloudflare-workers"),
+      ...variants("github-pages"),
+      readFileSync(join(repoRoot, ".github/workflows/build.yml"), "utf8"),
+    ];
+    for (const yml of workflows) {
+      const checkouts = [...yml.matchAll(/uses: actions\/checkout@\S+\n((?: {8,}.*\n?)*)/g)];
+      expect(checkouts.length).toBeGreaterThan(0);
+      for (const [, withBlock] of checkouts) {
+        expect(withBlock).toMatch(/persist-credentials: false/);
+      }
+    }
+  });
+
+  it("keeps the Cloudflare token out of the job that installs dependencies", () => {
+    // A dependency's install script could swap node_modules/.bin/wrangler and
+    // read the token if both shared a job, so the deploy job gets only the built
+    // artifact and runs wrangler straight from npm.
+    for (const yml of variants("cloudflare-workers")) {
+      const jobs = [...splitJobs(yml)];
+      const withSecrets = jobs.filter(([, block]) => block.includes("secrets."));
+      expect(withSecrets.map(([name]) => name)).toEqual(["deploy"]);
+      const deploy = withSecrets[0]?.[1] ?? "";
+      expect(deploy).not.toContain("actions/checkout");
+      expect(deploy).not.toMatch(/npm (ci|install)/);
+      expect(deploy).toContain("npx --yes wrangler@4 deploy");
+      // No third-party action receives the token (or anything else).
+      for (const m of yml.matchAll(/uses:\s*(\S+)/g)) {
+        expect(m[1]).toMatch(/^actions\//);
+      }
+    }
+  });
+
+  it("ships wrangler.jsonc next to dist so the deploy job can read its config", () => {
+    const yml = generateGithubActionsWorkflow({
+      target: "cloudflare-workers",
+      workingDirectory: "site",
+    });
+    expect(yml).toMatch(/path: \|\n\s+site\/wrangler\.jsonc\n\s+site\/dist\n/);
+    const root = generateGithubActionsWorkflow({ target: "cloudflare-workers" });
+    expect(root).toMatch(/path: \|\n\s+wrangler\.jsonc\n\s+dist\n/);
   });
 });
 

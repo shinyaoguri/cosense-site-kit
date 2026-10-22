@@ -514,12 +514,14 @@ export default defineCosenseSite({
 
 `cosense-site deploy init` で次のファイルが生成されます:
 
-- `.github/workflows/build.yml` — checkout → Cosense cache 復元 → `cosense-site fetch` → **`cosense-site doctor`（公開前ゲート）** → `astro build` → `cloudflare/wrangler-action` で Workers へ、または `actions/deploy-pages` で GitHub Pages へ公開
+- `.github/workflows/build.yml` — checkout → Cosense cache 復元 → `cosense-site fetch` → **`cosense-site doctor`（公開前ゲート）** → `astro build` → 別ジョブの `wrangler deploy` で Workers へ、または `actions/deploy-pages` で GitHub Pages へ公開
 - `wrangler.jsonc`（Cloudflare 用のみ） — Workers Static Assets を `./dist` に向けた設定（404 ページ配信のための `not_found_handling: "404-page"` を含む）
 
 ビルドは cron + `workflow_dispatch` の併用が前提です。Cosense は分単位で更新するものではないので、1 日 2 回で十分です。
 
 **公開前ゲート（doctor）**: 生成される workflow は fetch と build の間で `cosense-site doctor` を実行します。doctor は `fail` が 1 件でもあれば exit 1 でデプロイを止め、`warn` だけなら止めません（exit code の契約どおり）。ナビ参照切れ・リンク切れなどが壊れたまま公開されるのを既定で防ぎます。止めたくない運用では `deploy init --no-doctor` で外せます。**この機能より前に生成した既存サイト**は `deploy init --force` で再生成するとゲートが入ります。
+
+**依存のインストール**: `package-lock.json` がコミットされていれば `npm ci`（lockfile どおりに固定）、無ければ `npm install`（cron のたびに範囲内の最新版を取り込む）を実行します。雛形は最新のフレームワークを追うため lockfile を gitignore しています。ビルドを再現可能にしたい場合は lockfile をコミットしてください。また checkout は `persist-credentials: false` なので、ビルド中のスクリプトから `GITHUB_TOKEN` は読めません。**以前に生成した既存サイト**は `deploy init --force` で再生成すると取り込めます。
 
 **すぐ反映したいとき（手動リビルド）**: cron は最大で半日ほど遅延します。Cosense を編集してすぐ公開したい場合は、生成された `build.yml` が `workflow_dispatch` を持つので、GitHub の **Actions タブ → 対象ワークフロー → Run workflow** から手動実行できます（差分 fetch のキャッシュが効くので速い）。Cosense には Webhook がないため、これが「今すぐ再ビルド」の標準手段です。
 
@@ -546,6 +548,8 @@ site: {
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
+
+トークンは依存をインストールするジョブには渡りません。build ジョブは `dist/` と `wrangler.jsonc` だけを artifact にして渡し、deploy ジョブはリポジトリを checkout せず、`npx wrangler@4 deploy` を npm から直接実行します。こうしておくと、依存のインストールスクリプトが `node_modules/.bin/wrangler` を差し替えても、トークンは読まれません。そのため deploy ジョブには、`wrangler.jsonc` と `dist/` 以外のファイルがありません。生成された assets 専用の設定に `main`（Worker スクリプト）などを足す場合は、それらも artifact に含めるようワークフローを調整してください。
 
 ### 404 ページ
 
