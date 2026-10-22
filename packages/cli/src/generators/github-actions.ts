@@ -10,8 +10,14 @@ export const ACTION_VERSIONS = {
   configurePages: "actions/configure-pages@v6",
   uploadPagesArtifact: "actions/upload-pages-artifact@v5",
   deployPages: "actions/deploy-pages@v5",
-  wranglerAction: "cloudflare/wrangler-action@v4",
+  uploadArtifact: "actions/upload-artifact@v7",
+  downloadArtifact: "actions/download-artifact@v8",
 } as const;
+
+// Cloudflare deploys run wrangler straight from npm in a job that never installs
+// the site's dependencies (see renderCloudflareWorkflow), so the major is pinned
+// here rather than taken from the site's package.json.
+const WRANGLER = "wrangler@4";
 
 export interface GithubActionsOptions {
   /** Cron schedule. Default: "17 1,13 * * *" (twice daily, off-the-hour). */
@@ -118,7 +124,11 @@ function buildStep(a: RenderArgs): string {
         working-directory: \${{ github.workspace }}`;
 }
 
-// Install dependencies. In the source-build (dogfooding) case the whole npm
+// Install dependencies — from the lockfile when the site commits one, otherwise
+// resolving fresh. The starter template deliberately gitignores
+// package-lock.json so cron rebuilds pick up the newest matching framework, and
+// a bare `npm ci` fails without a lockfile; a site that does commit one gets the
+// reproducible, lockfile-enforced install instead. In the source-build (dogfooding) case the whole npm
 // workspace must be installed, so pin the step to the repo root regardless of
 // the job's working-directory. A normal consumer installs where their
 // package.json (with the @cosense-site-kit/* deps) lives — the job's
@@ -126,11 +136,20 @@ function buildStep(a: RenderArgs): string {
 // override is emitted, and a subdir site with its own package.json installs
 // correctly instead of failing at a scriptless repo root.
 function installStep(a: RenderArgs): string {
+  const install = "      - run: if [ -f package-lock.json ]; then npm ci; else npm install; fi";
   if (a.buildWorkspaces) {
-    return `      - run: npm install
+    return `${install}
         working-directory: \${{ github.workspace }}`;
   }
-  return `      - run: npm install`;
+  return install;
+}
+
+// No later step pushes or calls the API with git, so don't leave the
+// GITHUB_TOKEN in .git/config where any build-time script could read it.
+function checkoutStep(): string {
+  return `      - uses: ${ACTION_VERSIONS.checkout}
+        with:
+          persist-credentials: false`;
 }
 
 // How the workflow invokes the cosense-site CLI. In source-build (dogfooding)
@@ -174,7 +193,14 @@ function renderCloudflareWorkflow(a: RenderArgs): string {
     ? `\n    defaults:\n      run:\n        working-directory: ${a.workingDirectory}`
     : "";
   const cachePath = a.workingDirectory ? `${a.workingDirectory}/.cosense-cache` : ".cosense-cache";
+  const prefix = a.workingDirectory ? `${a.workingDirectory}/` : "";
 
+  // The API token never shares a job with the dependency install: an install
+  // script could otherwise swap node_modules/.bin/wrangler (which a deploy
+  // action would run) and read the token. The build job hands the deploy job
+  // only dist/ plus wrangler.jsonc — uploaded together so their common parent
+  // becomes the artifact root and the config's "./dist" still resolves — and
+  // the deploy job runs wrangler from npm without checking out the repo.
   return `name: Build and deploy
 
 on:
@@ -193,7 +219,7 @@ jobs:
     permissions:
       contents: read${wd}
     steps:
-      - uses: ${ACTION_VERSIONS.checkout}
+${checkoutStep()}
 
       - uses: ${ACTION_VERSIONS.setupNode}
         with:
@@ -214,12 +240,36 @@ ${installStep(a)}
 ${buildStep(a)}
 ${renderRunSteps(a)}
 
-      - name: Deploy to Cloudflare Workers (Static Assets)
-        uses: ${ACTION_VERSIONS.wranglerAction}
+      - name: Upload site artifact
+        uses: ${ACTION_VERSIONS.uploadArtifact}
         with:
-          apiToken: \${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy${a.workingDirectory ? `\n          workingDirectory: ${a.workingDirectory}` : ""}
+          name: site
+          path: |
+            ${prefix}wrangler.jsonc
+            ${prefix}dist
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: ${ACTION_VERSIONS.downloadArtifact}
+        with:
+          name: site
+
+      - uses: ${ACTION_VERSIONS.setupNode}
+        with:
+          node-version: ${a.nodeVersion}
+
+      - name: Deploy to Cloudflare Workers (Static Assets)
+        run: npx --yes ${WRANGLER} deploy
+        env:
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 `;
 }
 
@@ -259,7 +309,7 @@ jobs:
       contents: read
       pages: read${wd}
     steps:
-      - uses: ${ACTION_VERSIONS.checkout}
+${checkoutStep()}
 
       - uses: ${ACTION_VERSIONS.setupNode}
         with:
