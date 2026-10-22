@@ -1,0 +1,36 @@
+name: PR metadata
+
+# Squash merge では PR タイトルが main のコミット要約に、本文 (リポ設定
+# squash_merge_commit_message: PR_BODY) がコミット本文になる。どちらもマージ
+# 前に検査する。edited で走らせるので、タイトルや本文を直せば再検査される
+# (ビルド・テストの重い check は ci.yml 側で、編集では走らせない)。
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: pr-metadata-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Conventional Commits 形式を強制する。
+  pr-title:
+    runs-on: ubuntu-latest
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: ./scripts/check-pr-title.sh
+
+  # [ci skip] などが本文に混ざると、マージコミットの push で main の CI と
+  # Release がスキップされる (#181)。
+  pr-body:
+    runs-on: ubuntu-latest
+    env:
+      PR_BODY: ${{ github.event.pull_request.body }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: ./scripts/check-pr-body.sh
