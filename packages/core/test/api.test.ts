@@ -37,6 +37,18 @@ describe("CosenseApi", () => {
     expect(url.searchParams.get("skip")).toBe("0");
   });
 
+  it("getPage refuses a dot-only title instead of requesting another endpoint", async () => {
+    // URL parsing would turn ".../p/." into the page list and ".../p/.." into
+    // /api/pages/ — escaped or not (#199). Fail as a 404 without a request.
+    const api = new CosenseApi();
+    for (const title of [".", ".."]) {
+      const err = await api.getPage("p", title).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(CosenseApiError);
+      expect((err as CosenseApiError).status).toBe(404);
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it("listAllPages walks pages until count is exhausted", async () => {
     fetchSpy
       .mockResolvedValueOnce(

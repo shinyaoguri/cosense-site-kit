@@ -73,6 +73,17 @@ export function isSafePathSegment(seg: string): boolean {
   return seg !== "" && !seg.startsWith(".") && !seg.includes("/") && !UNSAFE_PATH_CHARS.test(seg);
 }
 
+/**
+ * True when an already-encoded path segment is one WHATWG URL parsing resolves
+ * as "." or "..", which includes the %2E-escaped forms. encodeURIComponent
+ * leaves "." alone, so a Cosense page titled "." or ".." can't be put in a
+ * request path at all: `new URL()` (and so `fetch()`) would request a
+ * different endpoint (#199).
+ */
+export function isDotSegment(encodedSeg: string): boolean {
+  return /^(?:\.|%2e){1,2}$/i.test(encodedSeg);
+}
+
 /** True when `value` (expected pre-normalized) is a safe redirect source. */
 export function isSafeRedirectSource(value: string): boolean {
   if (!value) return false;

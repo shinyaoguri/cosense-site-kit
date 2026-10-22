@@ -162,6 +162,22 @@ describe("createCosenseSource cache freshness", () => {
     expect(warnings[0]).toContain("Gone");
   });
 
+  it("skips a dot-only title with its own warning instead of calling it deleted", async () => {
+    // URL parsing resolves "." / ".." (escaped or not) to another endpoint, so
+    // such a page can't be fetched through the API at all (#199).
+    const source = createCosenseSource({ project: "p", cacheDir });
+    const warnings: string[] = [];
+    const page = await source.fetch(
+      { id: "dots", title: "..", updated: 1_700_000_000, sourceUrl: "u" },
+      { onWarn: (m) => warnings.push(m) },
+    );
+    expect(page).toBeNull();
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("dot segment");
+    expect(warnings[0]).not.toContain("disappeared");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it("does not resurrect a deleted page from cache on 404", async () => {
     const source = createCosenseSource({ project: "p", cacheDir });
     fetchSpy.mockResolvedValueOnce(
