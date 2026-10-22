@@ -11,7 +11,12 @@ import {
 } from "@cosense-site-kit/core";
 import type { AstroIntegration } from "astro";
 import { assertDraftPreviewAllowed } from "./drafts";
-import { writeSecurityHeaders } from "./headers";
+import {
+  buildSecurityHeaders,
+  type CspOption,
+  scriptAssetsInlineLimit,
+  writeSecurityHeaders,
+} from "./headers";
 import { type ImageRemotePatterns, resolveImageRemotePatterns } from "./images";
 import {
   DEV_TTL_MS,
@@ -48,6 +53,17 @@ export interface CosenseIntegrationOptions {
    * (it can't set headers). Default: true.
    */
   securityHeaders?: boolean;
+  /**
+   * The CSP's script-src in `dist/_headers`. By default only same-origin
+   * scripts run (`script-src 'self' 'wasm-unsafe-eval'`), so a script injected
+   * into the built HTML is blocked; to keep that true, Astro's inlining of
+   * small scripts is turned off. Add the origins of third-party scripts a site
+   * loads, e.g. `{ scriptSrc: ["https://static.cloudflareinsights.com"] }` for
+   * Cloudflare Web Analytics or `"https://www.googletagmanager.com"` for Google
+   * Analytics (its inline config snippet must move to a file, or add its
+   * `'sha256-…'` hash). `false` drops script-src (and leaves inlining alone).
+   */
+  csp?: CspOption;
   /**
    * Hosts astro:assets may fetch for `<Image>`. Default: any https host, since
    * Cosense content hot-links arbitrary image hosts. Only matters when a theme
@@ -119,6 +135,8 @@ function virtualSitePlugin(getSnapshot: () => VirtualSnapshot): {
 }
 
 export default function cosense(opts: CosenseIntegrationOptions = {}): AstroIntegration {
+  // Built (and validated) up front so a bad csp.scriptSrc fails at config load.
+  const securityHeaders = buildSecurityHeaders(opts.csp);
   return {
     name: "@cosense-site-kit/astro",
     hooks: {
@@ -192,6 +210,11 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           site: config.site.baseUrl,
           vite: {
             plugins: [virtualSitePlugin(() => ({ site, structure }))],
+            // script-src 'self' blocks inline scripts, so keep every processed
+            // script in its own file (see headers.ts).
+            ...(opts.csp === false
+              ? {}
+              : { build: { assetsInlineLimit: scriptAssetsInlineLimit } }),
           },
           // Permit astro:assets on remote images (see images.ts). Inert by
           // default — the theme serves <img> directly; this only enables
@@ -215,7 +238,7 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
       },
       "astro:build:done": ({ dir, logger }) => {
         if (opts.securityHeaders === false) return;
-        if (writeSecurityHeaders(fileURLToPath(dir)) === "kept") {
+        if (writeSecurityHeaders(fileURLToPath(dir), securityHeaders) === "kept") {
           logger.info("cosense: keeping the site's own _headers (security headers not written)");
         } else {
           logger.info("cosense: wrote security headers to _headers");

@@ -5,34 +5,38 @@
 // a small card with the target page's title, image and clipped summary.
 // Progressive enhancement: links work normally without JS, and the card never
 // appears on touch (no hover) — taps just navigate.
-const endpoint = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/link-previews.json`;
+// A processed (bundled, external) script rather than is:inline: the generated
+// CSP only runs same-origin script files (script-src 'self').
 ---
-<script is:inline define:vars={{ endpoint }}>
+<script>
   (() => {
+    const endpoint = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/link-previews.json`;
+    type Entry = { title: string; image?: string; summary?: string };
+    type Previews = Record<string, Entry | undefined>;
     const ATTR = "data-preview-slug";
     const OPEN_DELAY = 120;
     const CLOSE_DELAY = 160;
-    let cache = null;
-    let loading = null;
-    let pop = null;
+    let cache: Previews | null = null;
+    let loading: Promise<Previews> | null = null;
+    let pop: HTMLDivElement | null = null;
     let openTimer = 0;
     let closeTimer = 0;
     // The link the pointer/focus is currently on. show() re-checks this after
     // its await so a slow fetch can't pop a card for a link already left.
-    let currentLink = null;
+    let currentLink: Element | null = null;
 
-    const load = () => {
+    const load = (): Promise<Previews> => {
       if (cache) return Promise.resolve(cache);
       if (!loading) {
         loading = fetch(endpoint)
-          .then((r) => (r.ok ? r.json() : {}))
+          .then((r) => (r.ok ? (r.json() as Promise<Previews>) : {}))
           .then((d) => (cache = d))
           .catch(() => (cache = {}));
       }
       return loading;
     };
 
-    const ensurePopover = () => {
+    const ensurePopover = (): HTMLDivElement => {
       if (pop) return pop;
       pop = document.createElement("div");
       pop.className = "link-preview";
@@ -52,7 +56,7 @@ const endpoint = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/link-previews.j
       closeTimer = window.setTimeout(hide, CLOSE_DELAY);
     }
 
-    const position = (el, link) => {
+    const position = (el: HTMLElement, link: Element) => {
       const r = link.getBoundingClientRect();
       const pw = el.offsetWidth;
       const ph = el.offsetHeight;
@@ -65,7 +69,7 @@ const endpoint = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/link-previews.j
       el.style.top = `${flip ? above : below}px`;
     };
 
-    const show = async (link) => {
+    const show = async (link: Element) => {
       const slug = link.getAttribute(ATTR);
       if (!slug) return;
       const data = await load();
@@ -98,8 +102,8 @@ const endpoint = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/link-previews.j
       position(el, link);
     };
 
-    const linkFrom = (e) =>
-      e.target && e.target.closest ? e.target.closest(`a[${ATTR}]`) : null;
+    const linkFrom = (e: Event) =>
+      e.target instanceof Element ? e.target.closest(`a[${ATTR}]`) : null;
 
     document.addEventListener("pointerover", (e) => {
       const link = linkFrom(e);
