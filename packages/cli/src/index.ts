@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { DEPLOY_TARGETS, type DeployTarget } from "@cosense-site-kit/core";
+import { DEPLOY_TARGETS, type DeployTarget, escapeForLog } from "@cosense-site-kit/core";
 import { Command, InvalidArgumentError, Option } from "commander";
 import pc from "picocolors";
 import { runDeployInit } from "./commands/deploy";
@@ -148,6 +148,7 @@ deploy
 
 program.parseAsync().catch((err: unknown) => {
   const msg = err instanceof Error ? err.message : String(err);
-  console.error(pc.red("✗"), msg);
+  // Errors can quote Cosense-derived text (e.g. a .site YAML parse error).
+  console.error(pc.red("✗"), escapeForLog(msg));
   process.exit(1);
 });

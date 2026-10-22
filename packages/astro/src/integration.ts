@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import {
   type CosenseSiteConfig,
   emptySiteStructure,
+  escapeForLog,
   loadCosenseSiteConfig,
   normalizeBase,
   type SiteStructure,
@@ -11,6 +12,7 @@ import {
 import type { AstroIntegration } from "astro";
 import { assertDraftPreviewAllowed } from "./drafts";
 import { writeSecurityHeaders } from "./headers";
+import { type ImageRemotePatterns, resolveImageRemotePatterns } from "./images";
 import {
   DEV_TTL_MS,
   getSharedIntermediate,
@@ -46,6 +48,14 @@ export interface CosenseIntegrationOptions {
    * (it can't set headers). Default: true.
    */
   securityHeaders?: boolean;
+  /**
+   * Hosts astro:assets may fetch for `<Image>`. Default: any https host, since
+   * Cosense content hot-links arbitrary image hosts. Only matters when a theme
+   * renders `<Image>` — then the build fetches every image URL a Cosense editor
+   * writes. Pass a narrower list (or `[]`) to restrict it; `image.remotePatterns`
+   * in astro.config can't, because Astro concatenates it with this one.
+   */
+  imageRemotePatterns?: ImageRemotePatterns;
 }
 
 // Astro Integration. Use in astro.config.ts:
@@ -120,6 +130,8 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
         config: astroConfig,
       }) => {
         const config = opts.config ?? (await loadCosenseSiteConfig(opts.configFile));
+        // Warnings carry Cosense-derived text (titles, .site YAML errors).
+        const warn = (m: string) => logger.warn(escapeForLog(m));
         const normalized = normalizeBase(config.site.base);
         const isDev = command === "dev";
         assertDraftPreviewAllowed(opts.previewDrafts, isDev);
@@ -159,7 +171,7 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           icon = data.site.icon;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          logger.warn(`cosense: pipeline failed (${msg}); using empty structure`);
+          warn(`cosense: pipeline failed (${msg}); using empty structure`);
         }
 
         // Vendor the favicon locally — same reason as in-page icons: scrapbox.io
@@ -171,7 +183,7 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           icon = await vendorImage(icon, {
             dir: iconVendorDir(astroConfig.publicDir),
             baseUrl: `${assetBase}/cosense-icons`,
-            onWarn: (m) => logger.warn(m),
+            onWarn: warn,
           });
         }
 
@@ -181,18 +193,18 @@ export default function cosense(opts: CosenseIntegrationOptions = {}): AstroInte
           vite: {
             plugins: [virtualSitePlugin(() => ({ site, structure }))],
           },
-          // Permit astro:assets on remote images (content comes from arbitrary
-          // image hosts: Gyazo, Scrapbox uploads, etc.). Inert by default — the
-          // theme serves <img> directly; this only enables <Image> for themes
-          // that opt into build-time optimization. See docs/THEMES.md.
-          image: { remotePatterns: [{ protocol: "https" }] },
+          // Permit astro:assets on remote images (see images.ts). Inert by
+          // default — the theme serves <img> directly; this only enables
+          // <Image> for themes that opt into build-time optimization. See
+          // docs/THEMES.md.
+          image: { remotePatterns: resolveImageRemotePatterns(opts.imageRemotePatterns) },
         });
         if (normalized !== "/") {
           updateConfig({ base: normalized.replace(/\/$/, "") });
         }
 
         const redirects = buildRedirects(structure.redirects, normalized, (from) =>
-          logger.warn(`cosense: skipped unsafe redirect source ${JSON.stringify(from)}`),
+          warn(`cosense: skipped unsafe redirect source ${JSON.stringify(from)}`),
         );
         if (Object.keys(redirects).length > 0) {
           updateConfig({ redirects });

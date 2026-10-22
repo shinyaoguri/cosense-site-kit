@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import {
   buildIntermediate,
+  escapeForLog,
   loadCosenseSiteConfig,
   writeIntermediate,
 } from "@cosense-site-kit/core";
@@ -35,7 +36,7 @@ export async function runFetch(opts: FetchOptions): Promise<void> {
           break;
         case "fetch":
           if (e.current % 10 === 0 || e.current === e.total) {
-            console.log(pc.dim(`  fetch  ${e.current}/${e.total} ${e.title}`));
+            console.log(pc.dim(`  fetch  ${e.current}/${e.total} ${escapeForLog(e.title)}`));
           }
           break;
         case "publish":
@@ -45,13 +46,13 @@ export async function runFetch(opts: FetchOptions): Promise<void> {
           if (!e.found) {
             console.log(
               pc.yellow(
-                `⚠ site-config page "${config.siteConfig.page}" not found — using defaults`,
+                `⚠ site-config page "${escapeForLog(String(config.siteConfig.page))}" not found — using defaults`,
               ),
             );
           }
           break;
         case "warn":
-          console.log(pc.yellow(`⚠ ${e.message}`));
+          console.log(pc.yellow(`⚠ ${escapeForLog(e.message)}`));
           break;
         case "normalize":
           // quiet: implied by fetch completion
@@ -61,7 +62,7 @@ export async function runFetch(opts: FetchOptions): Promise<void> {
   });
 
   console.log(pc.green(`✓ ${data.pages.length} page(s) ready`));
-  for (const w of data.warnings) console.log(pc.yellow(`⚠ ${w}`));
+  for (const w of data.warnings) console.log(pc.yellow(`⚠ ${escapeForLog(w)}`));
 
   if (opts.exportPath) {
     const out = resolve(opts.cwd, opts.exportPath);

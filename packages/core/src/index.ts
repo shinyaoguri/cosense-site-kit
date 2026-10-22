@@ -24,6 +24,7 @@ export { type DoctorCheck, runDoctor } from "./doctor";
 // match author-supplied names against page data must normalize the same way.
 export { normalizeKey } from "./keys";
 export { loadCosenseSiteConfig } from "./load-config";
+export { escapeForLog } from "./log";
 // ── Pipeline (consumed by the Astro integration and the CLI) ─────────────
 export { buildIntermediate, writeIntermediate } from "./pipeline";
 // ── Path helpers (consumed by themes via theme-utils, and by the Astro

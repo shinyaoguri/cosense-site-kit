@@ -1,5 +1,5 @@
 import type { DoctorCheck } from "@cosense-site-kit/core";
-import { loadCosenseSiteConfig, runDoctor } from "@cosense-site-kit/core";
+import { escapeForLog, loadCosenseSiteConfig, runDoctor } from "@cosense-site-kit/core";
 import pc from "picocolors";
 
 export interface DoctorOptions {
@@ -17,7 +17,7 @@ const SYMBOL = {
 
 export async function runDoctorCmd(opts: DoctorOptions): Promise<number> {
   const config = await loadCosenseSiteConfig(opts.configFile, opts.cwd);
-  console.log(pc.bold(`Doctor report for "${config.source.project}"`));
+  console.log(pc.bold(`Doctor report for "${escapeForLog(config.source.project)}"`));
   console.log();
 
   const report = await runDoctor({
@@ -27,7 +27,9 @@ export async function runDoctorCmd(opts: DoctorOptions): Promise<number> {
   });
 
   if (report.fatalError) {
-    console.log(`${SYMBOL.fail} ${pc.bold("Pipeline crashed")} — ${report.fatalError}`);
+    console.log(
+      `${SYMBOL.fail} ${pc.bold("Pipeline crashed")} — ${escapeForLog(report.fatalError)}`,
+    );
     console.log();
     return 1;
   }
@@ -51,10 +53,10 @@ export async function runDoctorCmd(opts: DoctorOptions): Promise<number> {
 }
 
 function printCheck(c: DoctorCheck): void {
-  console.log(`  ${SYMBOL[c.status]} ${c.name}  ${pc.dim(c.message)}`);
+  console.log(`  ${SYMBOL[c.status]} ${c.name}  ${pc.dim(escapeForLog(c.message))}`);
   if (c.details && c.details.length > 0) {
     for (const d of c.details.slice(0, 10)) {
-      console.log(`      ${pc.dim("·")} ${d}`);
+      console.log(`      ${pc.dim("·")} ${escapeForLog(d)}`);
     }
     if (c.details.length > 10) {
       console.log(`      ${pc.dim(`… and ${c.details.length - 10} more`)}`);
