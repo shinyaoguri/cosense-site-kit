@@ -37,11 +37,11 @@
   "dependencies": {
     "@cosense-site-kit/core": "^0.4.7",
     "@cosense-site-kit/theme-utils": "^0.5.3",
-    "pagefind": "^1.5.2"
+    "pagefind": "^1.6.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
-    "astro": "^7.4.4",
+    "astro": "^7.4.7",
     "tsup": "^9.0.0",
     "typescript": "^5.7.2"
   },
